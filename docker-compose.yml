@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  # The main web application service
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      # Mount the current directory into the container for live-reloading
+      - .:/app
+    env_file:
+      - .env
+    ports:
+      # Expose the application port to the host machine
+      - "3000:3000"
+    # The actual command to run the Flask app will be added in a later task
+    # For now, this keeps the service alive for inspection.
+    command: python -m http.server 3000
+    depends_on:
+      - redis
+
+  # The Redis service for state management and Celery message brokering
+  redis:
+    image: redis:7-alpine
+    ports:
+      # Expose Redis to the host for debugging, but services will connect internally
+      - "6379:6379"
+
+  # The Celery worker service will be added in a later task (OPS-01)
+  # celeryworker:
+  #   build: .
+  #   command: celery -A server.celery_app worker --loglevel=info
+  #   volumes:
+  #     - .:/app
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - redis

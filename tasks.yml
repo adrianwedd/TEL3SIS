@@ -1,0 +1,852 @@
+# jsonschema: |
+#   {
+#     "$schema": "http://json-schema.org/draft-07/schema#",
+#     "type": "array",
+#     "items": {
+#       "type": "object",
+#       "required": ["id","description","dependencies","priority","status"],
+#       "properties": {
+#         "id": {"type": "integer"},
+#         "description": {"type": "string"},
+#         "component": {"type": "string"},
+#         "dependencies": {"type": "array","items": {"type": "integer"}},
+#         "priority": {"type": "integer","minimum": 1, "maximum": 5},
+#         "status": {"type": "string","enum": ["pending","in_progress","done"]},
+#         "command": {"type": ["string", "null"]},
+#         "task_id": {"type": "string"},
+#         "title": {"type": "string"},
+#         "area": {"type": "string"},
+#         "actionable_steps": {"type": "array", "items": {"type": "string"}},
+#         "acceptance_criteria": {"type": "array", "items": {"type": "string"}},
+#         "assigned_to": {"type": ["string", "null"]},
+#         "epic": {"type": "string"}
+#       }
+#     }
+#   }
+
+tasks:
+  - id: 1
+    task_id: INIT-00
+    epic: "Phase 0: Initialization"
+    title: "Set up project directory and file structure"
+    description: "Create folders for server, agents, scripts, and config. Prepare Docker and Flask scaffolding."
+    component: infrastructure
+    area: Setup
+    dependencies: []
+    priority: 1
+    status: pending
+    assigned_to: null
+    command: "mkdir -p server agents scripts recordings/audio recordings/transcripts"
+    actionable_steps:
+      - "Create root project directory."
+      - "Create subdirectories: /server, /agents, /scripts, /recordings."
+      - "Add initial Dockerfile, docker-compose.yml, and requirements.txt."
+    acceptance_criteria:
+      - "The specified directory structure exists in the repository."
+      - "A basic Dockerfile and docker-compose.yml are present."
+  - id: 2
+    task_id: INIT-01
+    epic: "Phase 0: Initialization"
+    title: "Configure .env and environment secrets"
+    description: "Create a .env file using .env.example and securely populate credentials for Twilio, OpenAI, etc."
+    component: config
+    area: Setup
+    dependencies: [1]
+    priority: 1
+    status: pending
+    assigned_to: null
+    command: "cp .env.example .env"
+    actionable_steps:
+      - "Create a .env.example file listing all required environment variables."
+      - "Create the .env file and add it to .gitignore."
+      - "Populate the .env file with valid credentials."
+    acceptance_criteria:
+      - "The application can successfully load all required secrets from the environment."
+  - id: 3
+    task_id: INIT-02
+    epic: "Phase 0: Initialization"
+    title: "Implement latency logger with loguru"
+    description: "Instrument STT → LLM → TTS roundtrip using loguru and record structured latency metrics."
+    component: agent
+    area: Ops
+    dependencies: [1]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Add loguru to requirements.txt."
+      - "Wrap Vocode's STT, LLM, and TTS handlers to log timestamps before and after each step."
+      - "Output structured JSON logs containing call_sid and latency_ms for each step."
+    acceptance_criteria:
+      - "During a call, latency logs are printed to the console in a structured format."
+  - id: 4
+    task_id: INIT-03
+    epic: "Phase 0: Initialization"
+    title: "Add STT warm-up daemon for Whisper"
+    description: "Build a background process to preload Whisper models and maintain readiness to reduce cold start time. Note: Can be deferred until post-MVP to prioritize stable call flow."
+    component: agent
+    area: Performance
+    dependencies: [1]
+    priority: 5
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Create a script to initialize a Whisper model in memory."
+      - "Integrate this script into the application's startup process."
+    acceptance_criteria:
+      - "The first call received after server start has significantly reduced STT latency."
+  - id: 5
+    task_id: INIT-04
+    epic: "Phase 0: Initialization"
+    title: "Build minimal Vocode Flask app with Twilio webhook"
+    description: "Implement Flask app with `/inbound_call` route to handle Twilio requests and return basic voice responses."
+    component: server
+    area: Core Logic
+    dependencies: [1, 2]
+    priority: 1
+    status: pending
+    assigned_to: null
+    command: "flask --app server.app run"
+    actionable_steps:
+      - "Create server/app.py with a Flask application."
+      - "Import and configure Vocode's TelephonyServer."
+      - "Implement the /inbound_call endpoint to handle POST requests from Twilio."
+    acceptance_criteria:
+      - "The Flask server runs without errors."
+      - "Hitting the /inbound_call endpoint returns a valid TwiML response for Vocode."
+  - id: 6
+    task_id: CORE-01
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Create core conversational agent configuration"
+    description: "Define initial ChatGPT agent with voice, transcriber, and personality configs."
+    component: agent
+    area: Core Logic
+    dependencies: [1, 2]
+    priority: 1
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create agents/core_agent.py."
+      - "Define a function that returns a Vocode AgentConfig object."
+      - "Configure the agent with a prompt preamble, STT provider, and TTS provider."
+    acceptance_criteria:
+      - "The function returns a valid Vocode agent configuration object without errors."
+  - id: 7
+    task_id: CORE-02
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Set up local microphone/speaker test script"
+    description: "Enable local dev testing of the agent using dev_test_call.py."
+    component: tools
+    area: Setup
+    dependencies: [6]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: "python scripts/dev_test_call.py"
+    actionable_steps:
+      - "Create scripts/dev_test_call.py."
+      - "Import the core agent configuration."
+      - "Use Vocode's StreamingConversation to wire up local mic/speaker."
+    acceptance_criteria:
+      - "Running the script starts a live conversation with the AI agent through the local machine's audio devices."
+  - id: 8
+    task_id: CORE-03
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Handle incoming call, STT, TTS, and response"
+    description: "Integrate agent into Twilio call handler to enable real-time AI conversation."
+    component: server
+    area: Core Logic
+    dependencies: [5, 6]
+    priority: 1
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "In server/app.py, import the core agent configuration."
+      - "Pass the agent configuration to the TelephonyServer within the /inbound_call handler."
+    acceptance_criteria:
+      - "When a call is received via Twilio, the agent's initial greeting is spoken."
+      - "The agent can hold a real-time conversation with the caller."
+  - id: 9
+    task_id: CORE-04
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Enable and store call recordings"
+    description: "Use Twilio settings to record audio and persist locally or to a specified path."
+    component: telephony
+    area: Data
+    dependencies: [8]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Set `record=True` in the TwilioConfig object in the call handler."
+      - "Implement a webhook to receive recording status updates from Twilio."
+      - "Write a function to download the audio file from the provided URL to /recordings/audio."
+    acceptance_criteria:
+      - "After a call completes, an audio file of the conversation is saved locally."
+
+  - id: 35
+    task_id: CORE-04A
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Implement recording status webhook"
+    description: "Create /recording_status endpoint to handle Twilio recording callbacks."
+    component: telephony
+    area: Data
+    dependencies: [9]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Add new Flask route `/recording_status`."
+      - "Update Twilio Console to call this route."
+      - "Store recording SID and URL in Redis session."
+    acceptance_criteria:
+      - "Recording callback hits the endpoint and data is logged without errors."
+  - id: 10
+    task_id: CORE-05
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Transcribe call audio after hangup"
+    description: "Use Whisper or Deepgram to generate a transcript file from recorded audio."
+    component: agent
+    area: Data
+    dependencies: [9, 12]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Create a function that takes a call recording file as input."
+      - "Use a transcription library to process the audio."
+      - "Save the resulting text to /recordings/transcripts."
+      - "Integrate this into an async background task queue (e.g., Celery)."
+    acceptance_criteria:
+      - "For every audio recording, a corresponding text transcript is generated and saved."
+  - id: 11
+    task_id: CORE-06
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Send transcript and audio to user via email/SMS"
+    description: "Send a message with call summary and attached transcript/audio using SMTP or Twilio Notify."
+    component: tools
+    area: UX
+    dependencies: [10, 12]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Integrate an email (e.g., SendGrid) or SMS (Twilio) client."
+      - "After transcription, trigger a notification function."
+      - "The function should send a message with the transcript attached or linked."
+    acceptance_criteria:
+      - "A notification is sent to a pre-defined recipient after a call is fully processed."
+  - id: 12
+    task_id: MEM-01
+    epic: "Phase 2: Tool Integration"
+    title: "Add Redis support for short-term state tracking"
+    description: "Store session data like caller ID, recent utterances, and agent actions. Required before any tool use."
+    component: state
+    area: Infrastructure
+    dependencies: [5]
+    priority: 1
+    status: pending
+    assigned_to: null
+    command: "docker-compose up redis"
+    actionable_steps:
+      - "Add Redis to the docker-compose.yml file."
+      - "Install redis-py library."
+      - "Create a state manager class that connects to Redis."
+      - "In the call handler, create a new session in Redis for each call."
+    acceptance_criteria:
+      - "A Redis container is running and accessible by the Flask app."
+      - "When a call starts, a new key is created in Redis for that session."
+  - id: 13
+    task_id: TOOL-01
+    epic: "Phase 2: Tool Integration"
+    title: "Add OpenAI function-calling support to agent"
+    description: "Enable agent to use structured tool calls via JSON schema-based functions."
+    component: agent
+    area: Core Logic
+    dependencies: [6, 12]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Update ChatGPTAgentConfig to include a `functions` list with JSON schemas."
+      - "Implement the agent's `handle_function_call` method to parse tool requests."
+    acceptance_criteria:
+      - "The agent correctly identifies when a user's request should trigger a tool."
+      - "The `handle_function_call` method is successfully invoked."
+  - id: 14
+    task_id: TOOL-02
+    epic: "Phase 2: Tool Integration"
+    title: "Integrate simple tool: weather API"
+    description: "Add first tool plugin to validate toolchain logic with minimal dependencies."
+    component: tools
+    area: Tooling
+    dependencies: [13]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create a tools/weather.py module with a function to call a weather API."
+      - "Add logic to the agent's function handler to call this function."
+      - "Format the API result into a human-readable string for the LLM."
+    acceptance_criteria:
+      - "When a user asks for the weather, the agent successfully calls the API and provides an accurate report."
+  - id: 15
+    task_id: TOOL-03
+    epic: "Phase 2: Tool Integration"
+    title: "Build Google Calendar tool with OAuth"
+    description: "Authenticate users via OAuth and enable agent to schedule events using Google Calendar API."
+    component: tools
+    area: Tooling
+    dependencies: [13, 16]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Set up a Google Cloud Platform project with OAuth 2.0 credentials."
+      - "Implement the OAuth flow (consent screen, callback URL)."
+      - "Write functions to create/read calendar events using the google-api-python-client."
+    acceptance_criteria:
+      - "The agent can successfully create a calendar event on behalf of an authenticated user."
+  - id: 16
+    task_id: TOOL-04
+    epic: "Phase 2: Tool Integration"
+    title: "Store refresh tokens and OAuth metadata"
+    description: "Persist access tokens securely with expiration and refresh logic. Tokens must be encrypted before storage."
+    component: state
+    area: Security
+    dependencies: [12]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Use a library like `cryptography` to encrypt tokens."
+      - "Extend the state manager to store encrypted tokens associated with a user."
+      - "Implement logic to use refresh tokens to get new access tokens when they expire."
+    acceptance_criteria:
+      - "OAuth tokens are stored in an encrypted format."
+      - "The system can maintain persistent access to the Google Calendar API."
+  - id: 17
+    task_id: TOOL-05
+    epic: "Phase 2: Tool Integration"
+    title: "Implement fallback for tool auth failure"
+    description: "Add conversational fallback: “I'll text you a link” for tool auth issues."
+    component: agent
+    area: UX
+    dependencies: [13]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "In the tool-handling logic, add error handling for authentication failures."
+      - "If auth fails, the agent's next response should be the fallback message."
+      - "Trigger a notification (SMS) with the authentication link."
+    acceptance_criteria:
+      - "When a tool requiring auth is used by an unauthenticated user, the agent responds with the correct fallback message."
+  - id: 18
+    task_id: FWD-01
+    epic: "Phase 3: Call Forwarding + Handoff"
+    title: "Add escalation triggers based on keywords"
+    description: "Enable agent to detect urgency and escalate call to human. For MVP, implement only keyword-based triggers."
+    component: agent
+    area: UX
+    dependencies: [8]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create a list of escalation keywords."
+      - "In the agent's main loop, check each user utterance against the keyword list."
+      - "If a keyword is detected, set an internal state to `escalation_required`."
+    acceptance_criteria:
+      - "The agent correctly identifies when a user has spoken an escalation keyword."
+  - id: 19
+    task_id: FWD-02
+    epic: "Phase 3: Call Forwarding + Handoff"
+    title: "Summarize conversation before handoff"
+    description: "Generate a 'whisper summary' and convert to speech for context transfer."
+    component: agent
+    area: UX
+    dependencies: [18]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "When escalation is triggered, take the conversation history from Redis."
+      - "Make an LLM call to summarize the text."
+      - "Store the summary to be used in the handoff."
+    acceptance_criteria:
+      - "A concise summary of the conversation is generated upon escalation."
+  - id: 20
+    task_id: FWD-03
+    epic: "Phase 3: Call Forwarding + Handoff"
+    title: "Forward live call to mobile number"
+    description: "Use Twilio `<Dial>` logic to connect the user with the human after handoff."
+    component: telephony
+    area: Core Logic
+    dependencies: [19]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create logic to return a TwiML response instead of letting Vocode handle it."
+      - "When `escalation_required`, return a TwiML response containing a `<Dial>` verb pointed to a number from .env."
+    acceptance_criteria:
+      - "After an escalation is triggered, the call is successfully transferred to the specified phone number."
+  - id: 21
+    task_id: FWD-04
+    epic: "Phase 3: Call Forwarding + Handoff"
+    title: "Notify user of handoff via SMS/email"
+    description: "Send context summary to human before/while forwarding the call."
+    component: tools
+    area: UX
+    dependencies: [19, 20]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Just before returning the `<Dial>` TwiML, use the Twilio client to send an SMS."
+      - "The SMS should contain the summary generated in the previous step."
+    acceptance_criteria:
+      - "The human recipient receives an SMS with the call summary just before the forwarded call connects."
+  - id: 22
+    task_id: MEM-02
+    epic: "Phase 4: State & Memory"
+    title: "Persist call summaries and preferences"
+    description: "Write mid/long-term user memory to SQLite/Postgres with basic schema."
+    component: state
+    area: Data
+    dependencies: [10]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Set up a database (e.g., SQLite)."
+      - "Define a schema for a `calls` table and a `user_preferences` table."
+      - "After a call is transcribed and summarized, write the record to the database."
+    acceptance_criteria:
+      - "Completed calls are logged as new rows in the `calls` table with an accurate summary."
+  - id: 23
+    task_id: MEM-03
+    epic: "Phase 4: State & Memory"
+    title: "Add semantic memory support with ChromaDB or pgvector"
+    description: "Enable agent to recall facts or preferences based on semantic embeddings."
+    component: state
+    area: Data
+    dependencies: [22]
+    priority: 5
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Integrate a vector database (e.g., ChromaDB)."
+      - "During conversations, identify key facts and generate embeddings for them."
+      - "Store the embeddings and associated text in the vector DB."
+      - "Create a tool for the agent to perform semantic search against this DB."
+    acceptance_criteria:
+      - "The agent can recall previously mentioned facts that are not in the immediate conversation context."
+  - id: 24
+    task_id: SAFE-01
+    epic: "Phase 5: Safety & Reflection"
+    title: "Implement Safety Oracle function"
+    description: "Build structured evaluator to determine riskiness of a user query. This should operate as a pre-execution filter on LLM responses."
+    component: agent
+    area: Safety
+    dependencies: [13, 12]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Define a `safety_check` internal tool."
+      - "The tool makes a separate LLM call to evaluate a proposed response for safety."
+      - "Modify the agent's logic to generate a response, pass it to the `safety_check`, and only proceed if the check passes."
+    acceptance_criteria:
+      - "Potentially harmful responses are intercepted before being sent to TTS."
+      - "When a response is blocked, a safe, generic message is delivered instead."
+  - id: 25
+    task_id: SAFE-02
+    epic: "Phase 5: Safety & Reflection"
+    title: "Red-team simulation engine"
+    description: "Simulate adversarial prompts against the agent and log failure points."
+    component: tools
+    area: Safety
+    dependencies: [8]
+    priority: 5
+    status: pending
+    assigned_to: null
+    command: "python scripts/red_team.py"
+    actionable_steps:
+      - "Create a list of adversarial prompts in a YAML or JSON file."
+      - "Write a script that iterates through the prompts, runs them against the agent, and logs the responses."
+    acceptance_criteria:
+      - "The script can automatically test the agent against a suite of adversarial inputs."
+  - id: 26
+    task_id: SAFE-03
+    epic: "Phase 5: Safety & Reflection"
+    title: "Add self-reflection routine to agent"
+    description: "After each call, let agent critique its own behavior, usefulness, and identify failures."
+    component: agent
+    area: Safety
+    dependencies: [10]
+    priority: 5
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "In the post-call async task, add a step after transcription."
+      - "Make an LLM call with the full transcript, asking it to critique its own performance based on a rubric."
+      - "Store this self-reflection in the `calls` table in the database."
+    acceptance_criteria:
+      - "Each call record in the database includes a 'self_critique' field populated by the LLM."
+  - id: 27
+    task_id: UI-01
+    epic: "Phase 6: UI + Ops (Optional)"
+    title: "Create basic dashboard to list transcripts and recordings"
+    description: "Build Flask or React UI to manage and review past conversations."
+    component: ui
+    area: Ops
+    dependencies: [22]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create a new Flask blueprint for the dashboard."
+      - "Create an endpoint that queries the `calls` table from the database."
+      - "Render the results in an HTML template showing a list of calls."
+    acceptance_criteria:
+      - "A web page is available that lists all past conversations."
+  - id: 28
+    task_id: UI-02
+    epic: "Phase 6: UI + Ops (Optional)"
+    title: "Add search, playback, and call metadata view"
+    description: "Let user filter past calls by user, topic, duration, tool usage."
+    component: ui
+    area: Ops
+    dependencies: [27]
+    priority: 5
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add a search form to the dashboard."
+      - "Create a detailed view page for a single call."
+      - "Embed an HTML5 audio player to play back the recording."
+      - "Display the full transcript and other metadata."
+    acceptance_criteria:
+      - "Users can search for calls and view a detailed page with playback and transcription for each call."
+  - id: 29
+    task_id: UI-03
+    epic: "Phase 6: UI + Ops (Optional)"
+    title: "Add RBAC for admin access and logs"
+    description: "Implement role-based access control for operational privacy."
+    component: ui
+    area: Security
+    dependencies: [27]
+    priority: 5
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Integrate a user management library like Flask-Login."
+      - "Add a `role` column to a `users` table."
+      - "Protect dashboard endpoints, requiring a specific role to access them."
+    acceptance_criteria:
+      - "Unauthorized users cannot access the call dashboard."
+  - id: 30
+    task_id: OPS-01
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Introduce Celery worker & docker‑compose service"
+    description: "Add Celery plus Redis broker to handle async tasks like transcription and notifications."
+    component: infrastructure
+    area: Ops
+    dependencies: [5, 12]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Add Celery to requirements.txt."
+      - "Create celery_app.py and configure Redis as broker/back‑end."
+      - "Add a `celeryworker` service to docker-compose.yml."
+      - "Refactor CORE‑05 and CORE‑06 steps to call Celery tasks."
+    acceptance_criteria:
+      - "Celery worker starts via docker‑compose and can run a sample task."
+
+  - id: 31
+    task_id: OPS-02
+    epic: "Phase 0: Initialization"
+    title: "Add encryption libs to Docker image"
+    description: "Install `cryptography` and OS libs (libssl-dev) for secure token storage."
+    component: infrastructure
+    area: Security
+    dependencies: [1]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Add `cryptography` to requirements.txt."
+      - "Modify Dockerfile to include `libssl-dev` and `build-essential`."
+    acceptance_criteria:
+      - "`pip install cryptography` succeeds inside container without errors."
+
+  - id: 32
+    task_id: QA-01
+    epic: "Phase 0: Initialization"
+    title: "Add unit tests for StateManager and TokenStore"
+    description: "Ensure core persistence layers behave correctly."
+    component: testing
+    area: Quality
+    dependencies: [12, 16]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Add pytest to requirements.txt."
+      - "Write tests for Redis StateManager session lifecycle."
+      - "Write tests for encrypted TokenStore CRUD."
+    acceptance_criteria:
+      - "`pytest` runs clean with all tests passing."
+
+  - id: 33
+    task_id: MON-01
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Integrate Prometheus exporter for latency metrics"
+    description: "Expose /metrics endpoint to scrape STT/LLM/TTS latency."
+    component: infrastructure
+    area: Monitoring
+    dependencies: [3]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Add prometheus_client to requirements."
+      - "Create Flask route /metrics."
+      - "Increment counters/histograms from latency logger."
+    acceptance_criteria:
+      - "Prometheus can successfully scrape /metrics and display latency histograms."
+
+  - id: 34
+    task_id: SEC-01
+    epic: "Phase 0: Initialization"
+    title: "Add git-secrets pre‑commit hook"
+    description: "Prevent accidental commit of secrets/keys."
+    component: security
+    area: DevOps
+    dependencies: [1]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Install git-secrets and add pre‑commit config."
+      - "Document usage in CONTRIBUTING.md."
+    acceptance_criteria:
+      - "Attempting to commit a file containing 'AWS_SECRET_ACCESS_KEY' is blocked locally."
+
+  - id: 36
+    task_id: DOC-01
+    epic: "Phase 0: Initialization"
+    title: "Create CONTRIBUTING.md"
+    description: "Provide guidelines for code style, branch naming, PR workflow, and pre‑commit setup."
+    component: documentation
+    area: Governance
+    dependencies: [1]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Draft CONTRIBUTING.md following Conventional Commits."
+      - "Include instructions for installing pre‑commit hooks."
+      - "Describe code review and CI requirements."
+    acceptance_criteria:
+      - "CONTRIBUTING.md renders correctly and covers style, hooks, and PR process."
+
+  - id: 37
+    task_id: DOC-02
+    epic: "Phase 0: Initialization"
+    title: "Add LICENSE file"
+    description: "Add MIT license to the root of the repository."
+    component: documentation
+    area: Legal
+    dependencies: [1]
+    priority: 1
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Create LICENSE with MIT template."
+      - "Add copyright notice for Adrian Wedd."
+    acceptance_criteria:
+      - "Project root contains a valid MIT LICENSE file."
+
+  - id: 38
+    task_id: CI-01
+    epic: "Phase 0: Initialization"
+    title: "Set up GitHub Actions CI workflow"
+    description: "Add .github/workflows/ci.yml for linting, testing, and Docker build."
+    component: infrastructure
+    area: CI/CD
+    dependencies: [32]  # requires tests
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Create .github/workflows/ci.yml."
+      - "Add jobs: lint (ruff), test (pytest), build (docker build)."
+      - "Trigger on push and pull_request."
+    acceptance_criteria:
+      - "CI pipeline passes on an empty commit."
+
+  - id: 39
+    task_id: CI-02
+    epic: "Phase 0: Initialization"
+    title: "Set up GitHub Actions security scan"
+    description: "Add .github/workflows/security.yml for secrets scanning (trufflehog)."
+    component: security
+    area: CI/CD
+    dependencies: [34]  # git-secrets local hook
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Create security.yml workflow."
+      - "Install trufflehog and scan repo on PR."
+    acceptance_criteria:
+      - "Security scan workflow runs and reports results."
+
+  - id: 40
+    task_id: DEV-01
+    epic: "Phase 0: Initialization"
+    title: "Add .pre-commit-config.yaml"
+    description: "Configure pre‑commit with black, ruff, and git‑secrets."
+    component: tooling
+    area: DevOps
+    dependencies: [34]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Create .pre-commit-config.yaml with hooks."
+      - "Add setup instructions in CONTRIBUTING.md."
+    acceptance_criteria:
+      - "Running `pre‑commit run --all-files` passes with no errors."
+
+  - id: 41
+    task_id: AGENT-01
+    epic: "Phase 0: Initialization"
+    title: "Scaffold CoordinatorAgent skeleton"
+    description: "Create agents/coordinator.py that can parse tasks.yml, label PRs, and serialize status updates post‑merge."
+    component: agents
+    area: Governance
+    dependencies: [38]   # CI in place
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Create agents/coordinator.py with class CoordinatorAgent."
+      - "Implement methods: load_tasks(), label_pr(), update_status()."
+      - "Use PyGithub to interact with GitHub API."
+    acceptance_criteria:
+      - "CoordinatorAgent can list open tasks and comment on a dummy PR."
+
+  - id: 42
+    task_id: AGENT-02
+    epic: "Phase 0: Initialization"
+    title: "Implement TestCrafterPro (TC) reviewer"
+    description: "Create agents/test_crafter.py to verify coverage and approve PRs if tests pass."
+    component: agents
+    area: Quality
+    dependencies: [32, 38]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Read coverage.xml produced by CI."
+      - "If coverage >= target, post `/agent TC verify_coverage`."
+    acceptance_criteria:
+      - "Agent posts approval comment when coverage threshold met."
+
+  - id: 43
+    task_id: AGENT-03
+    epic: "Phase 0: Initialization"
+    title: "Implement SafetyOracle bot"
+    description: "Create agents/safety_oracle.py that runs risk checks on LLM prompts and code diff."
+    component: agents
+    area: Safety
+    dependencies: [24, 38]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Load diff from PR."
+      - "Scan for banned patterns or unsafe prompt strings."
+      - "Post `/agent SO risk_ack` if safe."
+    acceptance_criteria:
+      - "Bot flags PRs containing unsafe content patterns."
+
+  - id: 44
+    task_id: AGENT-04
+    epic: "Phase 0: Initialization"
+    title: "Implement secondary CodeGenius logic reviewer"
+    description: "Create agents/code_reviewer.py that attempts independent solution diff."
+    component: agents
+    area: Review
+    dependencies: [6, 38]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Generate stub solution for task using local LLM."
+      - "Semantic diff against PR code."
+      - "Post `/agent CG logic_ok` if equivalence > threshold."
+    acceptance_criteria:
+      - "Bot produces logic_ok comment for simple tasks."
+
+  - id: 45
+    task_id: AGENT-05
+    epic: "Phase 1: Core Telephony Agent"
+    title: "Deploy GitHub App for CoordinatorAgent automation"
+    description: "Package CoordinatorAgent as a GitHub App running via GitHub Actions or Render cron."
+    component: infrastructure
+    area: CI/CD
+    dependencies: [41]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: ""
+    actionable_steps:
+      - "Create .github/workflows/ca_runner.yml."
+      - "Use PAT or GitHub App JWT for auth."
+      - "Schedule every 10 minutes to poll PRs."
+    acceptance_criteria:
+      - "CoordinatorAgent automatically labels new PRs and updates tasks.yml on merge."

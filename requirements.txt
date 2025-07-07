@@ -1,0 +1,8 @@
+# Core application dependencies will be added by role agents
+# Placeholder for initial Docker build
+
+# Logging (Task INIT-02)
+loguru
+
+# Testing (Task QA-01)
+pytest
