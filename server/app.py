@@ -22,6 +22,7 @@ def create_app() -> Flask:
     twilio_config = TwilioConfig(
         account_sid=os.environ.get("TWILIO_ACCOUNT_SID", ""),
         auth_token=os.environ.get("TWILIO_AUTH_TOKEN", ""),
+        record=True,
     )
 
     telephony_server = TelephonyServer(
