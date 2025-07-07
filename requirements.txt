@@ -12,3 +12,9 @@ cryptography
 
 # Speech-to-text
 openai-whisper
+
+# GitHub API client
+PyGithub
+
+# YAML parsing
+PyYAML
