@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import base64
+import json
 import os
 from typing import Any, Dict, Optional
 
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import redis
 
 
@@ -14,8 +17,30 @@ class StateManager:
         self.prefix = prefix
         self._redis = redis.Redis.from_url(self.url, decode_responses=True)
 
+        key_b64 = os.getenv("TOKEN_ENCRYPTION_KEY")
+        if key_b64:
+            self._encryption_key = base64.b64decode(key_b64)
+        else:
+            # Generate ephemeral key for development/testing
+            self._encryption_key = AESGCM.generate_key(bit_length=128)
+
     def _key(self, call_sid: str) -> str:
         return f"{self.prefix}:{call_sid}"
+
+    def _token_key(self, user_id: str) -> str:
+        return f"token:{user_id}"
+
+    def _encrypt(self, data: str) -> str:
+        aesgcm = AESGCM(self._encryption_key)
+        nonce = os.urandom(12)
+        ciphertext = aesgcm.encrypt(nonce, data.encode(), None)
+        return base64.b64encode(nonce + ciphertext).decode()
+
+    def _decrypt(self, blob: str) -> str:
+        raw = base64.b64decode(blob)
+        nonce, ciphertext = raw[:12], raw[12:]
+        aesgcm = AESGCM(self._encryption_key)
+        return aesgcm.decrypt(nonce, ciphertext, None).decode()
 
     def create_session(
         self, call_sid: str, data: Optional[Dict[str, Any]] = None
@@ -37,3 +62,30 @@ class StateManager:
     def delete_session(self, call_sid: str) -> None:
         """Remove a session completely."""
         self._redis.delete(self._key(call_sid))
+
+    # --- Token CRUD -------------------------------------------------
+
+    def set_token(
+        self,
+        user_id: str,
+        access_token: str,
+        refresh_token: Optional[str] = None,
+        expires_at: Optional[int] = None,
+    ) -> None:
+        data: Dict[str, Any] = {"access_token": access_token}
+        if refresh_token is not None:
+            data["refresh_token"] = refresh_token
+        if expires_at is not None:
+            data["expires_at"] = str(expires_at)
+        encrypted = self._encrypt(json.dumps(data))
+        self._redis.set(self._token_key(user_id), encrypted)
+
+    def get_token(self, user_id: str) -> Optional[Dict[str, str]]:
+        blob = self._redis.get(self._token_key(user_id))
+        if not blob:
+            return None
+        decrypted = self._decrypt(blob)
+        return json.loads(decrypted)
+
+    def delete_token(self, user_id: str) -> None:
+        self._redis.delete(self._token_key(user_id))
