@@ -14,6 +14,7 @@ from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
 from vocode.streaming.models.telephony import TwilioConfig
 from agents.core_agent import build_core_agent
 from .state_manager import StateManager
+from .tasks import echo
 
 
 def create_app() -> Flask:
@@ -45,6 +46,7 @@ def create_app() -> Flask:
                 "to": request.form.get("To", ""),
             },
         )
+        echo.delay(f"Call {call_sid} started")
 
         config = build_core_agent()
         inbound_route = telephony_server.create_inbound_route(
