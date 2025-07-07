@@ -17,6 +17,24 @@ from vocode.streaming.models.agent import ChatGPTAgentConfig
 from vocode.streaming.models.transcriber import WhisperCPPTranscriberConfig
 from vocode.streaming.models.synthesizer import ElevenLabsSynthesizerConfig
 
+from tools.weather import get_weather
+
+
+WEATHER_FUNCTION = {
+    "name": "get_weather",
+    "description": "Get the current weather for a location.",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "description": "City or region name",
+            }
+        },
+        "required": ["location"],
+    },
+}
+
 
 @dataclass
 class FunctionChatGPTAgentConfig(ChatGPTAgentConfig):
@@ -44,7 +62,9 @@ class FunctionCallingAgent(ChatGPTAgent):
         **kwargs: Any,
     ) -> None:
         super().__init__(agent_config, **kwargs)
-        self.function_map = function_map or {}
+        self.function_map = {"get_weather": get_weather}
+        if function_map:
+            self.function_map.update(function_map)
 
     def get_functions(self) -> List[Dict[str, Any]] | None:  # type: ignore[override]
         return self.agent_config.functions
@@ -84,7 +104,7 @@ def build_core_agent() -> CoreAgentConfig:
     agent_config = FunctionChatGPTAgentConfig(
         prompt_preamble="You are TEL3SIS, a helpful voice assistant.",
         openai_api_key=os.getenv("OPENAI_API_KEY"),
-        functions=[],
+        functions=[WEATHER_FUNCTION],
     )
 
     transcriber_config = WhisperCPPTranscriberConfig.from_telephone_input_device()

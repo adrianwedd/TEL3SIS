@@ -4,12 +4,11 @@ import asyncio
 
 from loguru import logger
 from vocode.helpers import create_streaming_microphone_input_and_speaker_output
-from vocode.streaming.agent.default_factory import DefaultAgentFactory
 from vocode.streaming.synthesizer.default_factory import DefaultSynthesizerFactory
 from vocode.streaming.transcriber.whisper_cpp_transcriber import WhisperCPPTranscriber
 from vocode.streaming.streaming_conversation import StreamingConversation
 
-from agents.core_agent import build_core_agent
+from agents.core_agent import FunctionCallingAgent, build_core_agent
 
 
 async def main() -> None:
@@ -19,7 +18,7 @@ async def main() -> None:
     )
 
     config = build_core_agent()
-    agent = DefaultAgentFactory().create_agent(config.agent)
+    agent = FunctionCallingAgent(config.agent)
     transcriber = WhisperCPPTranscriber(config.transcriber)
     synthesizer = DefaultSynthesizerFactory().create_synthesizer(config.synthesizer)
 
