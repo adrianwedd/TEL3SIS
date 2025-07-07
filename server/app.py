@@ -11,7 +11,7 @@ from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
     InMemoryConfigManager,
 )
 from vocode.streaming.models.telephony import TwilioConfig
-from vocode.streaming.models.agent import ChatGPTAgentConfig
+from agents.core_agent import build_core_agent
 
 
 def create_app() -> Flask:
@@ -24,34 +24,23 @@ def create_app() -> Flask:
         auth_token=os.environ.get("TWILIO_AUTH_TOKEN", ""),
     )
 
-    agent_config = ChatGPTAgentConfig(
-        prompt_preamble="You are a helpful assistant.",
-        openai_api_key=os.environ.get("OPENAI_API_KEY"),
-    )
-
     telephony_server = TelephonyServer(
         base_url=base_url,
         config_manager=InMemoryConfigManager(),
-        inbound_call_configs=[
-            TwilioInboundCallConfig(
-                url="/inbound_call",
-                agent_config=agent_config,
-                twilio_config=twilio_config,
-            )
-        ],
-    )
-
-    inbound_route = telephony_server.create_inbound_route(
-        TwilioInboundCallConfig(
-            url="/inbound_call",
-            agent_config=agent_config,
-            twilio_config=twilio_config,
-        )
     )
 
     @app.post("/inbound_call")
     def inbound_call() -> FlaskResponse:  # type: ignore[return-type]
         """Handle POST requests from Twilio."""
+
+        config = build_core_agent()
+        inbound_route = telephony_server.create_inbound_route(
+            TwilioInboundCallConfig(
+                url="/inbound_call",
+                agent_config=config.agent,
+                twilio_config=twilio_config,
+            )
+        )
 
         async def handle() -> str:
             response = await inbound_route(
