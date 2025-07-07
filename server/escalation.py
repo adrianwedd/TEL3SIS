@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterable
 
+from .tasks import summarize_text
+
 """Utilities for escalation keyword detection."""
 
 if TYPE_CHECKING:  # pragma: no cover - for typing only
@@ -26,5 +28,22 @@ def check_and_flag(state_manager: "StateManager", call_sid: str, text: str) -> b
     """Update session state if escalation is requested."""
     if contains_keyword(text, ESCALATION_KEYWORDS):
         state_manager.update_session(call_sid, escalation_required="true")
+        summarize_conversation(state_manager, call_sid)
         return True
     return False
+
+
+def summarize_conversation(
+    state_manager: "StateManager", call_sid: str, max_words: int = 50
+) -> str:
+    """Generate and persist a summary of the call history."""
+    history = state_manager.get_history(call_sid)
+    text = " ".join(entry.get("text", "") for entry in history)
+    # ``summarize_text`` is a Celery task; ``.run`` executes the underlying
+    # function synchronously.
+    try:
+        summary = summarize_text.run(text, max_words=max_words)
+    except AttributeError:  # pragma: no cover - fallback if not a task
+        summary = summarize_text(text, max_words=max_words)
+    state_manager.set_summary(call_sid, summary)
+    return summary

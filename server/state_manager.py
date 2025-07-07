@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, Optional, List, cast
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import redis
@@ -117,3 +117,32 @@ class StateManager:
         pipe.delete(self._oauth_key(state))
         user_id, _ = pipe.execute()
         return cast(Optional[str], user_id)
+
+    # --- Conversation History ---------------------------------------
+
+    def append_history(self, call_sid: str, speaker: str, text: str) -> None:
+        """Append an entry to the conversation history."""
+        key = self._key(call_sid)
+        history_json = self._redis.hget(key, "history")
+        history: List[Dict[str, str]]
+        if history_json:
+            history = cast(List[Dict[str, str]], json.loads(history_json))
+        else:
+            history = []
+        history.append({"speaker": speaker, "text": text})
+        self._redis.hset(key, "history", json.dumps(history))
+
+    def get_history(self, call_sid: str) -> List[Dict[str, str]]:
+        """Return conversation history for a call."""
+        history_json = self._redis.hget(self._key(call_sid), "history")
+        if not history_json:
+            return []
+        return cast(List[Dict[str, str]], json.loads(history_json))
+
+    def set_summary(self, call_sid: str, summary: str) -> None:
+        """Store a summary for later handoff."""
+        self._redis.hset(self._key(call_sid), mapping={"summary": summary})
+
+    def get_summary(self, call_sid: str) -> Optional[str]:
+        """Return saved summary if available."""
+        return cast(Optional[str], self._redis.hget(self._key(call_sid), "summary"))

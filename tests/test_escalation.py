@@ -29,3 +29,13 @@ def test_check_and_flag(monkeypatch: Any) -> None:
     flagged = escalation.check_and_flag(manager, "call", "I need a human operator")
     assert flagged
     assert manager.is_escalation_required("call")
+
+
+def test_summarize_conversation(monkeypatch: Any) -> None:
+    manager = _make_manager(monkeypatch)
+    manager.create_session("call", {"init": "1"})
+    manager.append_history("call", "user", "hello there")
+    manager.append_history("call", "bot", "hi how can I help")
+    summary = escalation.summarize_conversation(manager, "call", max_words=5)
+    assert "hello" in summary
+    assert manager.get_summary("call") == summary

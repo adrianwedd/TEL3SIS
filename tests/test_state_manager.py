@@ -31,3 +31,14 @@ def test_oauth_state(monkeypatch):
     manager.set_oauth_state("abc", "user1", ttl=1)
     assert manager.pop_oauth_state("abc") == "user1"
     assert manager.pop_oauth_state("abc") is None
+
+
+def test_history_and_summary(monkeypatch: Any) -> None:
+    manager = _make_manager(monkeypatch)
+    manager.create_session("call", {"init": "1"})
+    manager.append_history("call", "user", "hi there")
+    manager.append_history("call", "bot", "hello")
+    history = manager.get_history("call")
+    assert history[0]["text"] == "hi there"
+    manager.set_summary("call", "greeting")
+    assert manager.get_summary("call") == "greeting"
