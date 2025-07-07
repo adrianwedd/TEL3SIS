@@ -2,15 +2,27 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, List
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
 from server.state_manager import StateManager
+from tools.notifications import send_sms
 
-__all__ = ["generate_auth_url", "exchange_code", "create_event", "list_events"]
+
+class AuthError(RuntimeError):
+    """Authentication required for the requested action."""
+
+
+__all__ = [
+    "generate_auth_url",
+    "exchange_code",
+    "create_event",
+    "list_events",
+    "AuthError",
+]
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
@@ -63,11 +75,17 @@ def exchange_code(
 
 
 def _get_credentials(
-    state_manager: StateManager, user_id: str
-) -> Optional[Credentials]:
+    state_manager: StateManager,
+    user_id: str,
+    user_phone: str | None = None,
+    twilio_phone: str | None = None,
+) -> Credentials:
     data = state_manager.get_token(user_id)
     if not data:
-        return None
+        if user_phone and twilio_phone:
+            url = generate_auth_url(state_manager, user_id)
+            send_sms(user_phone, twilio_phone, f"Please authenticate here: {url}")
+        raise AuthError("No credentials")
     creds = Credentials(
         data["access_token"],
         refresh_token=data.get("refresh_token"),
@@ -91,11 +109,12 @@ def create_event(
     start: datetime,
     end: datetime,
     timezone: str = "UTC",
+    *,
+    user_phone: str | None = None,
+    twilio_phone: str | None = None,
 ) -> dict:
     """Create a calendar event and return the API response."""
-    creds = _get_credentials(state_manager, user_id)
-    if not creds:
-        raise RuntimeError("No credentials")
+    creds = _get_credentials(state_manager, user_id, user_phone, twilio_phone)
     service = build("calendar", "v3", credentials=creds)
     event = {
         "summary": summary,
@@ -110,11 +129,12 @@ def list_events(
     user_id: str,
     time_min: datetime,
     time_max: datetime,
+    *,
+    user_phone: str | None = None,
+    twilio_phone: str | None = None,
 ) -> List[dict]:
     """Return upcoming calendar events between two times."""
-    creds = _get_credentials(state_manager, user_id)
-    if not creds:
-        raise RuntimeError("No credentials")
+    creds = _get_credentials(state_manager, user_id, user_phone, twilio_phone)
     service = build("calendar", "v3", credentials=creds)
     resp = (
         service.events()
