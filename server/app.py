@@ -65,7 +65,7 @@ def create_app() -> Flask:
         )
         echo.delay(f"Call {call_sid} started")
 
-        config = build_core_agent()
+        config = build_core_agent(state_manager, call_sid)
         inbound_route = telephony_server.create_inbound_route(
             TwilioInboundCallConfig(
                 url="/inbound_call",

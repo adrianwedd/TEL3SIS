@@ -6,8 +6,9 @@ from pathlib import Path
 from loguru import logger
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+import requests
 
-__all__ = ["send_email"]
+__all__ = ["send_email", "send_sms"]
 
 
 def send_email(transcript_path: str, to_email: str | None = None) -> None:
@@ -32,3 +33,20 @@ def send_email(transcript_path: str, to_email: str | None = None) -> None:
         logger.info("Sent transcript email to %s", to_email)
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to send transcript email: %s", exc)
+
+
+def send_sms(to_phone: str, from_phone: str, body: str) -> None:
+    """Send an SMS via Twilio."""
+    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
+    auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+    if not account_sid or not auth_token:
+        logger.warning("Twilio not configured; skipping SMS notification")
+        return
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
+    data = {"To": to_phone, "From": from_phone, "Body": body}
+    try:
+        resp = requests.post(url, data=data, auth=(account_sid, auth_token), timeout=5)
+        resp.raise_for_status()
+        logger.info("Sent SMS to %s", to_phone)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Failed to send SMS: %s", exc)
