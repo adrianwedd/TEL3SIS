@@ -8,6 +8,7 @@ from vocode.streaming.telephony.server.base import (
     TelephonyServer,
     TwilioInboundCallConfig,
 )
+from .handoff import dial_twiml
 from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
     InMemoryConfigManager,
 )
@@ -74,12 +75,21 @@ def create_app() -> Flask:
             )
         )
 
-        async def handle() -> str:
+        async def handle() -> FlaskResponse:
+            if state_manager.is_escalation_required(call_sid):
+                xml = dial_twiml(request.form.get("From", ""))
+                return FlaskResponse(xml, content_type="text/xml")
+
             response = await inbound_route(
                 twilio_sid=request.form.get("CallSid", ""),
                 twilio_from=request.form.get("From", ""),
                 twilio_to=request.form.get("To", ""),
             )
+
+            if state_manager.is_escalation_required(call_sid):
+                xml = dial_twiml(request.form.get("From", ""))
+                return FlaskResponse(xml, content_type="text/xml")
+
             return FlaskResponse(  # type: ignore[return-value]
                 response.body,
                 status=response.status_code,
