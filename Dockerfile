@@ -6,7 +6,9 @@ WORKDIR /app
 
 # Install system dependencies that may be required by Python packages
 # e.g., for cryptography or other compiled libraries
-# RUN apt-get update && apt-get install -y build-essential libssl-dev
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the requirements file first to leverage Docker layer caching
 COPY requirements.txt .
