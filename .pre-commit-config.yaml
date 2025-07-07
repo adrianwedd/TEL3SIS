@@ -1,0 +1,17 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 23.11.0
+    hooks:
+      - id: black
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.3.4
+    hooks:
+      - id: ruff
+  - repo: local
+    hooks:
+      - id: git-secrets
+        name: git-secrets
+        entry: git secrets --scan -r
+        language: system
+        types: [text]
+
