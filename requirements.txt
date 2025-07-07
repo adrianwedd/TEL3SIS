@@ -9,3 +9,6 @@ pytest
 
 # Task instructions: add cryptography for SSL functionalities
 cryptography
+
+# Speech-to-text
+openai-whisper

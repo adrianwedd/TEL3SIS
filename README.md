@@ -72,7 +72,7 @@ TEL3SIS/
 │   ├── celery_app.py     # Celery factory
 │   └── state_manager.py  # Redis wrapper
 ├── tools/                # Calendar, Weather, SMS, etc.
-├── scripts/              # Dev helpers (e.g., dev_test_call.py)
+├── scripts/              # Dev helpers and startup tasks
 ├── tasks.yml             # Swarm task manifest
 ├── docker-compose.yml
 ├── Dockerfile
@@ -166,6 +166,7 @@ pytest -q
 
 * Unit tests live under `tests/`
 * End‑to‑end call emulation via `scripts/dev_test_call.py`
+* STT latency reduction via `scripts/warmup_whisper.py`
 
 ---
 
