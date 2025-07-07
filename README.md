@@ -10,7 +10,7 @@
 | Capability | Status | Notes |
 |------------|--------|-------|
 | Real‑time STT ↔️ LLM ↔️ TTS loop | ✅ Phase 1 | Whisper / Deepgram + GPT‑4o + ElevenLabs |
-| Call recording & transcription | ✅ Phase 1 | Stored locally or S3 |
+| Call recording & transcription | ✅ Phase 1 | Audio in `recordings/audio`, transcripts in `recordings/transcripts` |
 | Toolchain via OpenAI Function Calling | 🔄 Phase 2 | Weather, Google Calendar, SMS/email |
 | Context‑aware call forwarding | 🔄 Phase 3 | Whisper summary piped to human |
 | Tri‑layer memory (Redis + SQLite + Vectors) | 🔄 Phase 4 | Session ↔ Mid‑term ↔ Long‑term |
