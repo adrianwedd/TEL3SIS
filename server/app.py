@@ -1,0 +1,76 @@
+from __future__ import annotations
+
+import asyncio
+import os
+from flask import Flask, request, Response as FlaskResponse
+from vocode.streaming.telephony.server.base import (
+    TelephonyServer,
+    TwilioInboundCallConfig,
+)
+from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
+    InMemoryConfigManager,
+)
+from vocode.streaming.models.telephony import TwilioConfig
+from vocode.streaming.models.agent import ChatGPTAgentConfig
+
+
+def create_app() -> Flask:
+    """Create and configure the Flask application."""
+    app = Flask(__name__)
+
+    base_url = os.environ.get("BASE_URL", "")
+    twilio_config = TwilioConfig(
+        account_sid=os.environ.get("TWILIO_ACCOUNT_SID", ""),
+        auth_token=os.environ.get("TWILIO_AUTH_TOKEN", ""),
+    )
+
+    agent_config = ChatGPTAgentConfig(
+        prompt_preamble="You are a helpful assistant.",
+        openai_api_key=os.environ.get("OPENAI_API_KEY"),
+    )
+
+    telephony_server = TelephonyServer(
+        base_url=base_url,
+        config_manager=InMemoryConfigManager(),
+        inbound_call_configs=[
+            TwilioInboundCallConfig(
+                url="/inbound_call",
+                agent_config=agent_config,
+                twilio_config=twilio_config,
+            )
+        ],
+    )
+
+    inbound_route = telephony_server.create_inbound_route(
+        TwilioInboundCallConfig(
+            url="/inbound_call",
+            agent_config=agent_config,
+            twilio_config=twilio_config,
+        )
+    )
+
+    @app.post("/inbound_call")
+    def inbound_call() -> FlaskResponse:  # type: ignore[return-type]
+        """Handle POST requests from Twilio."""
+
+        async def handle() -> str:
+            response = await inbound_route(
+                twilio_sid=request.form.get("CallSid", ""),
+                twilio_from=request.form.get("From", ""),
+                twilio_to=request.form.get("To", ""),
+            )
+            return FlaskResponse(  # type: ignore[return-value]
+                response.body,
+                status=response.status_code,
+                content_type=response.media_type,
+            )
+
+        return asyncio.run(handle())
+
+    return app
+
+
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=3000)
