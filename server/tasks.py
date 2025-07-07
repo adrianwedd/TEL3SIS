@@ -4,6 +4,7 @@ from celery.utils.log import get_task_logger
 from pathlib import Path
 
 from .recordings import transcribe_recording
+from tools.notifications import send_email
 
 from .celery_app import celery_app
 
@@ -23,4 +24,11 @@ def transcribe_audio(audio_path: str) -> str:
 
     path = transcribe_recording(Path(audio_path))
     logger.info("Transcribed %s", audio_path)
+    send_transcript_email.delay(str(path))
     return str(path)
+
+
+@celery_app.task
+def send_transcript_email(transcript_path: str, to_email: str | None = None) -> None:
+    """Send the transcript file via email."""
+    send_email(transcript_path, to_email)
