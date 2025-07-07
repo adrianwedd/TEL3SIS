@@ -21,3 +21,4 @@ PyYAML
 requests
 redis
 celery
+sendgrid
