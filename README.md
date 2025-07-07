@@ -204,6 +204,7 @@ _Add new tool by implementing `tools/<name>.py` and registering JSON schema in `
 2. Check open issues in **`tasks.yml`**
 3. Branch ➜ code ➜ `pytest` ➜ PR
 4. PR must pass CI + receive one approval
+5. Install the hooks described in [CONTRIBUTING.md](CONTRIBUTING.md)
 
 We follow the **Conventional Commits** spec.
 

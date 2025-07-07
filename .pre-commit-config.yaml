@@ -1,3 +1,5 @@
+# Pre-commit hooks for TEL3SIS
+# See CONTRIBUTING.md for setup instructions
 repos:
   - repo: https://github.com/psf/black
     rev: 23.11.0
