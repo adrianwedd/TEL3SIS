@@ -35,7 +35,12 @@ docker-compose.override.yml
 
 # Project-specific
 .env
-recordings/
+recordings/*
+!recordings/.gitkeep
+!recordings/audio/
+!recordings/transcripts/
+!recordings/audio/.gitkeep
+!recordings/transcripts/.gitkeep
 logs/
 coverage.xml
 *.sqlite3
