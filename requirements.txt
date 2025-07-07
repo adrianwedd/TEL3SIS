@@ -6,3 +6,6 @@ loguru
 
 # Testing (Task QA-01)
 pytest
+
+# Task instructions: add cryptography for SSL functionalities
+cryptography
