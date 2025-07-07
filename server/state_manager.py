@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import redis
@@ -29,6 +29,9 @@ class StateManager:
 
     def _token_key(self, user_id: str) -> str:
         return f"token:{user_id}"
+
+    def _oauth_key(self, state: str) -> str:
+        return f"oauth:{state}"
 
     def _encrypt(self, data: str) -> str:
         aesgcm = AESGCM(self._encryption_key)
@@ -89,3 +92,17 @@ class StateManager:
 
     def delete_token(self, user_id: str) -> None:
         self._redis.delete(self._token_key(user_id))
+
+    # --- OAuth State -------------------------------------------------
+
+    def set_oauth_state(self, state: str, user_id: str, ttl: int = 600) -> None:
+        """Persist temporary mapping of OAuth state to user id."""
+        self._redis.set(self._oauth_key(state), user_id, ex=ttl)
+
+    def pop_oauth_state(self, state: str) -> Optional[str]:
+        """Return user id for state and delete the key."""
+        pipe = self._redis.pipeline()
+        pipe.get(self._oauth_key(state))
+        pipe.delete(self._oauth_key(state))
+        user_id, _ = pipe.execute()
+        return cast(Optional[str], user_id)

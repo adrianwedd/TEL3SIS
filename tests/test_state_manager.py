@@ -24,3 +24,10 @@ def test_token_crud(monkeypatch):
     assert data == {"access_token": "at", "refresh_token": "rt", "expires_at": "123"}
     manager.delete_token("user1")
     assert manager.get_token("user1") is None
+
+
+def test_oauth_state(monkeypatch):
+    manager = _make_manager(monkeypatch)
+    manager.set_oauth_state("abc", "user1", ttl=1)
+    assert manager.pop_oauth_state("abc") == "user1"
+    assert manager.pop_oauth_state("abc") is None
