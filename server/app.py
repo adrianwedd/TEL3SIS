@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 from flask import Flask, request, Response as FlaskResponse
+from loguru import logger
 from vocode.streaming.telephony.server.base import (
     TelephonyServer,
     TwilioInboundCallConfig,
@@ -56,6 +57,18 @@ def create_app() -> Flask:
             )
 
         return asyncio.run(handle())
+
+    @app.post("/recording_status")
+    def recording_status() -> str:
+        """Receive recording status callbacks from Twilio."""
+
+        recording_sid = request.form.get("RecordingSid", "")
+        recording_url = request.form.get("RecordingUrl", "")
+        call_sid = request.form.get("CallSid", "")
+        logger.info(
+            f"Recording callback: call_sid={call_sid} recording_sid={recording_sid} url={recording_url}"
+        )
+        return "", 204
 
     return app
 
