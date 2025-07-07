@@ -204,6 +204,16 @@ pytest -q
 
 _Add new tool by implementing `tools/<name>.py` and registering JSON schema in `agents/tools_registry.py`._
 
+### Notifications
+
+Transcripts can be sent automatically once SendGrid and Twilio credentials are configured. Set:
+
+- `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` – enables `send_email()`
+- `NOTIFY_EMAIL` – default email recipient
+- `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` – enables `send_sms()`
+
+If these variables are unset, the system logs a warning and skips the notification.
+
 ---
 
 ## 🤝 Contributing
