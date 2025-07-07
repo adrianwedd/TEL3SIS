@@ -20,3 +20,4 @@ PyGithub
 PyYAML
 requests
 redis
+celery

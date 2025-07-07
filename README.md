@@ -136,6 +136,8 @@ python server/app.py
 | `OPENAI_API_KEY` | LLM access |
 | `ELEVEN_LABS_API_KEY` | TTS voice |
 | `REDIS_URL` | Redis connection for state & Celery broker |
+| `CELERY_BROKER_URL` | Broker URL for Celery |
+| `CELERY_RESULT_BACKEND` | Result backend for Celery |
 | `DATABASE_URL` | SQLite / Postgres for mid‑term memory |
 | `ESCALATION_PHONE_NUMBER` | Phone number used when handing off calls |
 | _see `.env.example`_ |

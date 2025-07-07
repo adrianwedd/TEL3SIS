@@ -28,13 +28,13 @@ services:
       # Expose Redis to the host for debugging, but services will connect internally
       - "6379:6379"
 
-  # The Celery worker service will be added in a later task (OPS-01)
-  # celeryworker:
-  #   build: .
-  #   command: celery -A server.celery_app worker --loglevel=info
-  #   volumes:
-  #     - .:/app
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - redis
+  # Celery worker handling background tasks
+  celeryworker:
+    build: .
+    command: celery -A server.celery_app worker --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis
