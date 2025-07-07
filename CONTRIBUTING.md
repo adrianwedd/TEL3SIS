@@ -1,6 +1,13 @@
 # Contributing to TEL3SIS
 
-Thank you for helping improve **TEL3SIS**! This project follows the [Conventional Commits](https://www.conventionalcommits.org) standard and requires several pre-commit checks.
+Thank you for helping improve **TEL3SIS**! Please follow the guidelines below to keep contributions consistent.
+
+## Code Style
+
+- Format Python code with [Black](https://black.readthedocs.io/).
+- Lint using [Ruff](https://github.com/astral-sh/ruff).
+- Write clear docstrings for modules and functions.
+- Commit messages use the Conventional Commits `type(scope): summary` style.
 
 ## Setup
 
@@ -23,10 +30,39 @@ Thank you for helping improve **TEL3SIS**! This project follows the [Conventiona
    git secrets --scan -r
    ```
 
-## Workflow
+## Branch Naming
 
-- Use branches named `<phase>/<task_id>-short-desc`.
-- Run `pre-commit` before pushing.
-- Open a pull request referencing the task ID in `tasks.yml`.
-- CI must pass and at least one review is required.
+Create feature branches using `<phase>/<task_id>-short-desc`. Examples:
+
+```bash
+git checkout -b dev/INIT-00-scaffold
+```
+
+## Pre-commit Workflow
+
+Run hooks locally before pushing:
+
+```bash
+pre-commit run --files <changed files>
+```
+
+Hooks will format with Black, lint with Ruff, and scan with git-secrets.
+
+## Pull Request Process
+
+1. Ensure `pre-commit` and `pytest` pass.
+2. Push your branch and open a PR referencing the task ID from `tasks.yml`.
+3. Follow the PR template:
+
+```
+### Task
+- ID: <task id>
+### Description
+Describe what the PR does.
+### Checklist
+- [ ] Tests added
+- [ ] Docs updated
+- [ ] CI green
+```
+4. CI must succeed and at least one reviewer must approve.
 
