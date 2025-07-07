@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .recordings import transcribe_recording
 from tools.notifications import send_email
+from .database import save_call_summary
 
 from .celery_app import celery_app
 
@@ -19,12 +20,27 @@ def echo(message: str) -> str:
 
 
 @celery_app.task
-def transcribe_audio(audio_path: str) -> str:
-    """Transcribe an audio file and return the transcript path."""
+def summarize_text(text: str, max_words: int = 30) -> str:
+    """Return a naive summary consisting of the first ``max_words``."""
+
+    words = text.strip().split()
+    return " ".join(words[:max_words])
+
+
+def transcribe_audio(
+    audio_path: str,
+    call_sid: str,
+    from_number: str,
+    to_number: str,
+) -> str:
+    """Transcribe an audio file and persist a summary."""
 
     path = transcribe_recording(Path(audio_path))
     logger.info("Transcribed %s", audio_path)
     send_transcript_email.delay(str(path))
+    text = Path(path).read_text()
+    summary = summarize_text(text)
+    save_call_summary(call_sid, from_number, to_number, str(path), summary)
     return str(path)
 
 

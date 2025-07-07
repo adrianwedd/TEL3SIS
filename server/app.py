@@ -15,11 +15,13 @@ from vocode.streaming.models.telephony import TwilioConfig
 from agents.core_agent import build_core_agent
 from .state_manager import StateManager
 from .tasks import echo
+from .database import init_db
 
 
 def create_app() -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
+    init_db()
 
     base_url = os.environ.get("BASE_URL", "")
     twilio_config = TwilioConfig(
