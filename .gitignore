@@ -18,7 +18,6 @@ __pycache__/
 *.egg
 *instance/
 # Virtual Environments
-.env
 .venv
 env/
 venv/
@@ -34,7 +33,7 @@ docker-compose.override.yml
 .DS_Store
 
 # Project-specific
-.env
+.env  # local secrets
 recordings/*
 !recordings/.gitkeep
 !recordings/audio/
