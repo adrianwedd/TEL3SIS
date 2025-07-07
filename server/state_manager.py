@@ -93,6 +93,17 @@ class StateManager:
     def delete_token(self, user_id: str) -> None:
         self._redis.delete(self._token_key(user_id))
 
+    # --- Escalation Flags --------------------------------------------
+
+    def flag_escalation(self, call_sid: str) -> None:
+        """Mark that the call requires escalation."""
+        self.update_session(call_sid, escalation_required="true")
+
+    def is_escalation_required(self, call_sid: str) -> bool:
+        """Return ``True`` if escalation was requested for this call."""
+        value = self.get_session(call_sid).get("escalation_required")
+        return str(value).lower() == "true"
+
     # --- OAuth State -------------------------------------------------
 
     def set_oauth_state(self, state: str, user_id: str, ttl: int = 600) -> None:
