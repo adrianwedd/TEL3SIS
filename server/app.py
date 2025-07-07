@@ -13,6 +13,7 @@ from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
 )
 from vocode.streaming.models.telephony import TwilioConfig
 from agents.core_agent import build_core_agent
+from .state_manager import StateManager
 
 
 def create_app() -> Flask:
@@ -30,10 +31,20 @@ def create_app() -> Flask:
         base_url=base_url,
         config_manager=InMemoryConfigManager(),
     )
+    state_manager = StateManager()
 
     @app.post("/inbound_call")
     def inbound_call() -> FlaskResponse:  # type: ignore[return-type]
         """Handle POST requests from Twilio."""
+
+        call_sid = request.form.get("CallSid", "")
+        state_manager.create_session(
+            call_sid,
+            {
+                "from": request.form.get("From", ""),
+                "to": request.form.get("To", ""),
+            },
+        )
 
         config = build_core_agent()
         inbound_route = telephony_server.create_inbound_route(
