@@ -141,6 +141,7 @@ python server/app.py
 | `DATABASE_URL` | SQLite / Postgres for mid‑term memory |
 | `ESCALATION_PHONE_NUMBER` | Phone number used when handing off calls |
 | `TOKEN_ENCRYPTION_KEY` | Base64 AES key for encrypting OAuth tokens |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth credentials for Calendar |
 | `SENDGRID_API_KEY` | SendGrid API key for email notifications |
 | `SENDGRID_FROM_EMAIL` | Sender email address for SendGrid |
 | `NOTIFY_EMAIL` | Recipient for call transcripts |

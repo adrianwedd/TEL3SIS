@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
-from flask import Flask, request, Response as FlaskResponse
+from flask import Flask, request, Response as FlaskResponse, redirect
 from loguru import logger
 from vocode.streaming.telephony.server.base import (
     TelephonyServer,
@@ -16,6 +16,7 @@ from agents.core_agent import build_core_agent
 from .state_manager import StateManager
 from .tasks import echo
 from .database import init_db
+from tools.calendar import generate_auth_url, exchange_code
 
 
 def create_app() -> Flask:
@@ -35,6 +36,20 @@ def create_app() -> Flask:
         config_manager=InMemoryConfigManager(),
     )
     state_manager = StateManager()
+
+    @app.get("/oauth/start")
+    def oauth_start() -> str:
+        """Initiate Google OAuth flow and redirect user."""
+        user_id = request.args.get("user_id", "")
+        url = generate_auth_url(state_manager, user_id)
+        return redirect(url)
+
+    @app.get("/oauth/callback")
+    def oauth_callback() -> str:
+        """Handle OAuth callback and store credentials."""
+        state = request.args.get("state", "")
+        exchange_code(state_manager, state, request.url)
+        return "Authentication successful"
 
     @app.post("/inbound_call")
     def inbound_call() -> FlaskResponse:  # type: ignore[return-type]
