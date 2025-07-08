@@ -2,14 +2,21 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, AsyncGenerator
 
 from loguru import logger
 import json
 import asyncio
 
 from vocode.streaming.agent.chat_gpt_agent import ChatGPTAgent
-from vocode.streaming.agent.base_agent import AgentInput, AgentResponseMessage
+from vocode.streaming.agent.base_agent import (
+    AgentInput,
+    AgentResponseMessage,
+    GeneratedResponse,
+)
+from vocode.streaming.agent.default_factory import DefaultAgentFactory
+from vocode.streaming.agent.base_agent import BaseAgent
+from vocode.streaming.models.agent import AgentConfig
 from vocode.streaming.models.actions import FunctionCall
 from vocode.streaming.models.message import BaseMessage, EndOfTurn
 
@@ -18,6 +25,7 @@ from vocode.streaming.models.transcriber import WhisperCPPTranscriberConfig
 from vocode.streaming.models.synthesizer import ElevenLabsSynthesizerConfig
 
 from tools.weather import get_weather
+from tools.safety import safety_check
 from server.state_manager import StateManager
 from tools.calendar import AuthError
 
@@ -120,6 +128,49 @@ class FunctionCallingAgent(ChatGPTAgent):
         self.produce_interruptible_agent_response_event_nonblocking(
             AgentResponseMessage(message=EndOfTurn())
         )
+
+
+class SafeFunctionCallingAgent(FunctionCallingAgent):
+    """FunctionCallingAgent with a safety filter on LLM output."""
+
+    async def generate_response(
+        self,
+        human_input: str,
+        conversation_id: str,
+        is_interrupt: bool = False,
+        bot_was_in_medias_res: bool = False,
+    ) -> AsyncGenerator[GeneratedResponse, None]:
+        parts: List[str] = []
+        responses: List[GeneratedResponse] = []
+        async for resp in super().generate_response(
+            human_input,
+            conversation_id,
+            is_interrupt=is_interrupt,
+            bot_was_in_medias_res=bot_was_in_medias_res,
+        ):
+            if hasattr(resp.message, "text"):
+                parts.append(getattr(resp.message, "text"))
+            responses.append(resp)
+
+        full_text = "".join(parts)
+        if not safety_check(full_text):
+            yield GeneratedResponse(
+                message=BaseMessage(text="I'm sorry, I can't help with that."),
+                is_interruptible=True,
+            )
+            yield GeneratedResponse(message=EndOfTurn(), is_interruptible=True)
+        else:
+            for resp in responses:
+                yield resp
+
+
+class SafeAgentFactory(DefaultAgentFactory):
+    """AgentFactory that returns ``SafeFunctionCallingAgent`` for ChatGPT configs."""
+
+    def create_agent(self, agent_config: AgentConfig) -> BaseAgent:  # type: ignore[override]
+        if isinstance(agent_config, ChatGPTAgentConfig):
+            return SafeFunctionCallingAgent(agent_config)
+        return super().create_agent(agent_config)
 
 
 def build_core_agent(

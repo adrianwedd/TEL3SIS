@@ -13,7 +13,7 @@ from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
     InMemoryConfigManager,
 )
 from vocode.streaming.models.telephony import TwilioConfig
-from agents.core_agent import build_core_agent
+from agents.core_agent import build_core_agent, SafeAgentFactory
 from .state_manager import StateManager
 from .tasks import echo
 from .database import init_db
@@ -35,6 +35,7 @@ def create_app() -> Flask:
     telephony_server = TelephonyServer(
         base_url=base_url,
         config_manager=InMemoryConfigManager(),
+        agent_factory=SafeAgentFactory(),
     )
     state_manager = StateManager()
 
