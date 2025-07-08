@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 from flask import Flask, request, Response as FlaskResponse, redirect
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from loguru import logger
 from vocode.streaming.telephony.server.base import (
     TelephonyServer,
@@ -110,6 +111,11 @@ def create_app() -> Flask:
             f"Recording callback: call_sid={call_sid} recording_sid={recording_sid} url={recording_url}"
         )
         return "", 204
+
+    @app.get("/metrics")
+    def metrics() -> FlaskResponse:
+        """Expose Prometheus metrics."""
+        return FlaskResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)
 
     return app
 

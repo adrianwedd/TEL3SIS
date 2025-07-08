@@ -11,7 +11,7 @@ pytest
 cryptography
 
 # Speech-to-text
-openai-whisper
+openai - whisper
 openai
 
 # GitHub API client
@@ -26,6 +26,7 @@ sendgrid
 SQLAlchemy
 chromadb
 fakeredis
-google-api-python-client
-google-auth
-google-auth-oauthlib
+google - api - python - client
+google - auth
+google - auth - oauthlib
+prometheus_client
