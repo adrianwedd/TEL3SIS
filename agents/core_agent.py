@@ -194,3 +194,11 @@ def build_core_agent(
         transcriber=transcriber_config,
         synthesizer=synthesizer_config,
     )
+
+
+def get_core_agent(
+    state_manager: StateManager, call_sid: str | None = None
+) -> AgentConfig:
+    """Return just the Vocode ``AgentConfig`` for the core agent."""
+
+    return build_core_agent(state_manager, call_sid).agent
