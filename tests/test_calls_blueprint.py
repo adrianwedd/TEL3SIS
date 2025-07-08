@@ -1,6 +1,7 @@
 import types
 import sys
 import os
+import base64
 from importlib import reload
 
 # Reuse the dummy vocode modules from test_metrics
@@ -129,6 +130,7 @@ os.environ.setdefault("SECRET_KEY", "x")
 os.environ.setdefault("BASE_URL", "http://localhost")
 os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
+os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
 
 from server import database as db  # noqa: E402
@@ -142,6 +144,7 @@ def test_list_calls(monkeypatch, tmp_path):
     monkeypatch.setenv("BASE_URL", "http://localhost")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     reload(db)
     db.init_db()
     db.save_call_summary("abc", "111", "222", "/path", "summary", "crit")

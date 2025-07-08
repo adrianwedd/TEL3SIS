@@ -2,6 +2,7 @@ import sys
 import types
 import time
 import os
+import base64
 
 from server.latency_logging import log_stt
 
@@ -131,6 +132,7 @@ os.environ.setdefault("SECRET_KEY", "x")
 os.environ.setdefault("BASE_URL", "http://localhost")
 os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
+os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
 
 from server.app import create_app  # noqa: E402
@@ -141,6 +143,7 @@ def test_metrics_endpoint() -> None:
     os.environ.setdefault("BASE_URL", "http://localhost")
     os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
     os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
+    os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     app = create_app()
     client = app.test_client()
 

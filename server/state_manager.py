@@ -9,6 +9,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import redis
 
 from .vector_db import VectorDB
+from .config import ConfigError
 
 
 class StateManager:
@@ -28,11 +29,14 @@ class StateManager:
         self._summary_db = summary_db or VectorDB(collection_name="summaries")
 
         key_b64 = os.getenv("TOKEN_ENCRYPTION_KEY")
-        if key_b64:
+        if not key_b64:
+            raise ConfigError(
+                "Missing required environment variable: TOKEN_ENCRYPTION_KEY"
+            )
+        try:
             self._encryption_key = base64.b64decode(key_b64)
-        else:
-            # Generate ephemeral key for development/testing
-            self._encryption_key = AESGCM.generate_key(bit_length=128)
+        except Exception as exc:  # pragma: no cover - invalid base64 rare
+            raise ConfigError("Invalid TOKEN_ENCRYPTION_KEY format") from exc
 
     def _key(self, call_sid: str) -> str:
         return f"{self.prefix}:{call_sid}"
