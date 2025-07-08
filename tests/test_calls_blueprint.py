@@ -152,7 +152,7 @@ def test_list_calls(monkeypatch, tmp_path):
     app = create_app()
     client = app.test_client()
 
-    resp = client.get("/calls")
+    resp = client.get("/v1/calls")
     assert resp.status_code == 200
     data = resp.get_json()
     assert data[0]["call_sid"] == "abc"

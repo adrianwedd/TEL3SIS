@@ -154,6 +154,6 @@ def test_metrics_endpoint() -> None:
 
     dummy()
 
-    resp = client.get("/metrics")
+    resp = client.get("/v1/metrics")
     body = resp.data.decode()
     assert "stt_latency_seconds" in body
