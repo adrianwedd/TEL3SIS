@@ -850,3 +850,90 @@ tasks:
       - "Schedule every 10 minutes to poll PRs."
     acceptance_criteria:
       - "CoordinatorAgent automatically labels new PRs and updates tasks.yml on merge."
+  - id: 46
+    task_id: CORE-16
+    epic: "Phase 2: Stability"
+    title: "Configuration Loader"
+    description: "Implement centralized configuration loading and validation for environment variables."
+    component: server
+    area: Core Logic
+    dependencies: [45]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create server/config.py with a Config dataclass that reads required env vars."
+      - "Update create_app to instantiate Config and fail fast if values are missing."
+    acceptance_criteria:
+      - "App startup aborts with a clear error message when mandatory variables are unset."
+  - id: 47
+    task_id: CORE-17
+    epic: "Phase 2: Stability"
+    title: "Persistent Encryption Key"
+    description: "Enforce stable token encryption key in StateManager and warn if missing."
+    component: server
+    area: Security
+    dependencies: [46]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Modify StateManager to raise an error unless TOKEN_ENCRYPTION_KEY is provided."
+      - "Document migration steps in README for generating and storing this key."
+    acceptance_criteria:
+      - "Server refuses to start without a configured encryption key."
+  - id: 48
+    task_id: API-01
+    epic: "Phase 2: Stability"
+    title: "Versioned API with Validation"
+    description: "Add API versioning and request validation for all HTTP endpoints."
+    component: server
+    area: Interfaces
+    dependencies: [46]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Prefix existing routes with /v1/ and update clients accordingly."
+      - "Use Pydantic or Marshmallow to validate inbound form and JSON data."
+      - "Return structured error messages when validation fails."
+    acceptance_criteria:
+      - "All endpoints reject malformed requests with 4xx codes and descriptive errors."
+  - id: 49
+    task_id: OPS-03
+    epic: "Phase 2: Stability"
+    title: "Clean requirements"
+    description: "Correct and pin package versions in requirements.txt."
+    component: tooling
+    area: DevOps
+    dependencies: [45]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Remove invalid package names (e.g., 'openai - whisper')."
+      - "Pin all dependencies to compatible versions."
+      - "Update installation instructions accordingly."
+    acceptance_criteria:
+      - "`pip install -r requirements.txt` succeeds without errors."
+  - id: 50
+    task_id: CI-03
+    epic: "Phase 2: Stability"
+    title: "Pre-commit in CI"
+    description: "Run pre-commit hooks as part of the GitHub Actions CI workflow."
+    component: ci
+    area: CI/CD
+    dependencies: [49]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add a job or step in ci.yml that executes `pre-commit run --all-files`."
+      - "Ensure hooks (black, ruff, git-secrets) pass before running tests."
+    acceptance_criteria:
+      - "Pull requests fail if pre-commit hooks report issues."
