@@ -6,6 +6,7 @@ from pathlib import Path
 from .recordings import transcribe_recording
 from tools.notifications import send_email
 from .database import save_call_summary
+from .self_reflection import generate_self_critique
 
 from .celery_app import celery_app
 
@@ -40,7 +41,15 @@ def transcribe_audio(
     send_transcript_email.delay(str(path))
     text = Path(path).read_text()
     summary = summarize_text(text)
-    save_call_summary(call_sid, from_number, to_number, str(path), summary)
+    critique = generate_self_critique(text)
+    save_call_summary(
+        call_sid,
+        from_number,
+        to_number,
+        str(path),
+        summary,
+        critique,
+    )
     return str(path)
 
 

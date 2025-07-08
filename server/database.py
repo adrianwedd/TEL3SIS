@@ -25,6 +25,7 @@ class Call(Base):
     to_number = Column(String, nullable=False)
     transcript_path = Column(String, nullable=False)
     summary = Column(String, nullable=False)
+    self_critique = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
@@ -52,6 +53,7 @@ def save_call_summary(
     to_number: str,
     transcript_path: str,
     summary: str,
+    self_critique: str | None = None,
 ) -> None:
     """Persist a completed call with summary to the database."""
     with get_session() as session:
@@ -61,6 +63,7 @@ def save_call_summary(
             to_number=to_number,
             transcript_path=transcript_path,
             summary=summary,
+            self_critique=self_critique,
         )
         session.add(call)
         session.commit()

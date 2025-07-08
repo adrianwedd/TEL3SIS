@@ -12,6 +12,7 @@ cryptography
 
 # Speech-to-text
 openai-whisper
+openai
 
 # GitHub API client
 PyGithub
