@@ -22,7 +22,7 @@ from vocode.streaming.models.telephony import TwilioConfig
 from agents.core_agent import build_core_agent, SafeAgentFactory
 from .state_manager import StateManager
 from .tasks import echo
-from .database import init_db, get_user
+from .database import init_db, get_user, get_user_preference
 from .auth_bp import bp as auth_bp
 from tools.calendar import generate_auth_url, exchange_code
 from .config import Config, ConfigError
@@ -118,7 +118,11 @@ def create_app() -> Flask:
         )
         echo.delay(f"Call {call_sid} started")
 
-        config = build_core_agent(state_manager, call_sid)
+        language = get_user_preference(data.From, "language") or "en"
+        if hasattr(state_manager, "update_session"):
+            state_manager.update_session(call_sid, language=language)
+
+        config = build_core_agent(state_manager, call_sid, language=language)
         inbound_route = telephony_server.create_inbound_route(
             TwilioInboundCallConfig(
                 url="/v1/inbound_call",

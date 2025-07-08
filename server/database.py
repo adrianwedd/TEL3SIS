@@ -96,3 +96,32 @@ def get_user(user_id: int) -> User | None:
     """Return user by ID."""
     with get_session() as session:
         return session.get(User, user_id)
+
+
+def get_user_preference(phone_number: str, key: str) -> str | None:
+    """Return stored preference value for ``phone_number`` and ``key``."""
+    with get_session() as session:
+        pref = (
+            session.query(UserPreference)
+            .filter_by(phone_number=phone_number)
+            .one_or_none()
+        )
+        if pref:
+            return pref.data.get(key)
+    return None
+
+
+def set_user_preference(phone_number: str, key: str, value: str) -> None:
+    """Persist preference ``key`` for ``phone_number``."""
+    with get_session() as session:
+        pref = (
+            session.query(UserPreference)
+            .filter_by(phone_number=phone_number)
+            .one_or_none()
+        )
+        if pref is None:
+            pref = UserPreference(phone_number=phone_number, data={key: value})
+            session.add(pref)
+        else:
+            pref.data[key] = value
+        session.commit()

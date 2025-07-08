@@ -174,7 +174,7 @@ class SafeAgentFactory(DefaultAgentFactory):
 
 
 def build_core_agent(
-    state_manager: StateManager, call_sid: str | None = None
+    state_manager: StateManager, call_sid: str | None = None, language: str = "en"
 ) -> CoreAgentConfig:
     """Return TEL3SIS ChatGPT agent with STT and TTS providers configured."""
 
@@ -185,9 +185,12 @@ def build_core_agent(
     )
 
     transcriber_config = WhisperCPPTranscriberConfig.from_telephone_input_device()
+    setattr(transcriber_config, "language", language)
+
     synthesizer_config = ElevenLabsSynthesizerConfig.from_telephone_output_device(
         api_key=os.getenv("ELEVEN_LABS_API_KEY")
     )
+    setattr(synthesizer_config, "language", language)
 
     return CoreAgentConfig(
         agent=agent_config,
@@ -197,8 +200,8 @@ def build_core_agent(
 
 
 def get_core_agent(
-    state_manager: StateManager, call_sid: str | None = None
+    state_manager: StateManager, call_sid: str | None = None, language: str = "en"
 ) -> AgentConfig:
     """Return just the Vocode ``AgentConfig`` for the core agent."""
 
-    return build_core_agent(state_manager, call_sid).agent
+    return build_core_agent(state_manager, call_sid, language).agent

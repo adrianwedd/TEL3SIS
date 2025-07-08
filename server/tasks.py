@@ -6,8 +6,14 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from .recordings import transcribe_recording, DEFAULT_OUTPUT_DIR
 from tools.notifications import send_email
-from .database import save_call_summary, get_session, Call
+from .database import (
+    save_call_summary,
+    get_session,
+    Call,
+    set_user_preference,
+)
 from .self_reflection import generate_self_critique
+from tools.language import detect_language
 
 from .celery_app import celery_app
 
@@ -41,6 +47,8 @@ def transcribe_audio(
     logger.info("Transcribed %s", audio_path)
     send_transcript_email.delay(str(path))
     text = Path(path).read_text()
+    language = detect_language(text)
+    set_user_preference(from_number, "language", language)
     summary = summarize_text(text)
     critique = generate_self_critique(text)
     save_call_summary(
