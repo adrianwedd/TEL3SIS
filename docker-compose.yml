@@ -39,6 +39,16 @@ services:
     depends_on:
       - redis
 
+  celerybeat:
+    build: .
+    command: celery -A server.celery_app beat --loglevel=info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
   # Grafana service for metrics dashboards
   grafana:
     image: grafana/grafana:9.5.3
