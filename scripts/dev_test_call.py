@@ -9,6 +9,7 @@ from vocode.streaming.transcriber.whisper_cpp_transcriber import WhisperCPPTrans
 from vocode.streaming.streaming_conversation import StreamingConversation
 
 from agents.core_agent import SafeFunctionCallingAgent, build_core_agent
+from server.state_manager import StateManager
 
 
 async def main() -> None:
@@ -17,8 +18,9 @@ async def main() -> None:
         use_default_devices=True
     )
 
-    config = build_core_agent()
-    agent = SafeFunctionCallingAgent(config.agent)
+    state_manager = StateManager()
+    config = build_core_agent(state_manager)
+    agent = SafeFunctionCallingAgent(config.agent, state_manager=state_manager)
     transcriber = WhisperCPPTranscriber(config.transcriber)
     synthesizer = DefaultSynthesizerFactory().create_synthesizer(config.synthesizer)
 
@@ -43,6 +45,7 @@ async def main() -> None:
     finally:
         await conversation.terminate()
         speaker.terminate()
+        mic.terminate()
 
 
 if __name__ == "__main__":
