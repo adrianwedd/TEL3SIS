@@ -6,6 +6,21 @@ import time
 from typing import Any, Callable
 
 from loguru import logger
+from prometheus_client import Histogram
+
+# Histograms for latency metrics indexed by step name
+_histograms: dict[str, Histogram] = {}
+
+
+def _get_histogram(step_name: str) -> Histogram:
+    """Return (and lazily create) a Histogram for the given step."""
+    if step_name not in _histograms:
+        _histograms[step_name] = Histogram(
+            f"{step_name}_latency_seconds",
+            f"Latency in seconds for {step_name} step",
+            buckets=(0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0),
+        )
+    return _histograms[step_name]
 
 
 def _log_event(event: str, call_sid: str | None, **extra: Any) -> None:
@@ -29,10 +44,12 @@ def log_vocode_step(
                 _log_event(f"{step_name}_start", call_sid, timestamp=start)
                 result = await func(*args, **kwargs)
                 end = time.time()
+                latency = end - start
+                _get_histogram(step_name).observe(latency)
                 _log_event(
                     f"{step_name}_end",
                     call_sid,
-                    latency_ms=int((end - start) * 1000),
+                    latency_ms=int(latency * 1000),
                     timestamp=end,
                 )
                 return result
@@ -44,10 +61,12 @@ def log_vocode_step(
             _log_event(f"{step_name}_start", call_sid, timestamp=start)
             result = func(*args, **kwargs)
             end = time.time()
+            latency = end - start
+            _get_histogram(step_name).observe(latency)
             _log_event(
                 f"{step_name}_end",
                 call_sid,
-                latency_ms=int((end - start) * 1000),
+                latency_ms=int(latency * 1000),
                 timestamp=end,
             )
             return result
