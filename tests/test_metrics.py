@@ -1,6 +1,7 @@
 import sys
 import types
 import time
+import os
 
 from server.latency_logging import log_stt
 
@@ -126,11 +127,20 @@ sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.tran
 sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
+os.environ.setdefault("SECRET_KEY", "x")
+os.environ.setdefault("BASE_URL", "http://localhost")
+os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
+os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
+
 
 from server.app import create_app  # noqa: E402
 
 
 def test_metrics_endpoint() -> None:
+    os.environ.setdefault("SECRET_KEY", "x")
+    os.environ.setdefault("BASE_URL", "http://localhost")
+    os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
+    os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
     app = create_app()
     client = app.test_client()
 

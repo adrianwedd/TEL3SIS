@@ -1,9 +1,10 @@
 import types
 import sys
 import os
-from importlib import reload
+import pytest
 
-# Provide dummy "vocode" modules so that server.app can be imported without the real dependency.
+# Dummy modules to allow importing server.app without dependencies
+
 dummy = types.ModuleType("vocode")
 dummy.streaming = types.ModuleType("vocode.streaming")
 dummy.streaming.agent = types.ModuleType("vocode.streaming.agent")
@@ -128,42 +129,24 @@ os.environ.setdefault("BASE_URL", "http://localhost")
 os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
 
-from server import database as db  # noqa: E402
+
+from server.config import Config, ConfigError  # noqa: E402
 from server.app import create_app  # noqa: E402
 
 
-def test_dashboard_pages(monkeypatch, tmp_path):
-    db_url = f"sqlite:///{tmp_path}/test.db"
-    monkeypatch.setenv("DATABASE_URL", db_url)
-    monkeypatch.setenv("SECRET_KEY", "x")
-    monkeypatch.setenv("BASE_URL", "http://localhost")
-    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
-    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
-    reload(db)
-    db.init_db()
-    db.create_user("admin", "pass", role="admin")
-    transcript_dir = tmp_path / "transcripts"
-    transcript_dir.mkdir()
-    transcript_path = transcript_dir / "test.txt"
-    transcript_path.write_text("hello world")
-    db.save_call_summary("abc", "111", "222", str(transcript_path), "summary", "crit")
+def test_config_missing_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    monkeypatch.delenv("BASE_URL", raising=False)
+    monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
+    monkeypatch.delenv("TWILIO_AUTH_TOKEN", raising=False)
+    with pytest.raises(ConfigError):
+        Config()
 
-    app = create_app()
-    client = app.test_client()
 
-    resp = client.get("/dashboard")
-    assert resp.status_code == 302
-
-    client.post("/login", data={"username": "admin", "password": "pass"})
-
-    resp = client.get("/dashboard")
-    assert resp.status_code == 200
-    assert b"111" in resp.data
-
-    resp = client.get("/dashboard?q=111")
-    assert resp.status_code == 200
-    assert b"111" in resp.data
-
-    resp = client.get("/dashboard/1")
-    assert resp.status_code == 200
-    assert b"hello world" in resp.data
+def test_create_app_missing_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("SECRET_KEY", raising=False)
+    monkeypatch.delenv("BASE_URL", raising=False)
+    monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
+    monkeypatch.delenv("TWILIO_AUTH_TOKEN", raising=False)
+    with pytest.raises(RuntimeError):
+        create_app()

@@ -4,6 +4,7 @@ import pytest
 import xml.etree.ElementTree as ET
 import types
 import sys
+import os
 from importlib import reload
 
 from server.handoff import dial_twiml
@@ -127,6 +128,11 @@ sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.tran
 sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
+os.environ.setdefault("SECRET_KEY", "x")
+os.environ.setdefault("BASE_URL", "http://localhost")
+os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
+os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
+
 
 def test_dial_twiml(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ESCALATION_PHONE_NUMBER", "+1234567890")
@@ -183,6 +189,10 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
     monkeypatch.setattr("tools.notifications.send_sms", fake_send_sms)
     monkeypatch.setattr(server_app, "send_sms", fake_send_sms)
     monkeypatch.setenv("ESCALATION_PHONE_NUMBER", "+15550001111")
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
 
     app = server_app.create_app()
     client = app.test_client()
