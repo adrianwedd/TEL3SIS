@@ -34,7 +34,7 @@ tasks:
     area: Setup
     dependencies: []
     priority: 1
-    status: pending
+    status: done
     assigned_to: null
     command: "mkdir -p server agents scripts recordings/audio recordings/transcripts"
     actionable_steps:
@@ -53,7 +53,7 @@ tasks:
     area: Setup
     dependencies: [1]
     priority: 1
-    status: pending
+    status: done
     assigned_to: null
     command: "cp .env.example .env"
     actionable_steps:
@@ -71,7 +71,7 @@ tasks:
     area: Ops
     dependencies: [1]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -89,7 +89,7 @@ tasks:
     area: Performance
     dependencies: [1]
     priority: 5
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -106,7 +106,7 @@ tasks:
     area: Core Logic
     dependencies: [1, 2]
     priority: 1
-    status: pending
+    status: done
     assigned_to: null
     command: "flask --app server.app run"
     actionable_steps:
@@ -125,7 +125,7 @@ tasks:
     area: Core Logic
     dependencies: [1, 2]
     priority: 1
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -143,7 +143,7 @@ tasks:
     area: Setup
     dependencies: [6]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: "python scripts/dev_test_call.py"
     actionable_steps:
@@ -161,7 +161,7 @@ tasks:
     area: Core Logic
     dependencies: [5, 6]
     priority: 1
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -179,7 +179,7 @@ tasks:
     area: Data
     dependencies: [8]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -198,7 +198,7 @@ tasks:
     area: Data
     dependencies: [9]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -216,7 +216,7 @@ tasks:
     area: Data
     dependencies: [9, 12]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -235,7 +235,7 @@ tasks:
     area: UX
     dependencies: [10, 12]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -253,7 +253,7 @@ tasks:
     area: Infrastructure
     dependencies: [5]
     priority: 1
-    status: pending
+    status: done
     assigned_to: null
     command: "docker-compose up redis"
     actionable_steps:
@@ -273,7 +273,7 @@ tasks:
     area: Core Logic
     dependencies: [6, 12]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -291,7 +291,7 @@ tasks:
     area: Tooling
     dependencies: [13]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -309,7 +309,7 @@ tasks:
     area: Tooling
     dependencies: [13, 16]
     priority: 4
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -327,7 +327,7 @@ tasks:
     area: Security
     dependencies: [12]
     priority: 4
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -346,7 +346,7 @@ tasks:
     area: UX
     dependencies: [13]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -364,7 +364,7 @@ tasks:
     area: UX
     dependencies: [8]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -382,7 +382,7 @@ tasks:
     area: UX
     dependencies: [18]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -400,7 +400,7 @@ tasks:
     area: Core Logic
     dependencies: [19]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -417,7 +417,7 @@ tasks:
     area: UX
     dependencies: [19, 20]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -434,7 +434,7 @@ tasks:
     area: Data
     dependencies: [10]
     priority: 4
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -452,7 +452,7 @@ tasks:
     area: Data
     dependencies: [22]
     priority: 5
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -471,7 +471,7 @@ tasks:
     area: Safety
     dependencies: [13, 12]
     priority: 4
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -490,7 +490,7 @@ tasks:
     area: Safety
     dependencies: [8]
     priority: 5
-    status: pending
+    status: done
     assigned_to: null
     command: "python scripts/red_team.py"
     actionable_steps:
@@ -507,7 +507,7 @@ tasks:
     area: Safety
     dependencies: [10]
     priority: 5
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -525,7 +525,7 @@ tasks:
     area: Ops
     dependencies: [22]
     priority: 4
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -543,7 +543,7 @@ tasks:
     area: Ops
     dependencies: [27]
     priority: 5
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -562,7 +562,7 @@ tasks:
     area: Security
     dependencies: [27]
     priority: 5
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -580,7 +580,7 @@ tasks:
     area: Ops
     dependencies: [5, 12]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -600,7 +600,7 @@ tasks:
     area: Security
     dependencies: [1]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -618,7 +618,7 @@ tasks:
     area: Quality
     dependencies: [12, 16]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -637,7 +637,7 @@ tasks:
     area: Monitoring
     dependencies: [3]
     priority: 4
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -656,7 +656,7 @@ tasks:
     area: DevOps
     dependencies: [1]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -674,7 +674,7 @@ tasks:
     area: Governance
     dependencies: [1]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -693,7 +693,7 @@ tasks:
     area: Legal
     dependencies: [1]
     priority: 1
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -711,7 +711,7 @@ tasks:
     area: CI/CD
     dependencies: [32]  # requires tests
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -730,7 +730,7 @@ tasks:
     area: CI/CD
     dependencies: [34]  # git-secrets local hook
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -748,7 +748,7 @@ tasks:
     area: DevOps
     dependencies: [34]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -766,7 +766,7 @@ tasks:
     area: Governance
     dependencies: [38]   # CI in place
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -785,7 +785,7 @@ tasks:
     area: Quality
     dependencies: [32, 38]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -803,7 +803,7 @@ tasks:
     area: Safety
     dependencies: [24, 38]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -822,7 +822,7 @@ tasks:
     area: Review
     dependencies: [6, 38]
     priority: 4
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
@@ -841,7 +841,7 @@ tasks:
     area: CI/CD
     dependencies: [41]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: ""
     actionable_steps:
