@@ -201,7 +201,7 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
     client = app.test_client()
 
     resp = client.post(
-        "/inbound_call",
+        "/v1/inbound_call",
         data={"CallSid": "abc", "From": "+12025550100", "To": "+12025550199"},
     )
     assert resp.status_code == 200
@@ -210,3 +210,21 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
         "from": "+12025550100",
         "body": "summary",
     }
+
+
+def test_inbound_call_validation(monkeypatch: pytest.MonkeyPatch) -> None:
+    from server import app as server_app
+
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
+
+    app = server_app.create_app()
+    client = app.test_client()
+
+    resp = client.post("/v1/inbound_call", data={"From": "+1202555"})
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert data["error"] == "invalid_request"

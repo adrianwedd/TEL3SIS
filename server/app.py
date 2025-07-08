@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import os
-from flask import Flask, request, Response as FlaskResponse, redirect
+from flask import Flask, request, Response as FlaskResponse, redirect, jsonify
+from pydantic import BaseModel, HttpUrl, ValidationError
 from flask_login import LoginManager
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from loguru import logger
@@ -27,6 +28,24 @@ from tools.calendar import generate_auth_url, exchange_code
 from .config import Config, ConfigError
 
 
+class InboundCallData(BaseModel):
+    CallSid: str
+    From: str
+    To: str
+
+
+class RecordingStatusData(BaseModel):
+    CallSid: str
+    RecordingSid: str
+    RecordingUrl: HttpUrl
+
+
+def _validation_error_response(exc: ValidationError) -> FlaskResponse:
+    resp = jsonify({"error": "invalid_request", "details": exc.errors()})
+    resp.status_code = 400
+    return resp  # type: ignore[return-value]
+
+
 def create_app() -> Flask:
     """Create and configure the Flask application."""
     try:
@@ -36,9 +55,9 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
     app.secret_key = config.secret_key
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(calls_bp)
-    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(auth_bp, url_prefix="/v1")
+    app.register_blueprint(calls_bp, url_prefix="/v1")
+    app.register_blueprint(dashboard_bp, url_prefix="/v1")
     login_manager = LoginManager()
     login_manager.login_view = "auth.login_form"
 
@@ -66,30 +85,35 @@ def create_app() -> Flask:
     except ConfigError as exc:
         raise RuntimeError(str(exc)) from exc
 
-    @app.get("/oauth/start")
+    @app.get("/v1/oauth/start")
     def oauth_start() -> str:
         """Initiate Google OAuth flow and redirect user."""
         user_id = request.args.get("user_id", "")
         url = generate_auth_url(state_manager, user_id)
         return redirect(url)
 
-    @app.get("/oauth/callback")
+    @app.get("/v1/oauth/callback")
     def oauth_callback() -> str:
         """Handle OAuth callback and store credentials."""
         state = request.args.get("state", "")
         exchange_code(state_manager, state, request.url)
         return "Authentication successful"
 
-    @app.post("/inbound_call")
+    @app.post("/v1/inbound_call")
     def inbound_call() -> FlaskResponse:  # type: ignore[return-type]
         """Handle POST requests from Twilio."""
 
-        call_sid = request.form.get("CallSid", "")
+        try:
+            data = InboundCallData(**request.form)  # type: ignore[arg-type]
+        except ValidationError as exc:
+            return _validation_error_response(exc)
+
+        call_sid = data.CallSid
         state_manager.create_session(
             call_sid,
             {
-                "from": request.form.get("From", ""),
-                "to": request.form.get("To", ""),
+                "from": data.From,
+                "to": data.To,
             },
         )
         echo.delay(f"Call {call_sid} started")
@@ -97,7 +121,7 @@ def create_app() -> Flask:
         config = build_core_agent(state_manager, call_sid)
         inbound_route = telephony_server.create_inbound_route(
             TwilioInboundCallConfig(
-                url="/inbound_call",
+                url="/v1/inbound_call",
                 agent_config=config.agent,
                 twilio_config=twilio_config,
             )
@@ -108,19 +132,19 @@ def create_app() -> Flask:
                 summary = state_manager.get_summary(call_sid) or ""
                 send_sms(
                     to_phone=os.environ.get("ESCALATION_PHONE_NUMBER", ""),
-                    from_phone=request.form.get("From", ""),
+                    from_phone=data.From,
                     body=summary,
                 )
-                xml = dial_twiml(request.form.get("From", ""))
+                xml = dial_twiml(data.From)
                 return FlaskResponse(xml, content_type="text/xml")
 
             if state_manager.is_escalation_required(call_sid):
                 return escalate()
 
             response = await inbound_route(
-                twilio_sid=request.form.get("CallSid", ""),
-                twilio_from=request.form.get("From", ""),
-                twilio_to=request.form.get("To", ""),
+                twilio_sid=data.CallSid,
+                twilio_from=data.From,
+                twilio_to=data.To,
             )
 
             if state_manager.is_escalation_required(call_sid):
@@ -134,19 +158,24 @@ def create_app() -> Flask:
 
         return asyncio.run(handle())
 
-    @app.post("/recording_status")
+    @app.post("/v1/recording_status")
     def recording_status() -> str:
         """Receive recording status callbacks from Twilio."""
 
-        recording_sid = request.form.get("RecordingSid", "")
-        recording_url = request.form.get("RecordingUrl", "")
-        call_sid = request.form.get("CallSid", "")
+        try:
+            data = RecordingStatusData(**request.form)  # type: ignore[arg-type]
+        except ValidationError as exc:
+            return _validation_error_response(exc)
+
         logger.info(
-            f"Recording callback: call_sid={call_sid} recording_sid={recording_sid} url={recording_url}"
+            "Recording callback: call_sid=%s recording_sid=%s url=%s",
+            data.CallSid,
+            data.RecordingSid,
+            data.RecordingUrl,
         )
         return "", 204
 
-    @app.get("/metrics")
+    @app.get("/v1/metrics")
     def metrics() -> FlaskResponse:
         """Expose Prometheus metrics."""
         return FlaskResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)

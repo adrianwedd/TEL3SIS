@@ -222,13 +222,13 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     call_sid = "CA00000000000000000000000000000000"
 
     resp = client.post(
-        "/inbound_call",
+        "/v1/inbound_call",
         data={"CallSid": call_sid, "From": "+15005550006", "To": "+15005550010"},
     )
     assert resp.status_code == 200
 
     resp = client.post(
-        "/recording_status",
+        "/v1/recording_status",
         data={
             "CallSid": call_sid,
             "RecordingSid": "RS0000000000",
@@ -250,3 +250,20 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     with db.get_session() as session:
         call = session.query(db.Call).filter_by(call_sid=call_sid).one()
         assert call.summary
+
+
+def test_recording_status_validation(monkeypatch: pytest.MonkeyPatch) -> None:
+    from server import app as server_app
+
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
+
+    app = server_app.create_app()
+    client = app.test_client()
+
+    resp = client.post("/v1/recording_status", data={"CallSid": "abc"})
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "invalid_request"

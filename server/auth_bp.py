@@ -2,16 +2,36 @@ from __future__ import annotations
 
 import os
 import secrets
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+    jsonify,
+)
 from oauthlib.oauth2 import WebApplicationClient
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
+from pydantic import BaseModel, ValidationError
 
 from .database import get_session, User
 
 bp = Blueprint("auth", __name__, template_folder="templates")
 
 client = WebApplicationClient(os.environ.get("OAUTH_CLIENT_ID", "dummy"))
+
+
+class LoginData(BaseModel):
+    username: str
+    password: str
+
+
+def _validation_error_response(exc: ValidationError):
+    resp = jsonify({"error": "invalid_request", "details": exc.errors()})
+    resp.status_code = 400
+    return resp
 
 
 def _auth_url() -> str:
@@ -25,8 +45,12 @@ def login_form() -> str:  # type: ignore[return-type]
 
 @bp.post("/login")
 def login_post() -> str:  # type: ignore[return-type]
-    username = request.form.get("username", "")
-    password = request.form.get("password", "")
+    try:
+        data = LoginData(**request.form)  # type: ignore[arg-type]
+    except ValidationError as exc:
+        return _validation_error_response(exc)
+    username = data.username
+    password = data.password
     with get_session() as session:
         user = session.query(User).filter_by(username=username).first()
     if user and check_password_hash(user.password_hash, password):

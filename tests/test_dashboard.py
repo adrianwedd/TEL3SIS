@@ -154,29 +154,29 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     app = create_app()
     client = app.test_client()
 
-    resp = client.get("/dashboard")
+    resp = client.get("/v1/dashboard")
     assert resp.status_code == 302
-    assert "/login/oauth" in resp.headers["Location"]
+    assert "/v1/login/oauth" in resp.headers["Location"]
 
     monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
     monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
 
-    resp = client.get("/login/oauth")
+    resp = client.get("/v1/login/oauth")
     assert resp.status_code == 302
     assert resp.headers["Location"].startswith("https://auth.example/authorize")
     with client.session_transaction() as sess:
         state = sess["oauth_state"]
 
-    resp = client.get(f"/oauth/callback?state={state}&user=admin")
+    resp = client.get(f"/v1/oauth/callback?state={state}&user=admin")
     assert resp.status_code == 302
 
-    resp = client.get("/dashboard")
+    resp = client.get("/v1/dashboard")
     assert resp.status_code == 200
 
-    resp = client.get("/dashboard?q=111")
+    resp = client.get("/v1/dashboard?q=111")
     assert resp.status_code == 200
     assert b"111" in resp.data
 
-    resp = client.get("/dashboard/1")
+    resp = client.get("/v1/dashboard/1")
     assert resp.status_code == 200
     assert b"hello world" in resp.data
