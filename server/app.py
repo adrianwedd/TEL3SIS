@@ -10,6 +10,7 @@ from vocode.streaming.telephony.server.base import (
     TwilioInboundCallConfig,
 )
 from .handoff import dial_twiml
+from .calls_bp import bp as calls_bp
 from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
     InMemoryConfigManager,
 )
@@ -24,6 +25,7 @@ from tools.calendar import generate_auth_url, exchange_code
 def create_app() -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
+    app.register_blueprint(calls_bp)
     init_db()
 
     base_url = os.environ.get("BASE_URL", "")
