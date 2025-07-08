@@ -77,6 +77,7 @@ TEL3SIS/
 ├── docker-compose.yml
 ├── Dockerfile
 ├── requirements.txt
+├── requirements.lock
 └── README.md
 ```
 
@@ -120,9 +121,10 @@ TEL3SIS/
 ```bash
 python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.lock
 python server/app.py
 ```
+If you modify `requirements.txt`, run `pip-compile requirements.txt -o requirements.lock` to refresh pinned versions.
 > Use this only for lightweight debugging; Docker remains the canonical environment.
 
 ---
