@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 import types
 import sys
 import os
+import base64
 from importlib import reload
 
 from server.handoff import dial_twiml
@@ -132,6 +133,7 @@ os.environ.setdefault("SECRET_KEY", "x")
 os.environ.setdefault("BASE_URL", "http://localhost")
 os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
+os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
 
 def test_dial_twiml(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -193,6 +195,7 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
     monkeypatch.setenv("BASE_URL", "http://localhost")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
     app = server_app.create_app()
     client = app.test_client()

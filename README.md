@@ -156,6 +156,21 @@ python server/app.py
 | `NOTIFY_EMAIL` | Recipient for call transcripts |
 | _see `.env.example`_ |
 
+### Generating and Storing the Encryption Key
+
+The `TOKEN_ENCRYPTION_KEY` must be a persistent 128‑bit AES key encoded in
+base64. Generate one using:
+
+```bash
+python - <<'EOF'
+import base64, os
+print(base64.b64encode(os.urandom(16)).decode())
+EOF
+```
+
+Add the resulting value to your `.env` file under `TOKEN_ENCRYPTION_KEY` before
+starting the server. Without this key, TEL3SIS will refuse to launch.
+
 ---
 
 ## 🛠️ Development Workflow

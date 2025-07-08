@@ -1,6 +1,7 @@
 import os
 import types
 import sys
+import base64
 from importlib import reload
 from pathlib import Path
 
@@ -133,6 +134,7 @@ os.environ.setdefault("SECRET_KEY", "x")
 os.environ.setdefault("BASE_URL", "http://localhost")
 os.environ.setdefault("TWILIO_ACCOUNT_SID", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "your_auth_token")
+os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
 from server import app as server_app  # noqa: E402
 from server import database as db  # noqa: E402
@@ -147,6 +149,7 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     monkeypatch.setenv("BASE_URL", "http://localhost")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "your_auth_token")
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     monkeypatch.setenv("ESCALATION_PHONE_NUMBER", "+15550001111")
     reload(db)
     db.init_db()

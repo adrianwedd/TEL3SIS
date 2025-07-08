@@ -1,6 +1,7 @@
 import types
 import sys
 import os
+import base64
 import pytest
 
 # Dummy modules to allow importing server.app without dependencies
@@ -128,6 +129,7 @@ os.environ.setdefault("SECRET_KEY", "x")
 os.environ.setdefault("BASE_URL", "http://localhost")
 os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
+os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
 
 from server.config import Config, ConfigError  # noqa: E402
@@ -148,5 +150,11 @@ def test_create_app_missing_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("BASE_URL", raising=False)
     monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
     monkeypatch.delenv("TWILIO_AUTH_TOKEN", raising=False)
+    with pytest.raises(RuntimeError):
+        create_app()
+
+
+def test_create_app_missing_token_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("TOKEN_ENCRYPTION_KEY", raising=False)
     with pytest.raises(RuntimeError):
         create_app()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 from typing import Any
+import pytest
 
 import fakeredis
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -9,6 +10,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
 
 from server.state_manager import StateManager
+from server.config import ConfigError
 
 
 def _make_manager(monkeypatch: Any, tmp_path: Path) -> StateManager:
@@ -53,3 +55,10 @@ def test_similar_summaries(monkeypatch: Any, tmp_path: Path) -> None:
     manager.set_summary("c2", "Discussion on holiday plans")
     sims = manager.get_similar_summaries("weather", n_results=2)
     assert "User asked about the weather forecast" in sims
+
+
+def test_missing_encryption_key(monkeypatch: Any, tmp_path: Path) -> None:
+    monkeypatch.delenv("TOKEN_ENCRYPTION_KEY", raising=False)
+    monkeypatch.setenv("VECTOR_DB_PATH", str(tmp_path / "vectors"))
+    with pytest.raises(ConfigError):
+        StateManager(url="redis://localhost:6379/0")

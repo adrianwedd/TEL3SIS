@@ -61,7 +61,10 @@ def create_app() -> Flask:
         config_manager=InMemoryConfigManager(),
         agent_factory=SafeAgentFactory(),
     )
-    state_manager = StateManager()
+    try:
+        state_manager = StateManager()
+    except ConfigError as exc:
+        raise RuntimeError(str(exc)) from exc
 
     @app.get("/oauth/start")
     def oauth_start() -> str:
