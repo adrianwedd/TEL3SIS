@@ -937,3 +937,187 @@ tasks:
       - "Ensure hooks (black, ruff, git-secrets) pass before running tests."
     acceptance_criteria:
       - "Pull requests fail if pre-commit hooks report issues."
+
+  - id: 51
+    task_id: MON-02
+    epic: "Phase 6: UI + Ops"
+    title: "Provision Grafana dashboard"
+    description: "Deploy Grafana and create dashboards for latency metrics."
+    component: infrastructure
+    area: Monitoring
+    dependencies: [33]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add grafana service to docker-compose.yml."
+      - "Define dashboard JSON under ops/grafana/tel3sis.json."
+      - "Document setup steps in README."
+    acceptance_criteria:
+      - "Grafana displays STT/LLM/TTS latency graphs."
+
+  - id: 52
+    task_id: MON-03
+    epic: "Phase 6: UI + Ops"
+    title: "Configure Prometheus alert rules"
+    description: "Send Slack alerts when average latency exceeds 3s."
+    component: infrastructure
+    area: Monitoring
+    dependencies: [33, 51]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add Prometheus rules file with latency thresholds."
+      - "Use Slack webhook from .env to post alerts."
+      - "Document alerting workflow."
+    acceptance_criteria:
+      - "Slack channel receives notifications on latency breach."
+
+  - id: 53
+    task_id: OPS-04
+    epic: "Phase 2: Stability"
+    title: "Container image security scanning"
+    description: "Run Trivy on Docker images during CI to catch CVEs."
+    component: security
+    area: DevOps
+    dependencies: [38]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Install trivy in security.yml workflow."
+      - "Fail build if high severity CVEs are found."
+    acceptance_criteria:
+      - "CI fails when the container image contains critical vulnerabilities."
+
+  - id: 54
+    task_id: QA-02
+    epic: "Phase 3: Call Forwarding + Handoff"
+    title: "End-to-end call flow test"
+    description: "Automate a Twilio call to verify recording, transcription and handoff."
+    component: testing
+    area: Quality
+    dependencies: [20, 32]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Use Twilio test credentials to simulate a call."
+      - "Assert that recording and summary SMS occur."
+    acceptance_criteria:
+      - "`pytest tests/test_e2e_call.py` passes."
+
+  - id: 55
+    task_id: UI-04
+    epic: "Phase 6: UI + Ops"
+    title: "OAuth login for dashboard"
+    description: "Secure dashboard with OAuth 2.0 login (e.g., Google)."
+    component: ui
+    area: Security
+    dependencies: [27]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add Flask-Login and OAuthlib packages."
+      - "Implement login route and callback."
+      - "Restrict dashboard routes to authenticated users."
+    acceptance_criteria:
+      - "Unauthenticated requests redirect to the OAuth login page."
+
+  - id: 56
+    task_id: MEM-04
+    epic: "Phase 4: State & Memory"
+    title: "Summarization-aware memory retrieval"
+    description: "Store call summaries in the vector DB and surface them during new calls."
+    component: state
+    area: Data
+    dependencies: [23]
+    priority: 5
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create embeddings for call summaries."
+      - "Update StateManager to fetch similar past summaries."
+    acceptance_criteria:
+      - "Agent references prior summaries relevant to the caller."
+
+  - id: 57
+    task_id: API-02
+    epic: "Phase 2: Stability"
+    title: "API key authentication"
+    description: "Require API tokens for all /v1 endpoints."
+    component: server
+    area: Interfaces
+    dependencies: [48]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Generate API keys and store hashed values."
+      - "Validate keys on every request."
+    acceptance_criteria:
+      - "Requests without valid key return 401 Unauthorized."
+
+  - id: 58
+    task_id: CORE-18
+    epic: "Phase 3: Call Forwarding + Handoff"
+    title: "Multilingual call support"
+    description: "Detect language automatically and switch STT/TTS models."
+    component: agent
+    area: UX
+    dependencies: [6, 46]
+    priority: 5
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add language detection step in the call pipeline."
+      - "Load matching STT and TTS configs."
+      - "Persist caller language preference."
+    acceptance_criteria:
+      - "Calls in multiple languages use the appropriate voices."
+
+  - id: 59
+    task_id: OPS-05
+    epic: "Phase 6: UI + Ops"
+    title: "Data retention cleanup job"
+    description: "Periodic task to delete recordings older than 30 days."
+    component: infrastructure
+    area: Ops
+    dependencies: [22]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create a Celery beat schedule."
+      - "Delete audio files and DB rows beyond retention window."
+    acceptance_criteria:
+      - "Cron job removes outdated call data automatically."
+
+  - id: 60
+    task_id: SAFE-04
+    epic: "Phase 5: Safety & Reflection"
+    title: "Rate limiting and abuse protection"
+    description: "Throttle excessive API or call requests to prevent abuse."
+    component: security
+    area: Safety
+    dependencies: [24, 48]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Implement IP-based rate limits using Flask-Limiter."
+      - "Return 429 responses when limits are exceeded."
+    acceptance_criteria:
+      - "Rapid repeated requests are blocked with HTTP 429."
