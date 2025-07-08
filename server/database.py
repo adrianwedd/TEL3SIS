@@ -5,6 +5,8 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Integer, JSON, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from werkzeug.security import generate_password_hash
+from flask_login import UserMixin
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///tel3sis.db")
 
@@ -37,6 +39,15 @@ class UserPreference(Base):
     data = Column(JSON, default=dict)
 
 
+class User(Base, UserMixin):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="user")
+
+
 def init_db() -> None:
     """Create database tables if they do not exist."""
     Base.metadata.create_all(bind=engine)
@@ -67,3 +78,21 @@ def save_call_summary(
         )
         session.add(call)
         session.commit()
+
+
+def create_user(username: str, password: str, role: str = "user") -> None:
+    """Create a new user with hashed password."""
+    with get_session() as session:
+        user = User(
+            username=username,
+            password_hash=generate_password_hash(password),
+            role=role,
+        )
+        session.add(user)
+        session.commit()
+
+
+def get_user(user_id: int) -> User | None:
+    """Return user by ID."""
+    with get_session() as session:
+        return session.get(User, user_id)

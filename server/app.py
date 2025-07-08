@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 from flask import Flask, request, Response as FlaskResponse, redirect
+from flask_login import LoginManager
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from loguru import logger
 from vocode.streaming.telephony.server.base import (
@@ -19,15 +20,26 @@ from vocode.streaming.models.telephony import TwilioConfig
 from agents.core_agent import build_core_agent, SafeAgentFactory
 from .state_manager import StateManager
 from .tasks import echo
-from .database import init_db
+from .database import init_db, get_user
+from .auth_bp import bp as auth_bp
 from tools.calendar import generate_auth_url, exchange_code
 
 
 def create_app() -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
+    app.secret_key = os.environ.get("SECRET_KEY", "dev")
+    app.register_blueprint(auth_bp)
     app.register_blueprint(calls_bp)
     app.register_blueprint(dashboard_bp)
+    login_manager = LoginManager()
+    login_manager.login_view = "auth.login_form"
+
+    @login_manager.user_loader
+    def load_user(user_id: str):
+        return get_user(int(user_id))
+
+    login_manager.init_app(app)
     init_db()
 
     base_url = os.environ.get("BASE_URL", "")

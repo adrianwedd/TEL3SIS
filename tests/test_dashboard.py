@@ -131,6 +131,7 @@ def test_dashboard_pages(monkeypatch, tmp_path):
     monkeypatch.setenv("DATABASE_URL", db_url)
     reload(db)
     db.init_db()
+    db.create_user("admin", "pass", role="admin")
     transcript_dir = tmp_path / "transcripts"
     transcript_dir.mkdir()
     transcript_path = transcript_dir / "test.txt"
@@ -139,6 +140,11 @@ def test_dashboard_pages(monkeypatch, tmp_path):
 
     app = create_app()
     client = app.test_client()
+
+    resp = client.get("/dashboard")
+    assert resp.status_code == 302
+
+    client.post("/login", data={"username": "admin", "password": "pass"})
 
     resp = client.get("/dashboard")
     assert resp.status_code == 200

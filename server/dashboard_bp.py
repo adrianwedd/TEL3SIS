@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from flask import Blueprint, render_template, request, abort
+from flask_login import login_required, current_user
 from sqlalchemy import or_
 
 from .database import Call, get_session
@@ -11,8 +12,11 @@ bp = Blueprint("dashboard", __name__, template_folder="templates")
 
 
 @bp.get("/dashboard")
+@login_required
 def show_dashboard() -> str:  # type: ignore[return-type]
     """Render list of calls with optional search."""
+    if current_user.role != "admin":
+        abort(403)
     query_param = request.args.get("q", "").strip()
     with get_session() as session:
         q = session.query(Call)
@@ -31,8 +35,11 @@ def show_dashboard() -> str:  # type: ignore[return-type]
 
 
 @bp.get("/dashboard/<int:call_id>")
+@login_required
 def call_detail(call_id: int) -> str:  # type: ignore[return-type]
     """Display a single call with transcript and audio."""
+    if current_user.role != "admin":
+        abort(403)
     with get_session() as session:
         call = session.get(Call, call_id)
         if call is None:
