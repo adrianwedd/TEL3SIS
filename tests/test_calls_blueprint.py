@@ -1,5 +1,6 @@
 import types
 import sys
+import os
 from importlib import reload
 
 # Reuse the dummy vocode modules from test_metrics
@@ -124,6 +125,11 @@ sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.tran
 sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
+os.environ.setdefault("SECRET_KEY", "x")
+os.environ.setdefault("BASE_URL", "http://localhost")
+os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
+os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
+
 
 from server import database as db  # noqa: E402
 from server.app import create_app  # noqa: E402
@@ -132,6 +138,10 @@ from server.app import create_app  # noqa: E402
 def test_list_calls(monkeypatch, tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     reload(db)
     db.init_db()
     db.save_call_summary("abc", "111", "222", "/path", "summary", "crit")

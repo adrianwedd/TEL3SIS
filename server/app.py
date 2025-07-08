@@ -24,12 +24,18 @@ from .tasks import echo
 from .database import init_db, get_user
 from .auth_bp import bp as auth_bp
 from tools.calendar import generate_auth_url, exchange_code
+from .config import Config, ConfigError
 
 
 def create_app() -> Flask:
     """Create and configure the Flask application."""
+    try:
+        config = Config()
+    except ConfigError as exc:
+        raise RuntimeError(str(exc)) from exc
+
     app = Flask(__name__)
-    app.secret_key = os.environ.get("SECRET_KEY", "dev")
+    app.secret_key = config.secret_key
     app.register_blueprint(auth_bp)
     app.register_blueprint(calls_bp)
     app.register_blueprint(dashboard_bp)
@@ -43,10 +49,10 @@ def create_app() -> Flask:
     login_manager.init_app(app)
     init_db()
 
-    base_url = os.environ.get("BASE_URL", "")
+    base_url = config.base_url
     twilio_config = TwilioConfig(
-        account_sid=os.environ.get("TWILIO_ACCOUNT_SID", ""),
-        auth_token=os.environ.get("TWILIO_AUTH_TOKEN", ""),
+        account_sid=config.twilio_account_sid,
+        auth_token=config.twilio_auth_token,
         record=True,
     )
 
