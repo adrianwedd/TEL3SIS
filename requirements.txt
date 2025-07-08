@@ -2,33 +2,33 @@
 # Placeholder for initial Docker build
 
 # Logging (Task INIT-02)
-loguru
+loguru==0.7.2
 
 # Testing (Task QA-01)
-pytest
+pytest==8.2.0
+numpy==1.26.4
 
 # Task instructions: add cryptography for SSL functionalities
-cryptography
-Flask
-Flask-Login
+cryptography==42.0.5
+Flask==3.0.2
+Flask-Login==0.6.3
 
 # Speech-to-text
-openai - whisper
-openai
+openai==1.30.2
 
 # GitHub API client
-PyGithub
+PyGithub==2.3.0
 
 # YAML parsing
-PyYAML
-requests
-redis
-celery
-sendgrid
-SQLAlchemy
-chromadb
-fakeredis
-google - api - python - client
-google - auth
-google - auth - oauthlib
-prometheus_client
+PyYAML==6.0.1
+requests==2.31.0
+redis==5.0.4
+celery==5.3.6
+sendgrid==6.10.0
+SQLAlchemy==2.0.29
+chromadb==0.4.24
+fakeredis==2.23.1
+google-api-python-client==2.122.0
+google-auth==2.28.0
+google-auth-oauthlib==1.2.0
+prometheus_client==0.19.0

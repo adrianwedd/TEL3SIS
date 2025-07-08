@@ -93,27 +93,32 @@ TEL3SIS/
    cd TEL3SIS
    ```
 
-2. **Create `.env`**
+2. **Install Python dependencies**
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Create `.env`**
 
    ```bash
    cp .env.example .env
    # ➜ populate Twilio, OpenAI, ElevenLabs, Deepgram, etc.
    ```
 
-3. **Launch stack**
+4. **Launch stack**
 
    ```bash
    docker compose up --build
    ```
 
-4. **Expose to Twilio**
+5. **Expose to Twilio**
 
    ```bash
    ngrok http 3000
    # copy https URL ➜ Twilio Console ➜ Voice Webhook = https://xxxx.ngrok.io/inbound_call
    ```
 
-5. **Call your Twilio number** – if TEL3SIS answers, Phase 1 is alive.
+6. **Call your Twilio number** – if TEL3SIS answers, Phase 1 is alive.
 
 ---
 **Local (non‑Docker) setup**  
