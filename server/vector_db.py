@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import os
-from typing import Iterable, List, Sequence
+from typing import Iterable, List, Sequence, Optional
 
 import chromadb
 from chromadb.api.types import EmbeddingFunction, Embeddings
@@ -26,21 +26,30 @@ class SimpleEmbeddingFunction(EmbeddingFunction):
 class VectorDB:
     """Wrapper around ChromaDB for semantic memory."""
 
-    def __init__(self, persist_directory: str | None = None) -> None:
+    def __init__(
+        self,
+        persist_directory: str | None = None,
+        *,
+        collection_name: str = "memory",
+        embedding_function: Optional[EmbeddingFunction] = None,
+    ) -> None:
         persist_directory = persist_directory or os.getenv(
             "VECTOR_DB_PATH", "vector_store"
         )
         self.client = chromadb.PersistentClient(path=persist_directory)
         self.collection = self.client.get_or_create_collection(
-            "memory", embedding_function=SimpleEmbeddingFunction()
+            collection_name,
+            embedding_function=embedding_function or SimpleEmbeddingFunction(),
         )
 
-    def add_texts(self, texts: Iterable[str]) -> None:
+    def add_texts(
+        self, texts: Iterable[str], ids: Optional[Iterable[str]] = None
+    ) -> None:
         docs = list(texts)
         if not docs:
             return
-        ids = [str(hash(doc)) for doc in docs]
-        self.collection.add(documents=docs, ids=ids)
+        id_list = list(ids) if ids is not None else [str(hash(doc)) for doc in docs]
+        self.collection.add(documents=docs, ids=id_list)
 
     def search(self, query: str, n_results: int = 3) -> List[str]:
         result = self.collection.query(query_texts=[query], n_results=n_results)
