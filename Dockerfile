@@ -8,11 +8,11 @@ WORKDIR /app
 # e.g., for cryptography or other compiled libraries
 # RUN apt-get update && apt-get install -y build-essential libssl-dev
 
-# Copy the requirements file first to leverage Docker layer caching
-COPY requirements.txt .
+# Copy the requirements files first to leverage Docker layer caching
+COPY requirements.txt requirements.lock ./
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies from the lock file
+RUN pip install --no-cache-dir -r requirements.lock
 
 # Copy the rest of the application code into the container
 COPY . .
