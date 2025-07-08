@@ -38,3 +38,15 @@ services:
       - .env
     depends_on:
       - redis
+
+  # Grafana service for metrics dashboards
+  grafana:
+    image: grafana/grafana:9.5.3
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  grafana-data:
+
