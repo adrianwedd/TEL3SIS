@@ -120,6 +120,10 @@ TEL3SIS/
 
 6. **Call your Twilio number** – if TEL3SIS answers, Phase 1 is alive.
 
+7. **Open Grafana**
+
+   Navigate to [http://localhost:3000](http://localhost:3000) (default login `admin`/`admin`) and import `ops/grafana/tel3sis.json` via **Dashboard → Import**.
+
 ---
 **Local (non‑Docker) setup**  
 ```bash
@@ -185,7 +189,7 @@ pytest -q
 ## 📊 Monitoring
 
 * **Prometheus** scraps `/metrics`
-* Example Grafana dashboard JSON under `ops/grafana/tel3sis.json`
+* Browse Grafana at [http://localhost:3000](http://localhost:3000) and import `ops/grafana/tel3sis.json` for latency graphs
 * Alerts: STT/LLM/TTS > 3 s average latency → Slack
 
 ---

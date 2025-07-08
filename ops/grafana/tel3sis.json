@@ -1,0 +1,45 @@
+{
+  "id": null,
+  "uid": "tel3sis-latency",
+  "title": "TEL3SIS Latency",
+  "schemaVersion": 37,
+  "version": 1,
+  "tags": ["tel3sis"],
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "refresh": "5s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "graph",
+      "title": "STT Latency (p95)",
+      "datasource": "Prometheus",
+      "targets": [
+        {"expr": "histogram_quantile(0.95, rate(stt_latency_seconds_bucket[1m]))"}
+      ],
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8}
+    },
+    {
+      "id": 2,
+      "type": "graph",
+      "title": "LLM Latency (p95)",
+      "datasource": "Prometheus",
+      "targets": [
+        {"expr": "histogram_quantile(0.95, rate(llm_latency_seconds_bucket[1m]))"}
+      ],
+      "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8}
+    },
+    {
+      "id": 3,
+      "type": "graph",
+      "title": "TTS Latency (p95)",
+      "datasource": "Prometheus",
+      "targets": [
+        {"expr": "histogram_quantile(0.95, rate(tts_latency_seconds_bucket[1m]))"}
+      ],
+      "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8}
+    }
+  ]
+}
