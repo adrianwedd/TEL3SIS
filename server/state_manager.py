@@ -8,14 +8,24 @@ from typing import Any, Dict, Optional, List, cast
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import redis
 
+from .vector_db import VectorDB
+
 
 class StateManager:
     """Simple wrapper around Redis for call session state."""
 
-    def __init__(self, url: Optional[str] = None, prefix: str = "session") -> None:
+    def __init__(
+        self,
+        url: Optional[str] = None,
+        prefix: str = "session",
+        *,
+        summary_db: Optional[VectorDB] = None,
+    ) -> None:
         self.url = url or os.getenv("REDIS_URL", "redis://redis:6379/0")
         self.prefix = prefix
         self._redis = redis.Redis.from_url(self.url, decode_responses=True)
+
+        self._summary_db = summary_db or VectorDB(collection_name="summaries")
 
         key_b64 = os.getenv("TOKEN_ENCRYPTION_KEY")
         if key_b64:
@@ -52,6 +62,13 @@ class StateManager:
         if data is None:
             data = {}
         self._redis.hset(self._key(call_sid), mapping=data)
+        from_number = data.get("from")
+        if from_number:
+            sims = self._summary_db.search(from_number)
+            if sims:
+                self._redis.hset(
+                    self._key(call_sid), "similar_summaries", json.dumps(sims)
+                )
 
     def get_session(self, call_sid: str) -> Dict[str, str]:
         """Return all fields for a session."""
@@ -142,7 +159,12 @@ class StateManager:
     def set_summary(self, call_sid: str, summary: str) -> None:
         """Store a summary for later handoff."""
         self._redis.hset(self._key(call_sid), mapping={"summary": summary})
+        self._summary_db.add_texts([summary], ids=[call_sid])
 
     def get_summary(self, call_sid: str) -> Optional[str]:
         """Return saved summary if available."""
         return cast(Optional[str], self._redis.hget(self._key(call_sid), "summary"))
+
+    def get_similar_summaries(self, text: str, n_results: int = 3) -> List[str]:
+        """Return summaries semantically similar to ``text``."""
+        return self._summary_db.search(text, n_results=n_results)
