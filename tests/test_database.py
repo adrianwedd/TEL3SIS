@@ -20,6 +20,8 @@ def test_tables_exist(tmp_path, monkeypatch):
     tables = inspector.get_table_names()
     assert "calls" in tables
     assert "user_preferences" in tables
+    columns = [c["name"] for c in inspector.get_columns("calls")]
+    assert "self_critique" in columns
 
 
 def test_save_call_summary(tmp_path, monkeypatch):
@@ -27,7 +29,8 @@ def test_save_call_summary(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", db_url)
     reload(db)
     db.init_db()
-    db.save_call_summary("abc", "111", "222", "/path", "summary")
+    db.save_call_summary("abc", "111", "222", "/path", "summary", "crit")
     with db.get_session() as session:
         result = session.query(db.Call).filter_by(call_sid="abc").one()
         assert result.summary == "summary"
+        assert result.self_critique == "crit"
