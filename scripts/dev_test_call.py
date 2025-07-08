@@ -8,7 +8,7 @@ from vocode.streaming.synthesizer.default_factory import DefaultSynthesizerFacto
 from vocode.streaming.transcriber.whisper_cpp_transcriber import WhisperCPPTranscriber
 from vocode.streaming.streaming_conversation import StreamingConversation
 
-from agents.core_agent import FunctionCallingAgent, build_core_agent
+from agents.core_agent import SafeFunctionCallingAgent, build_core_agent
 
 
 async def main() -> None:
@@ -18,7 +18,7 @@ async def main() -> None:
     )
 
     config = build_core_agent()
-    agent = FunctionCallingAgent(config.agent)
+    agent = SafeFunctionCallingAgent(config.agent)
     transcriber = WhisperCPPTranscriber(config.transcriber)
     synthesizer = DefaultSynthesizerFactory().create_synthesizer(config.synthesizer)
 
