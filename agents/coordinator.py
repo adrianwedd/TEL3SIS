@@ -4,6 +4,7 @@ This agent reads ``tasks.yml`` to manage the swarm task board and
 interacts with GitHub to apply labels or update status.  The initial
 implementation only exposes a few helper methods.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
