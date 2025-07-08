@@ -132,7 +132,7 @@ python server/app.py
 | Key | Description |
 |-----|-------------|
 | `BASE_URL` | Public URL for webhook (ngrok / k8s ingress) |
-| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | Telephony credentials |
+| `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | Twilio credentials for SMS and escalation |
 | `OPENAI_API_KEY` | LLM access |
 | `ELEVEN_LABS_API_KEY` | TTS voice |
 | `REDIS_URL` | Redis connection for state & Celery broker |
@@ -211,6 +211,7 @@ Transcripts can be sent automatically once SendGrid and Twilio credentials are c
 - `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` – enables `send_email()`
 - `NOTIFY_EMAIL` – default email recipient
 - `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` – enables `send_sms()`
+- `ESCALATION_PHONE_NUMBER` – destination for escalation SMS
 
 If these variables are unset, the system logs a warning and skips the notification.
 
