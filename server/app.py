@@ -11,6 +11,7 @@ from vocode.streaming.telephony.server.base import (
 )
 from .handoff import dial_twiml
 from .calls_bp import bp as calls_bp
+from .dashboard_bp import bp as dashboard_bp
 from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
     InMemoryConfigManager,
 )
@@ -26,6 +27,7 @@ def create_app() -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
     app.register_blueprint(calls_bp)
+    app.register_blueprint(dashboard_bp)
     init_db()
 
     base_url = os.environ.get("BASE_URL", "")

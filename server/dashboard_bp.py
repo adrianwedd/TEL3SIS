@@ -1,0 +1,48 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from flask import Blueprint, render_template, request, abort
+from sqlalchemy import or_
+
+from .database import Call, get_session
+
+bp = Blueprint("dashboard", __name__, template_folder="templates")
+
+
+@bp.get("/dashboard")
+def show_dashboard() -> str:  # type: ignore[return-type]
+    """Render list of calls with optional search."""
+    query_param = request.args.get("q", "").strip()
+    with get_session() as session:
+        q = session.query(Call)
+        if query_param:
+            like = f"%{query_param}%"
+            q = q.filter(
+                or_(
+                    Call.from_number.like(like),
+                    Call.to_number.like(like),
+                    Call.summary.like(like),
+                    Call.self_critique.like(like),
+                )
+            )
+        calls = q.order_by(Call.created_at.desc()).all()
+    return render_template("dashboard/list.html", calls=calls, q=query_param)
+
+
+@bp.get("/dashboard/<int:call_id>")
+def call_detail(call_id: int) -> str:  # type: ignore[return-type]
+    """Display a single call with transcript and audio."""
+    with get_session() as session:
+        call = session.get(Call, call_id)
+        if call is None:
+            abort(404)
+    transcript = Path(call.transcript_path).read_text()
+    audio_filename = Path(call.transcript_path).stem + ".mp3"
+    audio_path = f"/recordings/audio/{audio_filename}"
+    return render_template(
+        "dashboard/detail.html",
+        call=call,
+        transcript=transcript,
+        audio_path=audio_path,
+    )
