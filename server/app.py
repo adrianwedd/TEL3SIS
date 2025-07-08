@@ -11,6 +11,7 @@ from vocode.streaming.telephony.server.base import (
     TwilioInboundCallConfig,
 )
 from .handoff import dial_twiml
+from tools.notifications import send_sms
 from .calls_bp import bp as calls_bp
 from .dashboard_bp import bp as dashboard_bp
 from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
@@ -94,9 +95,18 @@ def create_app() -> Flask:
         )
 
         async def handle() -> FlaskResponse:
-            if state_manager.is_escalation_required(call_sid):
+            def escalate() -> FlaskResponse:
+                summary = state_manager.get_summary(call_sid) or ""
+                send_sms(
+                    to_phone=os.environ.get("ESCALATION_PHONE_NUMBER", ""),
+                    from_phone=request.form.get("From", ""),
+                    body=summary,
+                )
                 xml = dial_twiml(request.form.get("From", ""))
                 return FlaskResponse(xml, content_type="text/xml")
+
+            if state_manager.is_escalation_required(call_sid):
+                return escalate()
 
             response = await inbound_route(
                 twilio_sid=request.form.get("CallSid", ""),
@@ -105,8 +115,7 @@ def create_app() -> Flask:
             )
 
             if state_manager.is_escalation_required(call_sid):
-                xml = dial_twiml(request.form.get("From", ""))
-                return FlaskResponse(xml, content_type="text/xml")
+                return escalate()
 
             return FlaskResponse(  # type: ignore[return-value]
                 response.body,
