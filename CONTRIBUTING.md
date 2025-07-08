@@ -66,3 +66,13 @@ Describe what the PR does.
 ```
 4. CI must succeed and at least one reviewer must approve.
 
+## Docker Image Security Scanning
+
+All pull requests trigger a Trivy scan in `security.yml`. The workflow builds the `tel3sis` image and fails if any **HIGH** severity CVEs are detected.
+You can run the scan locally:
+
+```bash
+docker build -t tel3sis .
+trivy image --severity HIGH --no-progress tel3sis
+```
+
