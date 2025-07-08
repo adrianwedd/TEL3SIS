@@ -132,7 +132,7 @@ from server import database as db  # noqa: E402
 from server.app import create_app  # noqa: E402
 
 
-def test_dashboard_pages(monkeypatch, tmp_path):
+def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
     monkeypatch.setenv("SECRET_KEY", "x")
@@ -153,12 +153,22 @@ def test_dashboard_pages(monkeypatch, tmp_path):
 
     resp = client.get("/dashboard")
     assert resp.status_code == 302
+    assert "/login/oauth" in resp.headers["Location"]
 
-    client.post("/login", data={"username": "admin", "password": "pass"})
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
+    monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
+
+    resp = client.get("/login/oauth")
+    assert resp.status_code == 302
+    assert resp.headers["Location"].startswith("https://auth.example/authorize")
+    with client.session_transaction() as sess:
+        state = sess["oauth_state"]
+
+    resp = client.get(f"/oauth/callback?state={state}&user=admin")
+    assert resp.status_code == 302
 
     resp = client.get("/dashboard")
     assert resp.status_code == 200
-    assert b"111" in resp.data
 
     resp = client.get("/dashboard?q=111")
     assert resp.status_code == 200

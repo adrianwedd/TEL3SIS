@@ -2,13 +2,20 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from flask import Blueprint, render_template, request, abort
+from flask import Blueprint, render_template, request, abort, redirect, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import or_
 
 from .database import Call, get_session
 
 bp = Blueprint("dashboard", __name__, template_folder="templates")
+
+
+@bp.before_request
+def require_login():  # type: ignore[return-type]
+    """Redirect anonymous users to OAuth login."""
+    if not current_user.is_authenticated:
+        return redirect(url_for("auth.oauth_login"))
 
 
 @bp.get("/dashboard")
