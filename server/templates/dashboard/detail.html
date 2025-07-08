@@ -1,0 +1,11 @@
+<!doctype html>
+<title>Call Detail</title>
+<h1>Call {{ call.call_sid }}</h1>
+<p>From: {{ call.from_number }} → {{ call.to_number }}</p>
+<p>Summary: {{ call.summary }}</p>
+{% if call.self_critique %}
+<p>Self Critique: {{ call.self_critique }}</p>
+{% endif %}
+<audio controls src="{{ audio_path }}"></audio>
+<pre>{{ transcript }}</pre>
+<p><a href="{{ url_for('dashboard.show_dashboard') }}">Back</a></p>
