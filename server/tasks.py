@@ -3,9 +3,10 @@ from __future__ import annotations
 from celery.utils.log import get_task_logger
 from pathlib import Path
 
-from .recordings import transcribe_recording
+from datetime import datetime, timedelta
+from .recordings import transcribe_recording, DEFAULT_OUTPUT_DIR
 from tools.notifications import send_email
-from .database import save_call_summary
+from .database import save_call_summary, get_session, Call
 from .self_reflection import generate_self_critique
 
 from .celery_app import celery_app
@@ -57,3 +58,22 @@ def transcribe_audio(
 def send_transcript_email(transcript_path: str, to_email: str | None = None) -> None:
     """Send the transcript file via email."""
     send_email(transcript_path, to_email)
+
+
+@celery_app.task
+def cleanup_old_calls(days: int = 30) -> int:
+    """Delete call records and files older than ``days`` days."""
+
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    removed = 0
+    with get_session() as session:
+        old_calls = session.query(Call).filter(Call.created_at < cutoff).all()
+        for call in old_calls:
+            transcript = Path(call.transcript_path)
+            audio = DEFAULT_OUTPUT_DIR / f"{transcript.stem}.mp3"
+            transcript.unlink(missing_ok=True)
+            audio.unlink(missing_ok=True)
+            session.delete(call)
+            removed += 1
+        session.commit()
+    return removed
