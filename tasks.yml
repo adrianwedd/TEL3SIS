@@ -1156,3 +1156,66 @@ tasks:
       - "Add step to Quick-Start for running `pre-commit install`."
     acceptance_criteria:
       - "README lists pre-commit installation step."
+  - id: 63
+    task_id: ARCH-01
+    epic: "Phase 3: Stability"
+    title: "Centralize environment configuration"
+    description: "Load all required env vars (Redis, Database, SendGrid, etc.) via a unified Config object to avoid scattered settings."
+    component: server
+    area: Infrastructure
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Extend server.config.Config with fields for Redis URL, Database URL, and email/SMS credentials."
+      - "Update modules that read os.environ directly to use Config."
+      - "Adjust tests to supply new Config fields."
+    acceptance_criteria:
+      - "Application starts with a single Config object providing all needed env variables."
+      - "Tests pass with updated configuration."
+    epic: "Phase 3"
+
+  - id: 64
+    task_id: ARCH-02
+    epic: "Phase 3: Stability"
+    title: "Harden external API error handling"
+    description: "Ensure tool integrations (calendar, notifications, weather) gracefully handle network failures and return user-friendly errors."
+    component: tools
+    area: Reliability
+    dependencies: []
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Wrap calls to external APIs in try/except blocks and log failures."
+      - "Return consistent fallback messages when APIs are unavailable."
+      - "Add unit tests simulating network errors for each tool."
+    acceptance_criteria:
+      - "All tools return a controlled message on connection failure."
+      - "New tests validate error handling paths."
+    epic: "Phase 3"
+
+  - id: 65
+    task_id: ARCH-03
+    epic: "Phase 4: Performance"
+    title: "Add indexes for call history queries"
+    description: "Optimize database queries in dashboard and API endpoints by adding indexes to frequently filtered columns."
+    component: server
+    area: Data
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create SQLAlchemy indexes on Call.created_at and Call.from_number."
+      - "Add Alembic migration or script to apply indexes."
+      - "Update tests to run migrations and verify performance."
+    acceptance_criteria:
+      - "Database schema includes indexes for common query fields."
+      - "Dashboard and list_calls endpoints operate efficiently with large datasets."
+    epic: "Phase 4"
+
