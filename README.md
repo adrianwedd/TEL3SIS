@@ -132,6 +132,9 @@ TEL3SIS/
 
 Detailed examples for every `/v1` endpoint can be found in [docs/api_usage.md](docs/api_usage.md).
 
+## 📚 Documentation
+For a deep dive into the system design, see the [core logic architecture review](docs/reviews/core_logic_architecture_review.md).
+
 ---
 **Local (non‑Docker) setup**  
 ```bash
