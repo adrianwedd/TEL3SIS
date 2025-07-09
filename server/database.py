@@ -123,5 +123,7 @@ def set_user_preference(phone_number: str, key: str, value: str) -> None:
             pref = UserPreference(phone_number=phone_number, data={key: value})
             session.add(pref)
         else:
-            pref.data[key] = value
+            data = dict(pref.data or {})
+            data[key] = value
+            pref.data = data
         session.commit()

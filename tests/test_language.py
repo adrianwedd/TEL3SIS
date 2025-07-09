@@ -117,6 +117,7 @@ def _setup_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
     reload(db)
+    reload(tasks)
     db.init_db()
 
 
@@ -163,6 +164,7 @@ def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
     )
     assert resp.status_code == 200
     assert captured["lang"] == "fr"
+    assert db.get_user_preference(from_num, "language") == "fr"
 
     transcript = tmp_path / "call.txt"
     transcript.write_text("hola mundo")
