@@ -20,6 +20,9 @@ from .database import (
 )
 from .self_reflection import generate_self_critique
 from tools.language import detect_language
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
+from .state_manager import StateManager
 
 from .celery_app import celery_app
 from prometheus_client import Counter, Histogram
@@ -167,3 +170,36 @@ def backup_data(upload_to_s3: bool | None = None) -> str:
             return f"s3://{bucket}/{key}"
 
         return str(tar_path)
+
+
+@celery_app.task
+def refresh_tokens_task(threshold_seconds: int = 300) -> int:
+    """Refresh OAuth tokens nearing expiration."""
+    with monitor_task("refresh_tokens_task"):
+        manager = StateManager()
+        now = int(datetime.now(UTC).timestamp())
+        refreshed = 0
+        for user_id, data in manager.iter_tokens():
+            expires_at = int(data.get("expires_at", 0)) if data.get("expires_at") else 0
+            refresh_token = data.get("refresh_token")
+            if not refresh_token or not expires_at:
+                continue
+            if expires_at - now > threshold_seconds:
+                continue
+            creds = Credentials(
+                data["access_token"],
+                refresh_token=refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=os.environ.get("GOOGLE_CLIENT_ID"),
+                client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+            )
+            creds.expiry = datetime.fromtimestamp(expires_at, UTC)
+            try:
+                creds.refresh(Request())
+            except Exception as exc:  # pragma: no cover - network errors
+                logger.warning("Failed to refresh token for %s: %s", user_id, exc)
+                continue
+            new_exp = int(creds.expiry.timestamp()) if creds.expiry else None
+            manager.set_token(user_id, creds.token, refresh_token, new_exp)
+            refreshed += 1
+        return refreshed

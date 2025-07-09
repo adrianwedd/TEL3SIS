@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, UTC
 from typing import Any
+import base64
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import pytest
 
 import fakeredis
@@ -11,7 +13,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from tools.calendar import create_event, list_events, AuthError
+from tools.calendar import create_event, list_events, AuthError, _get_credentials
 from server.state_manager import StateManager
 
 
@@ -51,6 +53,21 @@ class DummyService:
 
 
 def _make_manager(monkeypatch: Any) -> StateManager:
+    key = AESGCM.generate_key(bit_length=128)
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(key).decode())
+    monkeypatch.setenv("VECTOR_DB_PATH", "vector")
+    monkeypatch.setenv("EMBEDDING_MODEL_NAME", "dummy-model")
+
+    class DummyModel:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+        def encode(self, texts: list[str]):  # noqa: ANN001
+            import numpy as np
+
+            return np.zeros((len(texts), 2))
+
+    monkeypatch.setattr("server.vector_db.SentenceTransformer", DummyModel)
     manager = StateManager(url="redis://localhost:6379/0")
     manager._redis = fakeredis.FakeRedis(decode_responses=True)
     manager.set_token("user", "tok", "rt", expires_at=9999999999)
@@ -85,8 +102,8 @@ def test_create_and_list_events(monkeypatch: Any) -> None:
 
 
 def test_auth_failure_triggers_sms(monkeypatch: Any) -> None:
-    manager = StateManager(url="redis://localhost:6379/0")
-    manager._redis = fakeredis.FakeRedis(decode_responses=True)
+    manager = _make_manager(monkeypatch)
+    manager.delete_token("user")
 
     sent: dict[str, Any] = {}
 
@@ -110,3 +127,35 @@ def test_auth_failure_triggers_sms(monkeypatch: Any) -> None:
         )
     assert sent["to"] == "123"
     assert "link" in sent["body"]
+
+
+def test_get_credentials_refreshes(monkeypatch: Any) -> None:
+    manager = _make_manager(monkeypatch)
+    expires = int((datetime.now(UTC) - timedelta(minutes=1)).timestamp())
+    manager.set_token("user", "old", "rt", expires_at=expires)
+
+    class DummyCreds:
+        def __init__(
+            self,
+            token,
+            refresh_token=None,
+            token_uri=None,
+            client_id=None,
+            client_secret=None,
+        ):  # noqa: ANN001
+            self.token = token
+            self.refresh_token = refresh_token
+            self.expiry = datetime.now(UTC)
+            self.expired = True
+
+        def refresh(self, request):  # noqa: ANN001
+            self.token = "new"
+            self.expiry = datetime.now(UTC) + timedelta(hours=1)
+
+    monkeypatch.setattr("tools.calendar.Credentials", DummyCreds)
+    monkeypatch.setattr("tools.calendar.Request", lambda: None)
+
+    creds = _get_credentials(manager, "user")
+    assert creds.token == "new"
+    data = manager.get_token("user")
+    assert data["access_token"] == "new"

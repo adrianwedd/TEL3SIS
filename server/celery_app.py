@@ -23,6 +23,10 @@ def create_celery_app() -> Celery:
             "task": "server.tasks.backup_data",
             "schedule": crontab(minute=0, hour=1),
         },
+        "refresh-tokens": {
+            "task": "server.tasks.refresh_tokens_task",
+            "schedule": crontab(minute="*/10"),
+        },
     }
     return celery
 
