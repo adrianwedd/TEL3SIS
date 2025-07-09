@@ -104,6 +104,7 @@ sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.teleph
 from server import app as server_app  # noqa: E402
 from server import tasks  # noqa: E402
 from server import database as db  # noqa: E402
+from tools import language  # noqa: E402
 
 
 def _setup_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -154,12 +155,14 @@ def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
     from_num = "+15005550006"
     to_num = "+15005550010"
 
+    monkeypatch.setattr(language, "guess_language_from_number", lambda *_: "fr")
+
     resp = client.post(
         "/v1/inbound_call",
         data={"CallSid": "CA1", "From": from_num, "To": to_num},
     )
     assert resp.status_code == 200
-    assert captured["lang"] == "en"
+    assert captured["lang"] == "fr"
 
     transcript = tmp_path / "call.txt"
     transcript.write_text("hola mundo")
@@ -185,3 +188,8 @@ def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
     )
     assert resp.status_code == 200
     assert captured["lang"] == "es"
+
+
+def test_guess_language_from_number() -> None:
+    assert language.guess_language_from_number("+341234") == "es"
+    assert language.guess_language_from_number("+1555") == "en"
