@@ -1,0 +1,19 @@
+groups:
+  - name: celery_tasks
+    rules:
+      - alert: CeleryTaskFailures
+        expr: increase(celery_task_failures_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Celery task failures detected"
+          description: "At least one task failed in the last 5 minutes."
+      - alert: HighCeleryTaskLatency
+        expr: rate(celery_task_latency_seconds_sum[1m]) / rate(celery_task_latency_seconds_count[1m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Celery task latency above 10s"
+          description: "Average task execution time exceeded 10 seconds for over a minute."
