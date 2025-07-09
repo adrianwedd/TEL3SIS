@@ -4,6 +4,7 @@ from pathlib import Path
 
 from flask import Blueprint, render_template, request, abort, redirect, url_for
 from flask_login import login_required, current_user
+from flask_socketio import SocketIO, join_room, leave_room
 from sqlalchemy import or_
 from pydantic import BaseModel, StrictStr, ValidationError
 
@@ -12,6 +13,30 @@ from .validation import validation_error_response
 from .database import Call, get_session
 
 bp = Blueprint("dashboard", __name__, template_folder="templates")
+socketio = SocketIO(cors_allowed_origins="*")
+
+
+def stream_transcript_line(call_sid: str, speaker: str, text: str) -> None:
+    """Emit a transcript chunk to all listeners for the call."""
+    socketio.emit(
+        "transcript_line",
+        {"speaker": speaker, "text": text},
+        room=call_sid,
+    )
+
+
+@socketio.on("join")
+def _join(data: dict[str, str]) -> None:
+    call_sid = data.get("call_sid")
+    if call_sid:
+        join_room(call_sid)
+
+
+@socketio.on("leave")
+def _leave(data: dict[str, str]) -> None:
+    call_sid = data.get("call_sid")
+    if call_sid:
+        leave_room(call_sid)
 
 
 class DashboardQuery(BaseModel):
