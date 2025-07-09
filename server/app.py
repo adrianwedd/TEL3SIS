@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import os
 from flask import Flask, request, Response as FlaskResponse, redirect
 
@@ -129,7 +128,7 @@ def create_app() -> Flask:
 
     @app.post("/v1/inbound_call")
     @limiter.limit(call_rate_limit)
-    def inbound_call() -> FlaskResponse:  # type: ignore[return-type]
+    async def inbound_call() -> FlaskResponse:  # type: ignore[return-type]
         """Handle POST requests from Twilio."""
 
         try:
@@ -165,39 +164,36 @@ def create_app() -> Flask:
             )
         )
 
-        async def handle() -> FlaskResponse:
-            def escalate() -> FlaskResponse:
-                summary = state_manager.get_summary(call_sid) or ""
-                send_sms(
-                    to_phone=os.environ.get("ESCALATION_PHONE_NUMBER", ""),
-                    from_phone=data.From,
-                    body=summary,
-                )
-                xml = dial_twiml(data.From)
-                return FlaskResponse(xml, content_type="text/xml")
-
-            if state_manager.is_escalation_required(call_sid):
-                return escalate()
-
-            response = await inbound_route(
-                twilio_sid=data.CallSid,
-                twilio_from=data.From,
-                twilio_to=data.To,
+        async def escalate() -> FlaskResponse:
+            summary = state_manager.get_summary(call_sid) or ""
+            send_sms(
+                to_phone=os.environ.get("ESCALATION_PHONE_NUMBER", ""),
+                from_phone=data.From,
+                body=summary,
             )
+            xml = dial_twiml(data.From)
+            return FlaskResponse(xml, content_type="text/xml")
 
-            if state_manager.is_escalation_required(call_sid):
-                return escalate()
+        if state_manager.is_escalation_required(call_sid):
+            return await escalate()
 
-            return FlaskResponse(  # type: ignore[return-value]
-                response.body,
-                status=response.status_code,
-                content_type=response.media_type,
-            )
+        response = await inbound_route(
+            twilio_sid=data.CallSid,
+            twilio_from=data.From,
+            twilio_to=data.To,
+        )
 
-        return asyncio.run(handle())
+        if state_manager.is_escalation_required(call_sid):
+            return await escalate()
+
+        return FlaskResponse(  # type: ignore[return-value]
+            response.body,
+            status=response.status_code,
+            content_type=response.media_type,
+        )
 
     @app.post("/v1/recording_status")
-    def recording_status() -> str:
+    async def recording_status() -> str:
         """Receive recording status callbacks from Twilio."""
 
         try:
