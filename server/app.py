@@ -24,7 +24,12 @@ from vocode.streaming.models.telephony import TwilioConfig
 from agents.core_agent import build_core_agent, SafeAgentFactory
 from .state_manager import StateManager
 from .tasks import echo
-from .database import init_db, get_user, get_user_preference
+from .database import (
+    init_db,
+    get_user,
+    get_user_preference,
+    set_user_preference,
+)
 from .auth_bp import bp as auth_bp
 from tools.calendar import generate_auth_url, exchange_code
 from .config import Config, ConfigError
@@ -134,6 +139,7 @@ def create_app() -> Flask:
             from tools.language import guess_language_from_number
 
             language = guess_language_from_number(data.From)
+            set_user_preference(data.From, "language", language)
         if hasattr(state_manager, "update_session"):
             state_manager.update_session(call_sid, language=language)
 
