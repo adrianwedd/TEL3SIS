@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <style>
+        body[data-theme="light"] {
+            background: #ffffff;
+            color: #000000;
+        }
+        body[data-theme="dark"] {
+            background: #1e1e1e;
+            color: #eeeeee;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body data-theme="{{ request.cookies.get('theme', 'light') }}">
+{% block toggle %}{% endblock %}
+{% block content %}{% endblock %}
+<script>
+function setCookie(name, value) {
+  document.cookie = name + '=' + value + '; path=/';
+}
+function getCookie(name) {
+  const m = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+  return m ? m[2] : null;
+}
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+}
+function toggleTheme() {
+  const current = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(current);
+  setCookie('theme', current);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = getCookie('theme');
+  if (saved) applyTheme(saved);
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

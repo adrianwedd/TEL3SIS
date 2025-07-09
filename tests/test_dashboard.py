@@ -3,6 +3,9 @@ import sys
 import os
 import base64
 from importlib import reload
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 # Provide dummy "vocode" modules so that server.app can be imported without the real dependency.
 dummy = types.ModuleType("vocode")
@@ -98,24 +101,24 @@ dummy.streaming.models.telephony.TwilioConfig = TwilioConfig
 sys.modules["vocode"] = dummy
 sys.modules["vocode.streaming"] = dummy.streaming
 sys.modules["vocode.streaming.agent"] = dummy.streaming.agent
-sys.modules[
-    "vocode.streaming.agent.chat_gpt_agent"
-] = dummy.streaming.agent.chat_gpt_agent
+sys.modules["vocode.streaming.agent.chat_gpt_agent"] = (
+    dummy.streaming.agent.chat_gpt_agent
+)
 sys.modules["vocode.streaming.agent.base_agent"] = dummy.streaming.agent.base_agent
-sys.modules[
-    "vocode.streaming.agent.default_factory"
-] = dummy.streaming.agent.default_factory
+sys.modules["vocode.streaming.agent.default_factory"] = (
+    dummy.streaming.agent.default_factory
+)
 sys.modules["vocode.streaming.telephony"] = dummy.streaming.telephony
 sys.modules["vocode.streaming.telephony.server"] = dummy.streaming.telephony.server
-sys.modules[
-    "vocode.streaming.telephony.server.base"
-] = dummy.streaming.telephony.server.base
-sys.modules[
-    "vocode.streaming.telephony.config_manager"
-] = dummy.streaming.telephony.config_manager
-sys.modules[
-    "vocode.streaming.telephony.config_manager.in_memory_config_manager"
-] = dummy.streaming.telephony.config_manager.in_memory_config_manager
+sys.modules["vocode.streaming.telephony.server.base"] = (
+    dummy.streaming.telephony.server.base
+)
+sys.modules["vocode.streaming.telephony.config_manager"] = (
+    dummy.streaming.telephony.config_manager
+)
+sys.modules["vocode.streaming.telephony.config_manager.in_memory_config_manager"] = (
+    dummy.streaming.telephony.config_manager.in_memory_config_manager
+)
 sys.modules["vocode.streaming.models"] = dummy.streaming.models
 sys.modules["vocode.streaming.models.agent"] = dummy.streaming.models.agent
 sys.modules["vocode.streaming.models.actions"] = dummy.streaming.models.actions
@@ -203,3 +206,17 @@ def test_oauth_callback_validation(monkeypatch) -> None:
     resp = client.get("/v1/oauth/callback", headers={"X-API-Key": key})
     assert resp.status_code == 400
     assert resp.json()["error"] == "invalid_request"
+
+
+def test_dashboard_theme_toggle_template() -> None:
+    """Ensure dashboard template includes theme toggle button."""
+    from flask import Flask, render_template
+    from server.dashboard_bp import bp as dashboard_bp
+
+    app = Flask(__name__)
+    app.register_blueprint(dashboard_bp)
+
+    with app.test_request_context("/v1/dashboard", headers={"Cookie": "theme=dark"}):
+        html = render_template("dashboard/list.html", calls=[], q="")
+
+    assert '<button class="theme-toggle"' in html
