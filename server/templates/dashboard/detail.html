@@ -1,5 +1,6 @@
-<!doctype html>
-<title>Call Detail</title>
+{% extends "dashboard/layout.html" %}
+{% block title %}Call Detail{% endblock %}
+{% block content %}
 <h1>Call {{ call.call_sid }}</h1>
 <p>From: {{ call.from_number }} → {{ call.to_number }}</p>
 <p>Summary: {{ call.summary }}</p>
@@ -21,3 +22,4 @@
   });
 </script>
 <p><a href="{{ url_for('dashboard.show_dashboard') }}">Back</a></p>
+{% endblock %}
