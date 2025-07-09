@@ -1,0 +1,11 @@
+groups:
+  - name: llm_latency
+    rules:
+      - alert: HighLLMLatency
+        expr: rate(llm_latency_seconds_sum[1m]) / rate(llm_latency_seconds_count[1m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM latency above 3s"
+          description: "Average LLM response latency exceeded 3 seconds for over a minute."
