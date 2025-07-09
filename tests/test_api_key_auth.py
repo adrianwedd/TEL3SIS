@@ -3,6 +3,7 @@ import sys
 import types
 from importlib import reload
 from pathlib import Path
+import pytest
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -129,7 +130,7 @@ sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.teleph
 from server import database as db  # noqa: E402
 
 
-def setup_app(monkeypatch, tmp_path):
+async def setup_app(monkeypatch, tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
     monkeypatch.setenv("SECRET_KEY", "x")
@@ -141,27 +142,34 @@ def setup_app(monkeypatch, tmp_path):
     db.init_db()
     key = db.create_api_key("tester")
     from server.app import create_app  # noqa: E402
-    from fastapi.testclient import TestClient
+    import httpx
 
     app = create_app()
-    client = TestClient(app)
+    transport = httpx.ASGITransport(app=app)
+    client = httpx.AsyncClient(transport=transport, base_url="http://test")
     return client, key
 
 
-def test_missing_key(monkeypatch, tmp_path):
-    client, _ = setup_app(monkeypatch, tmp_path)
-    resp = client.get("/v1/calls")
+@pytest.mark.asyncio
+async def test_missing_key(monkeypatch, tmp_path):
+    client, _ = await setup_app(monkeypatch, tmp_path)
+    resp = await client.get("/v1/calls")
+    await client.aclose()
     assert resp.status_code == 401
 
 
-def test_invalid_key(monkeypatch, tmp_path):
-    client, _ = setup_app(monkeypatch, tmp_path)
-    resp = client.get("/v1/calls", headers={"X-API-Key": "bad"})
+@pytest.mark.asyncio
+async def test_invalid_key(monkeypatch, tmp_path):
+    client, _ = await setup_app(monkeypatch, tmp_path)
+    resp = await client.get("/v1/calls", headers={"X-API-Key": "bad"})
+    await client.aclose()
     assert resp.status_code == 401
 
 
-def test_valid_key(monkeypatch, tmp_path):
-    client, key = setup_app(monkeypatch, tmp_path)
+@pytest.mark.asyncio
+async def test_valid_key(monkeypatch, tmp_path):
+    client, key = await setup_app(monkeypatch, tmp_path)
     db.save_call_summary("abc", "111", "222", "/p", "s", None)
-    resp = client.get("/v1/calls", headers={"X-API-Key": key})
+    resp = await client.get("/v1/calls", headers={"X-API-Key": key})
+    await client.aclose()
     assert resp.status_code == 200
