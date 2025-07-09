@@ -48,3 +48,4 @@ click==8.1.7
 quart==0.19.4
 uvicorn==0.29.0
 apispec==6.3.0
+mkdocs==1.5.3

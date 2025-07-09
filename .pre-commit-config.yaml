@@ -16,4 +16,10 @@ repos:
         entry: git secrets --scan -r
         language: system
         types: [text]
+      - id: build-docs
+        name: build-docs
+        entry: mkdocs build --quiet
+        language: python
+        additional_dependencies: [mkdocs==1.5.3]
+        pass_filenames: false
 
