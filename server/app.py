@@ -129,7 +129,11 @@ def create_app() -> Flask:
         )
         echo.delay(f"Call {call_sid} started")
 
-        language = get_user_preference(data.From, "language") or "en"
+        language = get_user_preference(data.From, "language")
+        if not language:
+            from tools.language import guess_language_from_number
+
+            language = guess_language_from_number(data.From)
         if hasattr(state_manager, "update_session"):
             state_manager.update_session(call_sid, language=language)
 
