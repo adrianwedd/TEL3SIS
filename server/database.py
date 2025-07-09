@@ -5,7 +5,8 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, Integer, JSON, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
 from flask_login import UserMixin
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///tel3sis.db")
@@ -46,6 +47,16 @@ class User(Base, UserMixin):
     username = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
     role = Column(String, nullable=False, default="user")
+
+
+class APIKey(Base):
+    """API key hashed with owner."""
+
+    __tablename__ = "api_keys"
+
+    id = Column(Integer, primary_key=True)
+    owner = Column(String, nullable=False)
+    key_hash = Column(String, nullable=False, unique=True)
 
 
 def init_db() -> None:
@@ -127,3 +138,22 @@ def set_user_preference(phone_number: str, key: str, value: str) -> None:
             data[key] = value
             pref.data = data
         session.commit()
+
+
+def create_api_key(owner: str) -> str:
+    """Generate an API key for ``owner`` and store the hashed value."""
+    key = secrets.token_urlsafe(32)
+    key_hash = generate_password_hash(key)
+    with get_session() as session:
+        session.add(APIKey(owner=owner, key_hash=key_hash))
+        session.commit()
+    return key
+
+
+def verify_api_key(key: str) -> bool:
+    """Return True if ``key`` is valid."""
+    with get_session() as session:
+        for api_key in session.query(APIKey).all():
+            if check_password_hash(api_key.key_hash, key):
+                return True
+    return False

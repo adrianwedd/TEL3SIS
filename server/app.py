@@ -29,6 +29,7 @@ from .database import (
     get_user,
     get_user_preference,
     set_user_preference,
+    verify_api_key,
 )
 from .auth_bp import bp as auth_bp
 from tools.calendar import generate_auth_url, exchange_code
@@ -77,6 +78,14 @@ def create_app() -> Flask:
 
     login_manager.init_app(app)
     init_db()
+
+    @app.before_request
+    def require_api_key() -> FlaskResponse | None:  # type: ignore[return-type]
+        if request.path.startswith("/v1/"):
+            key = request.headers.get("X-API-Key")
+            if not key or not verify_api_key(key):
+                return FlaskResponse("Unauthorized", status=401)
+        return None
 
     base_url = config.base_url
     twilio_config = TwilioConfig(
