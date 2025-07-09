@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: runtime
     volumes:
       # Mount the current directory into the container for live-reloading
       - .:/app
@@ -29,7 +30,10 @@ services:
 
   # Celery worker handling background tasks
   celeryworker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
     command: celery -A server.celery_app worker --loglevel=info
     volumes:
       - .:/app
@@ -39,7 +43,10 @@ services:
       - redis
 
   celerybeat:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
     command: celery -A server.celery_app beat --loglevel=info
     volumes:
       - .:/app

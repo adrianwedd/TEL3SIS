@@ -1,0 +1,8 @@
+# Exclude development and test artifacts
+.git
+.github
+__pycache__/
+*.pyc
+docs/
+tests/
+recordings/

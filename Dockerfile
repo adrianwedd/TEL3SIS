@@ -1,24 +1,25 @@
-# Start with a slim, secure Python base image
-FROM python:3.11-slim
+# syntax=docker/dockerfile:1
 
-# Set the working directory inside the container
+FROM python:3.11-slim AS builder
 WORKDIR /app
 
-# Install system dependencies that may be required by Python packages
-# e.g., for cryptography or other compiled libraries
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential libssl-dev \
+# Install build dependencies and create virtualenv
+RUN apt-get update \ 
+    && apt-get install -y --no-install-recommends build-essential libssl-dev \ 
+    && python -m venv /opt/venv \ 
+    && /opt/venv/bin/pip install --upgrade pip \ 
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file first to leverage Docker layer caching
 COPY requirements.txt .
+RUN /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+FROM python:3.11-slim AS runtime
+WORKDIR /app
 
-# Copy the rest of the application code into the container
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+COPY --from=builder $VIRTUAL_ENV $VIRTUAL_ENV
 COPY . .
 
-# Placeholder command to keep the container running for development
-# This will be replaced by the actual application command (e.g., gunicorn, flask)
 CMD ["sleep", "infinity"]

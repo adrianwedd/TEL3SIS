@@ -43,4 +43,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Docker build
-        run: docker build -t tel3sis .
+        run: docker build --target runtime -t tel3sis .
