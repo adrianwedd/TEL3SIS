@@ -5,6 +5,7 @@ from importlib import reload
 
 # Reuse dummy vocode modules from test_api_key_auth
 import tests.test_api_key_auth  # noqa: F401
+from fastapi.testclient import TestClient
 
 from server import database as db
 
@@ -46,7 +47,7 @@ def test_async_inbound_call(monkeypatch, tmp_path):
     )
 
     app = create_app()
-    client = app.test_client()
+    client = TestClient(app)
     resp = client.post(
         "/v1/inbound_call",
         data={"CallSid": "CA1", "From": "+12025550100", "To": "+12025550101"},
@@ -67,7 +68,7 @@ def test_async_recording_status(monkeypatch):
     monkeypatch.setattr(server_app, "verify_api_key", lambda *_: True)
 
     app = create_app()
-    client = app.test_client()
+    client = TestClient(app)
     resp = client.post(
         "/v1/recording_status",
         data={

@@ -124,14 +124,15 @@ sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.tran
 sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
+from server import database as db  # noqa: E402
+from server.app import create_app  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+
 os.environ.setdefault("SECRET_KEY", "x")
 os.environ.setdefault("BASE_URL", "http://localhost")
 os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
 os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
-
-from server import database as db  # noqa: E402
-from server.app import create_app  # noqa: E402
 
 
 def test_dashboard_oauth_flow(monkeypatch, tmp_path):
@@ -153,7 +154,7 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     key = db.create_api_key("tester")
 
     app = create_app()
-    client = app.test_client()
+    client = TestClient(app)
 
     resp = client.get("/v1/dashboard", headers={"X-API-Key": key})
     assert resp.status_code == 302
@@ -165,8 +166,9 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     resp = client.get("/v1/login/oauth", headers={"X-API-Key": key})
     assert resp.status_code == 302
     assert resp.headers["Location"].startswith("https://auth.example/authorize")
-    with client.session_transaction() as sess:
-        state = sess["oauth_state"]
+    from urllib.parse import urlparse, parse_qs
+
+    state = parse_qs(urlparse(resp.headers["Location"]).query)["state"][0]
 
     resp = client.get(
         f"/v1/oauth/callback?state={state}&user=admin", headers={"X-API-Key": key}
@@ -178,11 +180,11 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
 
     resp = client.get("/v1/dashboard?q=111", headers={"X-API-Key": key})
     assert resp.status_code == 200
-    assert b"111" in resp.data
+    assert b"111" in resp.content
 
     resp = client.get("/v1/dashboard/1", headers={"X-API-Key": key})
     assert resp.status_code == 200
-    assert b"hello world" in resp.data
+    assert b"hello world" in resp.content
 
 
 def test_oauth_callback_validation(monkeypatch) -> None:
@@ -195,9 +197,9 @@ def test_oauth_callback_validation(monkeypatch) -> None:
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
     app = create_app()
-    client = app.test_client()
+    client = TestClient(app)
     key = db.create_api_key("tester")
 
     resp = client.get("/v1/oauth/callback", headers={"X-API-Key": key})
     assert resp.status_code == 400
-    assert resp.get_json()["error"] == "invalid_request"
+    assert resp.json()["error"] == "invalid_request"

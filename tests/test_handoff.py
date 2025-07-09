@@ -9,6 +9,9 @@ import base64
 from importlib import reload
 
 from server.handoff import dial_twiml
+from server import app as server_app  # noqa: E402
+from server import database as db  # noqa: E402
+from fastapi.testclient import TestClient
 
 dummy = types.ModuleType("vocode")
 dummy.streaming = types.ModuleType("vocode.streaming")
@@ -153,9 +156,6 @@ def test_dial_twiml_no_env(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    from server import app as server_app
-    from server import database as db
-
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
     reload(db)
@@ -199,7 +199,7 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
     app = server_app.create_app()
-    client = app.test_client()
+    client = TestClient(app)
 
     resp = client.post(
         "/v1/inbound_call",
@@ -215,9 +215,6 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
 
 
 def test_inbound_call_validation(monkeypatch: pytest.MonkeyPatch) -> None:
-    from server import app as server_app
-    from server import database as db
-
     monkeypatch.setenv("SECRET_KEY", "x")
     monkeypatch.setenv("BASE_URL", "http://localhost")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
@@ -225,7 +222,7 @@ def test_inbound_call_validation(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
     app = server_app.create_app()
-    client = app.test_client()
+    client = TestClient(app)
     key = db.create_api_key("tester")
 
     resp = client.post(
@@ -234,5 +231,5 @@ def test_inbound_call_validation(monkeypatch: pytest.MonkeyPatch) -> None:
         headers={"X-API-Key": key},
     )
     assert resp.status_code == 400
-    data = resp.get_json()
+    data = resp.json()
     assert data["error"] == "invalid_request"

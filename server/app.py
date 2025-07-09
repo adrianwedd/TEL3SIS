@@ -1,40 +1,40 @@
 from __future__ import annotations
 
 import os
-from flask import Flask, request, Response as FlaskResponse, redirect
+import secrets
+from pathlib import Path
 
-from .limits import limiter, call_rate_limit
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, HttpUrl, ValidationError
-
-from .validation import validation_error_response
-from flask_login import LoginManager
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from loguru import logger
+from starlette.middleware.sessions import SessionMiddleware
+
 from vocode.streaming.telephony.server.base import (
     TelephonyServer,
     TwilioInboundCallConfig,
 )
-from .handoff import dial_twiml
-from tools.notifications import send_sms
-from .calls_bp import bp as calls_bp
-from .dashboard_bp import bp as dashboard_bp
 from vocode.streaming.telephony.config_manager.in_memory_config_manager import (
     InMemoryConfigManager,
 )
 from vocode.streaming.models.telephony import TwilioConfig
-from agents.core_agent import build_core_agent, SafeAgentFactory
-from .state_manager import StateManager
-from .tasks import echo
+
 from .database import (
-    init_db,
-    get_user,
+    Call,
+    get_session,
     get_user_preference,
+    init_db,
     set_user_preference,
     verify_api_key,
 )
-from .auth_bp import bp as auth_bp
-from tools.calendar import generate_auth_url, exchange_code
 from .config import Config, ConfigError
+from .handoff import dial_twiml
+from .state_manager import StateManager
+from .tasks import echo
+from tools.notifications import send_sms
+from tools.calendar import exchange_code, generate_auth_url
+from agents.core_agent import build_core_agent, SafeAgentFactory
 
 
 class InboundCallData(BaseModel):
@@ -58,36 +58,56 @@ class OAuthCallbackData(BaseModel):
     user: str | None = None
 
 
-def create_app() -> Flask:
-    """Create and configure the Flask application."""
+class _SimpleLimiter:
+    def __init__(self, limit: int, interval: float) -> None:
+        self.limit = limit
+        self.interval = interval
+        self.calls: dict[str, list[float]] = {}
+
+    def allow(self, key: str) -> bool:
+        from time import monotonic
+
+        now = monotonic()
+        items = [t for t in self.calls.get(key, []) if now - t < self.interval]
+        if len(items) >= self.limit:
+            self.calls[key] = items
+            return False
+        items.append(now)
+        self.calls[key] = items
+        return True
+
+
+def _parse_rate(value: str) -> tuple[int, float]:
+    try:
+        limit, per = value.split("/")
+        limit = int(limit)
+        interval = 60 if per.endswith("minute") else 1
+    except Exception:
+        return 1000, 60
+    return limit, interval
+
+
+def _json_validation_error(exc: ValidationError) -> JSONResponse:
+    return JSONResponse(
+        {"error": "invalid_request", "details": exc.errors()}, status_code=400
+    )
+
+
+def create_app() -> FastAPI:
     try:
         config = Config()
     except ConfigError as exc:
         raise RuntimeError(str(exc)) from exc
 
-    app = Flask(__name__)
-    limiter.init_app(app)
-    app.secret_key = config.secret_key
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(calls_bp)
-    app.register_blueprint(dashboard_bp)
-    login_manager = LoginManager()
-    login_manager.login_view = "auth.login_form"
+    app = FastAPI()
+    app.add_middleware(SessionMiddleware, secret_key=config.secret_key)
 
-    @login_manager.user_loader
-    def load_user(user_id: str):
-        return get_user(int(user_id))
-
-    login_manager.init_app(app)
     init_db()
 
-    @app.before_request
-    def require_api_key() -> FlaskResponse | None:  # type: ignore[return-type]
-        if request.path.startswith("/v1/"):
-            key = request.headers.get("X-API-Key")
-            if not key or not verify_api_key(key):
-                return FlaskResponse("Unauthorized", status=401)
-        return None
+    call_limit, call_interval = _parse_rate(os.getenv("CALL_RATE_LIMIT", "3/minute"))
+    api_limit, api_interval = _parse_rate(os.getenv("API_RATE_LIMIT", "60/minute"))
+    call_limiter = _SimpleLimiter(call_limit, call_interval)
+    api_limiter = _SimpleLimiter(api_limit, api_interval)
 
     base_url = config.base_url
     twilio_config = TwilioConfig(
@@ -101,49 +121,131 @@ def create_app() -> Flask:
         config_manager=InMemoryConfigManager(),
         agent_factory=SafeAgentFactory(),
     )
+
     try:
         state_manager = StateManager()
     except ConfigError as exc:
         raise RuntimeError(str(exc)) from exc
 
-    @app.get("/v1/oauth/start")
-    def oauth_start() -> str:
-        """Initiate Google OAuth flow and redirect user."""
-        try:
-            data = OAuthStartData(**request.args)
-        except ValidationError as exc:
-            return validation_error_response(exc)
-        url = generate_auth_url(state_manager, data.user_id or "")
-        return redirect(url)
+    @app.middleware("http")
+    async def verify_key(request: Request, call_next):
+        if request.url.path.startswith("/v1/"):
+            key = request.headers.get("X-API-Key")
+            if not key or not verify_api_key(key):
+                return Response("Unauthorized", status_code=401)
+        return await call_next(request)
+
+    @app.middleware("http")
+    async def rate_limit(request: Request, call_next):
+        host = request.client.host if request.client else "anon"
+        if request.url.path.startswith("/v1/inbound_call"):
+            if not call_limiter.allow(host):
+                return Response("Too Many Requests", status_code=429)
+        elif request.url.path.startswith("/v1/"):
+            if not api_limiter.allow(host + request.url.path):
+                return Response("Too Many Requests", status_code=429)
+        return await call_next(request)
+
+    @app.get("/v1/login/oauth")
+    async def oauth_login(request: Request):
+        state = secrets.token_urlsafe(16)
+        request.session["oauth_state"] = state
+        url = os.environ.get("OAUTH_AUTH_URL", "https://example.com/auth")
+        redirect_url = f"{url}?state={state}"
+        return RedirectResponse(redirect_url)
 
     @app.get("/v1/oauth/callback")
-    def oauth_callback() -> str:
-        """Handle OAuth callback and store credentials."""
+    async def oauth_callback(request: Request):
         try:
-            data = OAuthCallbackData(**request.args)
+            data = OAuthCallbackData(**request.query_params)
         except ValidationError as exc:
-            return validation_error_response(exc)
-        exchange_code(state_manager, data.state, request.url)
-        return "Authentication successful"
+            return _json_validation_error(exc)
+        if data.state != request.session.pop("oauth_state", None):
+            return RedirectResponse("/v1/login/oauth")
+        request.session["user"] = data.user or "admin"
+        exchange_code(state_manager, data.state, str(request.url))
+        return RedirectResponse("/v1/dashboard")
+
+    @app.get("/v1/dashboard")
+    async def dashboard(request: Request, q: str | None = None):
+        if "user" not in request.session:
+            return RedirectResponse("/v1/login/oauth")
+        query_param = (q or "").strip()
+        with get_session() as session:
+            db_query = session.query(Call)
+            if query_param:
+                like = f"%{query_param}%"
+                from sqlalchemy import or_
+
+                db_query = db_query.filter(
+                    or_(
+                        Call.from_number.like(like),
+                        Call.to_number.like(like),
+                        Call.summary.like(like),
+                        Call.self_critique.like(like),
+                    )
+                )
+            calls = db_query.order_by(Call.created_at.desc()).all()
+        body = (
+            "\n".join(
+                f"<li><a href='/v1/dashboard/{c.id}'>{c.from_number}</a></li>"
+                for c in calls
+            )
+            or "<li>No calls found.</li>"
+        )
+        html = f"<ul>{body}</ul>"
+        return HTMLResponse(html)
+
+    @app.get("/v1/dashboard/{call_id}")
+    async def dashboard_detail(request: Request, call_id: int):
+        if "user" not in request.session:
+            return RedirectResponse("/v1/login/oauth")
+        with get_session() as session:
+            call = session.get(Call, call_id)
+        if not call:
+            raise HTTPException(status_code=404)
+        transcript = Path(call.transcript_path).read_text()
+        html = f"<pre>{transcript}</pre>"
+        return HTMLResponse(html)
+
+    @app.get("/v1/calls")
+    async def list_calls():
+        with get_session() as session:
+            calls = session.query(Call).order_by(Call.created_at.desc()).all()
+            data = [
+                {
+                    "id": c.id,
+                    "call_sid": c.call_sid,
+                    "from_number": c.from_number,
+                    "to_number": c.to_number,
+                    "transcript_path": c.transcript_path,
+                    "summary": c.summary,
+                    "self_critique": c.self_critique,
+                    "created_at": c.created_at.isoformat(),
+                }
+                for c in calls
+            ]
+        return JSONResponse(data)
+
+    @app.get("/v1/oauth/start")
+    async def oauth_start(request: Request):
+        try:
+            data = OAuthStartData(**request.query_params)
+        except ValidationError as exc:
+            return _json_validation_error(exc)
+        url = generate_auth_url(state_manager, data.user_id or "")
+        return RedirectResponse(url)
 
     @app.post("/v1/inbound_call")
-    @limiter.limit(call_rate_limit)
-    async def inbound_call() -> FlaskResponse:  # type: ignore[return-type]
-        """Handle POST requests from Twilio."""
-
+    async def inbound_call(request: Request):
         try:
-            data = InboundCallData(**request.form)  # type: ignore[arg-type]
+            form = await request.form()
+            data = InboundCallData(**form)
         except ValidationError as exc:
-            return validation_error_response(exc)
+            return _json_validation_error(exc)
 
         call_sid = data.CallSid
-        state_manager.create_session(
-            call_sid,
-            {
-                "from": data.From,
-                "to": data.To,
-            },
-        )
+        state_manager.create_session(call_sid, {"from": data.From, "to": data.To})
         echo.delay(f"Call {call_sid} started")
 
         language = get_user_preference(data.From, "language")
@@ -155,16 +257,16 @@ def create_app() -> Flask:
         if hasattr(state_manager, "update_session"):
             state_manager.update_session(call_sid, language=language)
 
-        config = build_core_agent(state_manager, call_sid, language=language)
+        config_obj = build_core_agent(state_manager, call_sid, language=language)
         inbound_route = telephony_server.create_inbound_route(
             TwilioInboundCallConfig(
                 url="/v1/inbound_call",
-                agent_config=config.agent,
+                agent_config=config_obj.agent,
                 twilio_config=twilio_config,
             )
         )
 
-        async def escalate() -> FlaskResponse:
+        async def escalate():
             summary = state_manager.get_summary(call_sid) or ""
             send_sms(
                 to_phone=os.environ.get("ESCALATION_PHONE_NUMBER", ""),
@@ -172,7 +274,7 @@ def create_app() -> Flask:
                 body=summary,
             )
             xml = dial_twiml(data.From)
-            return FlaskResponse(xml, content_type="text/xml")
+            return Response(content=xml, media_type="text/xml")
 
         if state_manager.is_escalation_required(call_sid):
             return await escalate()
@@ -186,20 +288,19 @@ def create_app() -> Flask:
         if state_manager.is_escalation_required(call_sid):
             return await escalate()
 
-        return FlaskResponse(  # type: ignore[return-value]
-            response.body,
-            status=response.status_code,
-            content_type=response.media_type,
+        return Response(
+            content=response.body,
+            status_code=response.status_code,
+            media_type=response.media_type,
         )
 
     @app.post("/v1/recording_status")
-    async def recording_status() -> str:
-        """Receive recording status callbacks from Twilio."""
-
+    async def recording_status(request: Request):
         try:
-            data = RecordingStatusData(**request.form)  # type: ignore[arg-type]
+            form = await request.form()
+            data = RecordingStatusData(**form)
         except ValidationError as exc:
-            return validation_error_response(exc)
+            return _json_validation_error(exc)
 
         logger.info(
             "Recording callback: call_sid=%s recording_sid=%s url=%s",
@@ -207,17 +308,10 @@ def create_app() -> Flask:
             data.RecordingSid,
             data.RecordingUrl,
         )
-        return "", 204
+        return Response(status_code=204)
 
     @app.get("/v1/metrics")
-    def metrics() -> FlaskResponse:
-        """Expose Prometheus metrics."""
-        return FlaskResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)
+    async def metrics():
+        return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
     return app
-
-
-app = create_app()
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=3000)
