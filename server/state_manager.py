@@ -34,9 +34,14 @@ class StateManager:
                 "Missing required environment variable: TOKEN_ENCRYPTION_KEY"
             )
         try:
-            self._encryption_key = base64.b64decode(key_b64)
+            key_bytes = base64.b64decode(key_b64)
         except Exception as exc:  # pragma: no cover - invalid base64 rare
             raise ConfigError("Invalid TOKEN_ENCRYPTION_KEY format") from exc
+        if len(key_bytes) != 16:
+            raise ConfigError(
+                "TOKEN_ENCRYPTION_KEY must decode to 16 bytes (128-bit AES key)"
+            )
+        self._encryption_key = key_bytes
 
     def _key(self, call_sid: str) -> str:
         return f"{self.prefix}:{call_sid}"

@@ -62,3 +62,10 @@ def test_missing_encryption_key(monkeypatch: Any, tmp_path: Path) -> None:
     monkeypatch.setenv("VECTOR_DB_PATH", str(tmp_path / "vectors"))
     with pytest.raises(ConfigError):
         StateManager(url="redis://localhost:6379/0")
+
+
+def test_invalid_encryption_key_length(monkeypatch: Any, tmp_path: Path) -> None:
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"short").decode())
+    monkeypatch.setenv("VECTOR_DB_PATH", str(tmp_path / "vectors"))
+    with pytest.raises(ConfigError):
+        StateManager(url="redis://localhost:6379/0")

@@ -169,7 +169,8 @@ EOF
 ```
 
 Add the resulting value to your `.env` file under `TOKEN_ENCRYPTION_KEY` before
-starting the server. Without this key, TEL3SIS will refuse to launch.
+starting the server. The decoded key must be exactly 16 bytes (AES‑128).
+Without this key, TEL3SIS will refuse to launch.
 
 ---
 
