@@ -160,6 +160,7 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
     monkeypatch.setenv("DATABASE_URL", db_url)
     reload(db)
     db.init_db()
+    key = db.create_api_key("tester")
 
     class DummyStateManager:
         def create_session(self, *args: object, **kwargs: object) -> None:
@@ -203,6 +204,7 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
     resp = client.post(
         "/v1/inbound_call",
         data={"CallSid": "abc", "From": "+12025550100", "To": "+12025550199"},
+        headers={"X-API-Key": key},
     )
     assert resp.status_code == 200
     assert sent == {
@@ -214,6 +216,7 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
 
 def test_inbound_call_validation(monkeypatch: pytest.MonkeyPatch) -> None:
     from server import app as server_app
+    from server import database as db
 
     monkeypatch.setenv("SECRET_KEY", "x")
     monkeypatch.setenv("BASE_URL", "http://localhost")
@@ -223,8 +226,13 @@ def test_inbound_call_validation(monkeypatch: pytest.MonkeyPatch) -> None:
 
     app = server_app.create_app()
     client = app.test_client()
+    key = db.create_api_key("tester")
 
-    resp = client.post("/v1/inbound_call", data={"From": "+1202555"})
+    resp = client.post(
+        "/v1/inbound_call",
+        data={"From": "+1202555"},
+        headers={"X-API-Key": key},
+    )
     assert resp.status_code == 400
     data = resp.get_json()
     assert data["error"] == "invalid_request"

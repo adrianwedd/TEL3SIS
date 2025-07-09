@@ -3,6 +3,7 @@ import types
 import time
 import os
 import base64
+from importlib import reload
 
 from server.latency_logging import log_stt
 
@@ -136,6 +137,7 @@ os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode
 
 
 from server.app import create_app  # noqa: E402
+from server import database as db  # noqa: E402
 
 
 def test_metrics_endpoint() -> None:
@@ -146,6 +148,9 @@ def test_metrics_endpoint() -> None:
     os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     app = create_app()
     client = app.test_client()
+    reload(db)
+    db.init_db()
+    key = db.create_api_key("tester")
 
     @log_stt
     def dummy() -> str:
@@ -154,6 +159,6 @@ def test_metrics_endpoint() -> None:
 
     dummy()
 
-    resp = client.get("/v1/metrics")
+    resp = client.get("/v1/metrics", headers={"X-API-Key": key})
     body = resp.data.decode()
     assert "stt_latency_seconds" in body

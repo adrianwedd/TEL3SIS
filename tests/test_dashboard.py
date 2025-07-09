@@ -150,34 +150,37 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     transcript_path = transcript_dir / "test.txt"
     transcript_path.write_text("hello world")
     db.save_call_summary("abc", "111", "222", str(transcript_path), "summary", "crit")
+    key = db.create_api_key("tester")
 
     app = create_app()
     client = app.test_client()
 
-    resp = client.get("/v1/dashboard")
+    resp = client.get("/v1/dashboard", headers={"X-API-Key": key})
     assert resp.status_code == 302
     assert "/v1/login/oauth" in resp.headers["Location"]
 
     monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
     monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
 
-    resp = client.get("/v1/login/oauth")
+    resp = client.get("/v1/login/oauth", headers={"X-API-Key": key})
     assert resp.status_code == 302
     assert resp.headers["Location"].startswith("https://auth.example/authorize")
     with client.session_transaction() as sess:
         state = sess["oauth_state"]
 
-    resp = client.get(f"/v1/oauth/callback?state={state}&user=admin")
+    resp = client.get(
+        f"/v1/oauth/callback?state={state}&user=admin", headers={"X-API-Key": key}
+    )
     assert resp.status_code == 302
 
-    resp = client.get("/v1/dashboard")
+    resp = client.get("/v1/dashboard", headers={"X-API-Key": key})
     assert resp.status_code == 200
 
-    resp = client.get("/v1/dashboard?q=111")
+    resp = client.get("/v1/dashboard?q=111", headers={"X-API-Key": key})
     assert resp.status_code == 200
     assert b"111" in resp.data
 
-    resp = client.get("/v1/dashboard/1")
+    resp = client.get("/v1/dashboard/1", headers={"X-API-Key": key})
     assert resp.status_code == 200
     assert b"hello world" in resp.data
 
@@ -193,7 +196,8 @@ def test_oauth_callback_validation(monkeypatch) -> None:
 
     app = create_app()
     client = app.test_client()
+    key = db.create_api_key("tester")
 
-    resp = client.get("/v1/oauth/callback")
+    resp = client.get("/v1/oauth/callback", headers={"X-API-Key": key})
     assert resp.status_code == 400
     assert resp.get_json()["error"] == "invalid_request"

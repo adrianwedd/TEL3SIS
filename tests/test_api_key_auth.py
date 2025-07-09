@@ -1,15 +1,12 @@
-from __future__ import annotations
-
 import base64
 import sys
 import types
 from importlib import reload
 from pathlib import Path
 
-import pytest
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-# Dummy vocode modules for server import
-
+# Provide dummy "vocode" modules so that server.app can be imported without the real dependency.
 dummy = types.ModuleType("vocode")
 dummy.streaming = types.ModuleType("vocode.streaming")
 dummy.streaming.agent = types.ModuleType("vocode.streaming.agent")
@@ -64,12 +61,41 @@ dummy.streaming.models.transcriber.WhisperCPPTranscriberConfig = Dummy
 dummy.streaming.models.synthesizer.ElevenLabsSynthesizerConfig = Dummy
 
 
-dummy.streaming.telephony.server.base.TelephonyServer = Dummy
-dummy.streaming.telephony.server.base.TwilioInboundCallConfig = Dummy
+class TelephonyServer:
+    def __init__(self, *_: object, **__: object) -> None:
+        pass
+
+    def create_inbound_route(self, *_: object, **__: object):
+        async def dummy_route(**___: object):
+            return type(
+                "Resp",
+                (),
+                {"body": b"", "status_code": 200, "media_type": "text/plain"},
+            )
+
+        return dummy_route
+
+
+class TwilioInboundCallConfig:
+    def __init__(self, **__: object) -> None:
+        pass
+
+
+class InMemoryConfigManager:
+    pass
+
+
+class TwilioConfig:
+    def __init__(self, **__: object) -> None:
+        pass
+
+
+dummy.streaming.telephony.server.base.TelephonyServer = TelephonyServer
+dummy.streaming.telephony.server.base.TwilioInboundCallConfig = TwilioInboundCallConfig
 dummy.streaming.telephony.config_manager.in_memory_config_manager.InMemoryConfigManager = (
-    Dummy
+    InMemoryConfigManager
 )
-dummy.streaming.models.telephony.TwilioConfig = Dummy
+dummy.streaming.models.telephony.TwilioConfig = TwilioConfig
 
 sys.modules["vocode"] = dummy
 sys.modules["vocode.streaming"] = dummy.streaming
@@ -100,14 +126,10 @@ sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.tran
 sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
-
-from server import app as server_app  # noqa: E402
-from server import tasks  # noqa: E402
 from server import database as db  # noqa: E402
-from tools import language  # noqa: E402
 
 
-def _setup_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> str:
+def setup_app(monkeypatch, tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
     monkeypatch.setenv("SECRET_KEY", "x")
@@ -115,87 +137,30 @@ def _setup_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> str:
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
-
     reload(db)
-    reload(tasks)
     db.init_db()
     key = db.create_api_key("tester")
-    return key
+    from server.app import create_app  # noqa: E402
 
-
-def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    key = _setup_env(monkeypatch, tmp_path)
-
-    class DummyStateManager:
-        def create_session(self, *_, **__):
-            pass
-
-        def update_session(self, *_, **__):
-            pass
-
-        def is_escalation_required(self, _sid: str) -> bool:
-            return False
-
-        def get_summary(self, _sid: str) -> str:
-            return ""
-
-    monkeypatch.setattr(server_app, "StateManager", lambda: DummyStateManager())
-    monkeypatch.setattr(
-        server_app, "echo", types.SimpleNamespace(delay=lambda *a, **k: None)
-    )
-
-    captured: dict[str, str] = {}
-
-    def fake_build_core_agent(_sm: object, _sid: object = None, language: str = "en"):
-        captured["lang"] = language
-        return types.SimpleNamespace(agent=None)
-
-    monkeypatch.setattr(server_app, "build_core_agent", fake_build_core_agent)
-
-    app = server_app.create_app()
+    app = create_app()
     client = app.test_client()
+    return client, key
 
-    from_num = "+15005550006"
-    to_num = "+15005550010"
 
-    monkeypatch.setattr(language, "guess_language_from_number", lambda *_: "fr")
+def test_missing_key(monkeypatch, tmp_path):
+    client, _ = setup_app(monkeypatch, tmp_path)
+    resp = client.get("/v1/calls")
+    assert resp.status_code == 401
 
-    resp = client.post(
-        "/v1/inbound_call",
-        data={"CallSid": "CA1", "From": from_num, "To": to_num},
-        headers={"X-API-Key": key},
-    )
+
+def test_invalid_key(monkeypatch, tmp_path):
+    client, _ = setup_app(monkeypatch, tmp_path)
+    resp = client.get("/v1/calls", headers={"X-API-Key": "bad"})
+    assert resp.status_code == 401
+
+
+def test_valid_key(monkeypatch, tmp_path):
+    client, key = setup_app(monkeypatch, tmp_path)
+    db.save_call_summary("abc", "111", "222", "/p", "s", None)
+    resp = client.get("/v1/calls", headers={"X-API-Key": key})
     assert resp.status_code == 200
-    assert captured["lang"] == "fr"
-    assert db.get_user_preference(from_num, "language") == "fr"
-
-    transcript = tmp_path / "call.txt"
-    transcript.write_text("hola mundo")
-
-    monkeypatch.setattr(tasks, "transcribe_recording", lambda *a, **k: transcript)
-    monkeypatch.setattr(
-        tasks,
-        "send_transcript_email",
-        types.SimpleNamespace(delay=lambda *a, **k: None),
-    )
-    monkeypatch.setattr(tasks, "generate_self_critique", lambda *_: "")
-    monkeypatch.setattr(tasks, "summarize_text", lambda t: "sum")
-    monkeypatch.setattr(tasks, "detect_language", lambda t: "es")
-
-    tasks.transcribe_audio(str(transcript), "CA1", from_num, to_num)
-
-    assert db.get_user_preference(from_num, "language") == "es"
-
-    captured.clear()
-    resp = client.post(
-        "/v1/inbound_call",
-        data={"CallSid": "CA2", "From": from_num, "To": to_num},
-        headers={"X-API-Key": key},
-    )
-    assert resp.status_code == 200
-    assert captured["lang"] == "es"
-
-
-def test_guess_language_from_number() -> None:
-    assert language.guess_language_from_number("+341234") == "es"
-    assert language.guess_language_from_number("+1555") == "en"

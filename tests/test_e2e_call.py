@@ -153,6 +153,7 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     monkeypatch.setenv("ESCALATION_PHONE_NUMBER", "+15550001111")
     reload(db)
     db.init_db()
+    key = db.create_api_key("tester")
 
     class DummyStateManager:
         def create_session(self, *_: object, **__: object) -> None:
@@ -224,6 +225,7 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     resp = client.post(
         "/v1/inbound_call",
         data={"CallSid": call_sid, "From": "+15005550006", "To": "+15005550010"},
+        headers={"X-API-Key": key},
     )
     assert resp.status_code == 200
 
@@ -234,6 +236,7 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
             "RecordingSid": "RS0000000000",
             "RecordingUrl": "http://twilio.test/record",
         },
+        headers={"X-API-Key": key},
     )
     assert resp.status_code == 204
 
@@ -263,7 +266,12 @@ def test_recording_status_validation(monkeypatch: pytest.MonkeyPatch) -> None:
 
     app = server_app.create_app()
     client = app.test_client()
+    key = db.create_api_key("tester")
 
-    resp = client.post("/v1/recording_status", data={"CallSid": "abc"})
+    resp = client.post(
+        "/v1/recording_status",
+        data={"CallSid": "abc"},
+        headers={"X-API-Key": key},
+    )
     assert resp.status_code == 400
     assert resp.get_json()["error"] == "invalid_request"
