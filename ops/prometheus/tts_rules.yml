@@ -1,0 +1,11 @@
+groups:
+  - name: tts_latency
+    rules:
+      - alert: HighTTSLatency
+        expr: rate(tts_latency_seconds_sum[1m]) / rate(tts_latency_seconds_count[1m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TTS latency above 3s"
+          description: "Average text-to-speech latency exceeded 3 seconds for over a minute."

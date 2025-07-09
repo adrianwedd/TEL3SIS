@@ -1,0 +1,11 @@
+groups:
+  - name: stt_latency
+    rules:
+      - alert: HighSTTLatency
+        expr: rate(stt_latency_seconds_sum[1m]) / rate(stt_latency_seconds_count[1m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "STT latency above 3s"
+          description: "Average speech-to-text latency exceeded 3 seconds for over a minute."

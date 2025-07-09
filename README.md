@@ -214,11 +214,11 @@ pytest -q
 
 ## 📊 Monitoring
 
-* **Prometheus** scraps `/metrics`
+* **Prometheus** scraps `/metrics` exposed by the Flask app
+* Alert rules live in `ops/prometheus/*_rules.yml` and define when latency is too high
+* Alerts trigger if STT/LLM/TTS average latency stays above **3 s** for over a minute
+* Alertmanager reads `ops/prometheus/alertmanager.yml` and posts to Slack via `SLACK_WEBHOOK_URL` in `.env`
 * Browse Grafana at [http://localhost:3000](http://localhost:3000) and import `ops/grafana/tel3sis.json` for latency graphs
-* Prometheus loads rules from `ops/prometheus/latency_rules.yml` and sends alerts via Alertmanager
-* Alerts fire when STT/LLM/TTS average latency exceeds **3 s** for more than a minute
-* Alertmanager posts to Slack using the `SLACK_WEBHOOK_URL` value in `.env`
 
 ---
 
