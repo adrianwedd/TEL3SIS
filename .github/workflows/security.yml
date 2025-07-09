@@ -19,6 +19,6 @@ jobs:
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
       - name: Build Docker image
-        run: docker build -t tel3sis .
+        run: docker build --target runtime -t tel3sis .
       - name: Scan Docker image for vulnerabilities
         run: trivy image --exit-code 1 --severity HIGH --no-progress tel3sis
