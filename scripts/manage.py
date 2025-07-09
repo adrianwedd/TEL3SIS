@@ -1,0 +1,43 @@
+import click
+
+from server import database as db
+from server import tasks
+
+
+@click.group(help="Management commands for TEL3SIS")
+def cli() -> None:
+    """Entry point for management CLI."""
+
+
+@cli.command("create-user")
+@click.argument("username")
+@click.argument("password")
+@click.option("--role", default="user", show_default=True, help="User role")
+def create_user_cmd(username: str, password: str, role: str) -> None:
+    """Create a user with the given credentials."""
+    db.init_db()
+    db.create_user(username, password, role)
+    click.echo(f"Created user '{username}' with role '{role}'.")
+
+
+@cli.command("generate-api-key")
+@click.argument("owner")
+def generate_api_key_cmd(owner: str) -> None:
+    """Generate and output an API key for OWNER."""
+    db.init_db()
+    key = db.create_api_key(owner)
+    click.echo(key)
+
+
+@cli.command()
+@click.option(
+    "--days", default=30, show_default=True, help="Delete calls older than DAYS"
+)
+def cleanup(days: int) -> None:
+    """Remove old call records and audio files."""
+    removed = tasks.cleanup_old_calls.run(days=days)
+    click.echo(f"Removed {removed} calls older than {days} days.")
+
+
+if __name__ == "__main__":
+    cli()
