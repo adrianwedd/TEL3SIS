@@ -14,10 +14,9 @@ services:
     ports:
       # Expose the application port to the host machine
       - "3000:3000"
-    # The actual command to run the Flask app will be added in a later task
-    # For now, this keeps the service alive for inspection.
+    # Run the async FastAPI server via uvicorn
     command: >-
-      bash -c "python scripts/warmup_whisper.py && python -m http.server 3000"
+      bash -c "python scripts/warmup_whisper.py && uvicorn server.app:create_app --factory --host 0.0.0.0 --port 3000"
     depends_on:
       - redis
 

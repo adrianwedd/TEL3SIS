@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from flask import jsonify, Response as FlaskResponse
+from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
 
 __all__ = ["validation_error_response"]
 
 
-def validation_error_response(exc: ValidationError) -> FlaskResponse:
+def validation_error_response(exc: ValidationError) -> JSONResponse:
     """Return a JSON error response for request validation failures."""
-    resp = jsonify({"error": "invalid_request", "details": exc.errors()})
-    resp.status_code = 400
-    return resp  # type: ignore[return-value]
+    return JSONResponse(
+        {"error": "invalid_request", "details": exc.errors()}, status_code=400
+    )
