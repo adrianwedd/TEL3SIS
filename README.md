@@ -170,6 +170,16 @@ EOF
 
 Add the resulting value to your `.env` file under `TOKEN_ENCRYPTION_KEY` before
 starting the server. The decoded key must be exactly 16 bytes (AES‑128).
+Example:
+
+```bash
+TOKEN_ENCRYPTION_KEY="$(python - <<'EOF'
+import base64, os
+print(base64.b64encode(os.urandom(16)).decode())
+EOF
+)"
+```
+
 Without this key, TEL3SIS will refuse to launch.
 
 ---

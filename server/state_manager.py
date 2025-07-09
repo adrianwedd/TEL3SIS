@@ -28,6 +28,10 @@ class StateManager:
 
         self._summary_db = summary_db or VectorDB(collection_name="summaries")
 
+        self._encryption_key = self._load_encryption_key()
+
+    def _load_encryption_key(self) -> bytes:
+        """Return the AES key from ``TOKEN_ENCRYPTION_KEY`` env variable."""
         key_b64 = os.getenv("TOKEN_ENCRYPTION_KEY")
         if not key_b64:
             raise ConfigError(
@@ -41,7 +45,7 @@ class StateManager:
             raise ConfigError(
                 "TOKEN_ENCRYPTION_KEY must decode to 16 bytes (128-bit AES key)"
             )
-        self._encryption_key = key_bytes
+        return key_bytes
 
     def _key(self, call_sid: str) -> str:
         return f"{self.prefix}:{call_sid}"
