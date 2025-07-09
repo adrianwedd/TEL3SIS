@@ -1,0 +1,11 @@
+route:
+  receiver: slack
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 1h
+receivers:
+  - name: slack
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_URL}
+        channel: '#tel3sis-alerts'
+        send_resolved: true
