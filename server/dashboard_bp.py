@@ -5,10 +5,17 @@ from pathlib import Path
 from flask import Blueprint, render_template, request, abort, redirect, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import or_
+from pydantic import BaseModel, StrictStr, ValidationError
+
+from .validation import validation_error_response
 
 from .database import Call, get_session
 
 bp = Blueprint("dashboard", __name__, template_folder="templates")
+
+
+class DashboardQuery(BaseModel):
+    q: StrictStr | None = None
 
 
 @bp.before_request
@@ -18,13 +25,17 @@ def require_login():  # type: ignore[return-type]
         return redirect(url_for("auth.oauth_login"))
 
 
-@bp.get("/dashboard")
+@bp.get("/v1/dashboard")
 @login_required
 def show_dashboard() -> str:  # type: ignore[return-type]
     """Render list of calls with optional search."""
     if current_user.role != "admin":
         abort(403)
-    query_param = request.args.get("q", "").strip()
+    try:
+        data = DashboardQuery(**request.args)
+    except ValidationError as exc:
+        return validation_error_response(exc)
+    query_param = (data.q or "").strip()
     with get_session() as session:
         q = session.query(Call)
         if query_param:
@@ -41,7 +52,7 @@ def show_dashboard() -> str:  # type: ignore[return-type]
     return render_template("dashboard/list.html", calls=calls, q=query_param)
 
 
-@bp.get("/dashboard/<int:call_id>")
+@bp.get("/v1/dashboard/<int:call_id>")
 @login_required
 def call_detail(call_id: int) -> str:  # type: ignore[return-type]
     """Display a single call with transcript and audio."""

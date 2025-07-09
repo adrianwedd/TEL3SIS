@@ -60,9 +60,9 @@ def create_app() -> Flask:
 
     app = Flask(__name__)
     app.secret_key = config.secret_key
-    app.register_blueprint(auth_bp, url_prefix="/v1")
-    app.register_blueprint(calls_bp, url_prefix="/v1")
-    app.register_blueprint(dashboard_bp, url_prefix="/v1")
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(calls_bp)
+    app.register_blueprint(dashboard_bp)
     login_manager = LoginManager()
     login_manager.login_view = "auth.login_form"
 
