@@ -6,11 +6,13 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from apispec import APISpec
 from pydantic import BaseModel, HttpUrl, ValidationError
 from datetime import datetime
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from logging_config import logger
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.openapi.utils import get_openapi
 
 from vocode.streaming.telephony.server.base import (
     TelephonyServer,
@@ -117,6 +119,23 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         openapi_url="/openapi.json",
     )
+    app.state.spec = APISpec(
+        title=app.title,
+        version=app.version,
+        openapi_version="3.0.3",
+    )
+
+    def custom_openapi() -> dict:
+        if not hasattr(app.state, "spec_dict"):
+            schema = get_openapi(
+                title=app.title,
+                version=app.version,
+                routes=app.routes,
+            )
+            app.state.spec_dict = schema
+        return app.state.spec_dict
+
+    app.openapi = custom_openapi
     app.add_middleware(SessionMiddleware, secret_key=config.secret_key)
 
     init_db()
@@ -163,7 +182,7 @@ def create_app() -> FastAPI:
                 return Response("Too Many Requests", status_code=429)
         return await call_next(request)
 
-    @app.get("/v1/login/oauth")
+    @app.get("/v1/login/oauth", summary="Start OAuth login", tags=["auth"])
     async def oauth_login(request: Request):
         state = secrets.token_urlsafe(16)
         request.session["oauth_state"] = state
@@ -171,7 +190,7 @@ def create_app() -> FastAPI:
         redirect_url = f"{url}?state={state}"
         return RedirectResponse(redirect_url)
 
-    @app.get("/v1/oauth/callback")
+    @app.get("/v1/oauth/callback", summary="Handle OAuth callback", tags=["auth"])
     async def oauth_callback(request: Request):
         try:
             data = OAuthCallbackData(**request.query_params)
@@ -183,7 +202,7 @@ def create_app() -> FastAPI:
         exchange_code(state_manager, data.state, str(request.url))
         return RedirectResponse("/v1/dashboard")
 
-    @app.get("/v1/dashboard")
+    @app.get("/v1/dashboard", summary="Render call dashboard", tags=["dashboard"])
     async def dashboard(request: Request, q: str | None = None):
         if "user" not in request.session:
             return RedirectResponse("/v1/login/oauth")
@@ -213,7 +232,11 @@ def create_app() -> FastAPI:
         html = f"<ul>{body}</ul>"
         return HTMLResponse(html)
 
-    @app.get("/v1/dashboard/{call_id}")
+    @app.get(
+        "/v1/dashboard/{call_id}",
+        summary="Dashboard call detail",
+        tags=["dashboard"],
+    )
     async def dashboard_detail(request: Request, call_id: int):
         if "user" not in request.session:
             return RedirectResponse("/v1/login/oauth")
@@ -225,7 +248,12 @@ def create_app() -> FastAPI:
         html = f"<pre>{transcript}</pre>"
         return HTMLResponse(html)
 
-    @app.get("/v1/calls", response_model=list[CallInfo])
+    @app.get(
+        "/v1/calls",
+        response_model=list[CallInfo],
+        summary="List past calls",
+        tags=["calls"],
+    )
     async def list_calls():
         with get_session() as session:
             calls = session.query(Call).order_by(Call.created_at.desc()).all()
@@ -244,7 +272,7 @@ def create_app() -> FastAPI:
             ]
         return data
 
-    @app.get("/v1/oauth/start")
+    @app.get("/v1/oauth/start", summary="Begin OAuth flow", tags=["auth"])
     async def oauth_start(request: Request):
         try:
             data = OAuthStartData(**request.query_params)
@@ -253,7 +281,7 @@ def create_app() -> FastAPI:
         url = generate_auth_url(state_manager, data.user_id or "")
         return RedirectResponse(url)
 
-    @app.post("/v1/inbound_call")
+    @app.post("/v1/inbound_call", summary="Handle inbound call", tags=["calls"])
     async def inbound_call(request: Request):
         try:
             form = await request.form()
@@ -311,7 +339,11 @@ def create_app() -> FastAPI:
             media_type=response.media_type,
         )
 
-    @app.post("/v1/recording_status")
+    @app.post(
+        "/v1/recording_status",
+        summary="Twilio recording webhook",
+        tags=["calls"],
+    )
     async def recording_status(request: Request):
         try:
             form = await request.form()
@@ -327,7 +359,12 @@ def create_app() -> FastAPI:
         )
         return Response(status_code=204)
 
-    @app.get("/v1/health", response_model=dict[str, str])
+    @app.get(
+        "/v1/health",
+        response_model=dict[str, str],
+        summary="Check service health",
+        tags=["system"],
+    )
     async def health() -> dict[str, str]:
         status: dict[str, str] = {}
 
@@ -354,7 +391,7 @@ def create_app() -> FastAPI:
 
         return status
 
-    @app.get("/v1/metrics")
+    @app.get("/v1/metrics", summary="Prometheus metrics", tags=["system"])
     async def metrics():
         return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
