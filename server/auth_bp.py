@@ -38,12 +38,12 @@ def _auth_url() -> str:
     return os.environ.get("OAUTH_AUTH_URL", "https://example.com/auth")
 
 
-@bp.get("/login")
+@bp.get("/v1/login")
 def login_form() -> str:  # type: ignore[return-type]
     return render_template("login.html", error=None)
 
 
-@bp.post("/login")
+@bp.post("/v1/login")
 def login_post() -> str:  # type: ignore[return-type]
     try:
         data = LoginData(**request.form)  # type: ignore[arg-type]
@@ -59,14 +59,14 @@ def login_post() -> str:  # type: ignore[return-type]
     return render_template("login.html", error="Invalid credentials")
 
 
-@bp.get("/logout")
+@bp.get("/v1/logout")
 @login_required
 def logout() -> str:  # type: ignore[return-type]
     logout_user()
     return redirect(url_for("auth.login_form"))
 
 
-@bp.get("/login/oauth")
+@bp.get("/v1/login/oauth")
 def oauth_login() -> str:  # type: ignore[return-type]
     """Initiate OAuth login flow."""
     state = secrets.token_urlsafe(16)
@@ -75,7 +75,7 @@ def oauth_login() -> str:  # type: ignore[return-type]
     return redirect(url)
 
 
-@bp.get("/oauth/callback")
+@bp.get("/v1/oauth/callback")
 def oauth_callback() -> str:  # type: ignore[return-type]
     """Handle OAuth callback and log the user in."""
     try:

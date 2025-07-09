@@ -8,7 +8,7 @@ from .database import Call, get_session
 bp = Blueprint("calls", __name__)
 
 
-@bp.get("/calls")
+@bp.get("/v1/calls")
 def list_calls() -> str:  # type: ignore[return-type]
     """Return JSON list of recorded calls."""
     with get_session() as session:
