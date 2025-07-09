@@ -5,7 +5,7 @@ from pathlib import Path
 
 from datetime import datetime, timedelta, UTC
 from .recordings import transcribe_recording, DEFAULT_OUTPUT_DIR
-from tools.notifications import send_email
+import tools.notifications as notifications
 from .database import (
     save_call_summary,
     get_session,
@@ -47,6 +47,8 @@ def transcribe_audio(
     logger.info("Transcribed %s", audio_path)
     send_transcript_email.delay(str(path))
     text = Path(path).read_text()
+    sanitized = notifications.sanitize_transcript(text)
+    logger.debug("Transcript sanitized snippet: %s", sanitized[:100])
     language = detect_language(text)
     set_user_preference(from_number, "language", language)
     summary = summarize_text(text)
@@ -65,7 +67,7 @@ def transcribe_audio(
 @celery_app.task
 def send_transcript_email(transcript_path: str, to_email: str | None = None) -> None:
     """Send the transcript file via email."""
-    send_email(transcript_path, to_email)
+    notifications.send_email(transcript_path, to_email)
 
 
 @celery_app.task

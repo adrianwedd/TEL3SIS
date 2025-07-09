@@ -2,13 +2,26 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import re
 
 from loguru import logger
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import requests
 
-__all__ = ["send_email", "send_sms"]
+__all__ = ["send_email", "send_sms", "sanitize_transcript"]
+
+
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+_PHONE_RE = re.compile(r"\+?\d[\d\s\-()]{7,}\d")
+
+
+def sanitize_transcript(text: str) -> str:
+    """Remove phone numbers and email addresses from ``text``."""
+
+    text = _EMAIL_RE.sub("[REDACTED]", text)
+    text = _PHONE_RE.sub("[REDACTED]", text)
+    return text
 
 
 def send_email(transcript_path: str, to_email: str | None = None) -> None:
@@ -22,6 +35,7 @@ def send_email(transcript_path: str, to_email: str | None = None) -> None:
         return
 
     text = Path(transcript_path).read_text()
+    text = sanitize_transcript(text)
     message = Mail(
         from_email=from_email,
         to_emails=to_email,
