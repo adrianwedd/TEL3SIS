@@ -149,6 +149,7 @@ def test_rate_limits(monkeypatch, tmp_path):
 
     from server.app import create_app  # noqa: E402
     import server.app as server_app  # noqa: E402
+    from fastapi.testclient import TestClient
 
     monkeypatch.setattr(
         server_app,
@@ -160,7 +161,7 @@ def test_rate_limits(monkeypatch, tmp_path):
     )
 
     app = create_app()
-    client = app.test_client()
+    client = TestClient(app)
 
     resp = client.get("/v1/calls", headers={"X-API-Key": key})
     assert resp.status_code == 200

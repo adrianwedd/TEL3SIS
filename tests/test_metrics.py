@@ -138,6 +138,7 @@ os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode
 
 from server.app import create_app  # noqa: E402
 from server import database as db  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 
 def test_metrics_endpoint() -> None:
@@ -147,7 +148,7 @@ def test_metrics_endpoint() -> None:
     os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
     os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     app = create_app()
-    client = app.test_client()
+    client = TestClient(app)
     reload(db)
     db.init_db()
     key = db.create_api_key("tester")
@@ -160,5 +161,5 @@ def test_metrics_endpoint() -> None:
     dummy()
 
     resp = client.get("/v1/metrics", headers={"X-API-Key": key})
-    body = resp.data.decode()
+    body = resp.text
     assert "stt_latency_seconds" in body

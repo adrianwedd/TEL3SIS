@@ -140,6 +140,7 @@ from server import app as server_app  # noqa: E402
 from server import database as db  # noqa: E402
 from server import recordings as rec  # noqa: E402
 from server import tasks  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 
 def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
@@ -218,7 +219,7 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     monkeypatch.setattr(tasks, "generate_self_critique", lambda *_: "crit")
 
     app = server_app.create_app()
-    client = app.test_client()
+    client = TestClient(app)
 
     call_sid = "CA00000000000000000000000000000000"
 
@@ -265,7 +266,7 @@ def test_recording_status_validation(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
     app = server_app.create_app()
-    client = app.test_client()
+    client = TestClient(app)
     key = db.create_api_key("tester")
 
     resp = client.post(
@@ -274,4 +275,4 @@ def test_recording_status_validation(monkeypatch: pytest.MonkeyPatch) -> None:
         headers={"X-API-Key": key},
     )
     assert resp.status_code == 400
-    assert resp.get_json()["error"] == "invalid_request"
+    assert resp.json()["error"] == "invalid_request"

@@ -3,6 +3,9 @@ import sys
 import os
 import base64
 from importlib import reload
+from fastapi.testclient import TestClient
+from server import database as db  # noqa: E402
+from server.app import create_app  # noqa: E402
 
 # Reuse the dummy vocode modules from test_metrics
 
@@ -133,10 +136,6 @@ os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
 os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
 
-from server import database as db  # noqa: E402
-from server.app import create_app  # noqa: E402
-
-
 def test_list_calls(monkeypatch, tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
@@ -151,9 +150,9 @@ def test_list_calls(monkeypatch, tmp_path):
     key = db.create_api_key("tester")
 
     app = create_app()
-    client = app.test_client()
+    client = TestClient(app)
 
     resp = client.get("/v1/calls", headers={"X-API-Key": key})
     assert resp.status_code == 200
-    data = resp.get_json()
+    data = resp.json()
     assert data[0]["call_sid"] == "abc"

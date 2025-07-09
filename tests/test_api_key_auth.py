@@ -141,9 +141,10 @@ def setup_app(monkeypatch, tmp_path):
     db.init_db()
     key = db.create_api_key("tester")
     from server.app import create_app  # noqa: E402
+    from fastapi.testclient import TestClient
 
     app = create_app()
-    client = app.test_client()
+    client = TestClient(app)
     return client, key
 
 
