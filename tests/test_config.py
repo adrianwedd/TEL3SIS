@@ -158,3 +158,9 @@ def test_create_app_missing_token_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TOKEN_ENCRYPTION_KEY", raising=False)
     with pytest.raises(RuntimeError):
         create_app()
+
+
+def test_create_app_invalid_token_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"abc").decode())
+    with pytest.raises(RuntimeError):
+        create_app()
