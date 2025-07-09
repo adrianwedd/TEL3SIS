@@ -310,6 +310,33 @@ def create_app() -> FastAPI:
         )
         return Response(status_code=204)
 
+    @app.get("/v1/health")
+    async def health() -> JSONResponse:
+        status: dict[str, str] = {}
+
+        try:
+            state_manager._redis.ping()  # type: ignore[attr-defined]
+            status["redis"] = "ok"
+        except Exception:
+            status["redis"] = "error"
+
+        try:
+            from sqlalchemy import text
+
+            with get_session() as session:
+                session.execute(text("SELECT 1"))
+            status["database"] = "ok"
+        except Exception:
+            status["database"] = "error"
+
+        try:
+            state_manager._summary_db.client.heartbeat()  # type: ignore[attr-defined]
+            status["chromadb"] = "ok"
+        except Exception:
+            status["chromadb"] = "error"
+
+        return JSONResponse(status)
+
     @app.get("/v1/metrics")
     async def metrics():
         return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
