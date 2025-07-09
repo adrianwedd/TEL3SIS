@@ -214,6 +214,15 @@ pytest -q
 * Unit tests live under `tests/`
 * End‑to‑end call emulation via `scripts/dev_test_call.py`
 * STT latency reduction via `scripts/warmup_whisper.py`
+* Management commands via `scripts/manage.py`
+
+### Management CLI
+
+```bash
+python scripts/manage.py create-user alice secret --role admin
+python scripts/manage.py generate-api-key alice
+python scripts/manage.py cleanup --days 30
+```
 
 ---
 
