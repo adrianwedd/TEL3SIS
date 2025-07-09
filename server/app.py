@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, HttpUrl, ValidationError
 from datetime import datetime
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-from loguru import logger
+from logging_config import logger
 from starlette.middleware.sessions import SessionMiddleware
 
 from vocode.streaming.telephony.server.base import (

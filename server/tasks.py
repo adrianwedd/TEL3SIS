@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from celery.utils.log import get_task_logger
+from logging_config import logger
 from pathlib import Path
 
 from datetime import datetime, timedelta, UTC
@@ -16,8 +16,6 @@ from .self_reflection import generate_self_critique
 from tools.language import detect_language
 
 from .celery_app import celery_app
-
-logger = get_task_logger(__name__)
 
 
 @celery_app.task
