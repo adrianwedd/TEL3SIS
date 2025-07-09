@@ -9,12 +9,13 @@ from flask import (
     redirect,
     url_for,
     session,
-    jsonify,
 )
 from oauthlib.oauth2 import WebApplicationClient
 from flask_login import login_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 from pydantic import BaseModel, ValidationError
+
+from .validation import validation_error_response
 
 from .database import get_session, User
 
@@ -28,10 +29,9 @@ class LoginData(BaseModel):
     password: str
 
 
-def _validation_error_response(exc: ValidationError):
-    resp = jsonify({"error": "invalid_request", "details": exc.errors()})
-    resp.status_code = 400
-    return resp
+class OAuthCallbackData(BaseModel):
+    state: str
+    user: str | None = None
 
 
 def _auth_url() -> str:
@@ -48,7 +48,7 @@ def login_post() -> str:  # type: ignore[return-type]
     try:
         data = LoginData(**request.form)  # type: ignore[arg-type]
     except ValidationError as exc:
-        return _validation_error_response(exc)
+        return validation_error_response(exc)
     username = data.username
     password = data.password
     with get_session() as session:
@@ -78,10 +78,13 @@ def oauth_login() -> str:  # type: ignore[return-type]
 @bp.get("/oauth/callback")
 def oauth_callback() -> str:  # type: ignore[return-type]
     """Handle OAuth callback and log the user in."""
-    state = request.args.get("state", "")
-    if state != session.pop("oauth_state", None):
+    try:
+        data = OAuthCallbackData(**request.args)
+    except ValidationError as exc:
+        return validation_error_response(exc)
+    if data.state != session.pop("oauth_state", None):
         return redirect(url_for("auth.login_form"))
-    username = request.args.get("user", "admin")
+    username = data.user or "admin"
     with get_session() as session_db:
         user = session_db.query(User).filter_by(username=username).first()
     if user:

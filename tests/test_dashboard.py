@@ -180,3 +180,20 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     resp = client.get("/v1/dashboard/1")
     assert resp.status_code == 200
     assert b"hello world" in resp.data
+
+
+def test_oauth_callback_validation(monkeypatch) -> None:
+    from server.app import create_app
+
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
+
+    app = create_app()
+    client = app.test_client()
+
+    resp = client.get("/v1/oauth/callback")
+    assert resp.status_code == 400
+    assert resp.get_json()["error"] == "invalid_request"

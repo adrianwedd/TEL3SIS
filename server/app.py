@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import os
-from flask import Flask, request, Response as FlaskResponse, redirect, jsonify
+from flask import Flask, request, Response as FlaskResponse, redirect
 from pydantic import BaseModel, HttpUrl, ValidationError
+
+from .validation import validation_error_response
 from flask_login import LoginManager
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from loguru import logger
@@ -40,10 +42,13 @@ class RecordingStatusData(BaseModel):
     RecordingUrl: HttpUrl
 
 
-def _validation_error_response(exc: ValidationError) -> FlaskResponse:
-    resp = jsonify({"error": "invalid_request", "details": exc.errors()})
-    resp.status_code = 400
-    return resp  # type: ignore[return-value]
+class OAuthStartData(BaseModel):
+    user_id: str | None = None
+
+
+class OAuthCallbackData(BaseModel):
+    state: str
+    user: str | None = None
 
 
 def create_app() -> Flask:
@@ -88,15 +93,21 @@ def create_app() -> Flask:
     @app.get("/v1/oauth/start")
     def oauth_start() -> str:
         """Initiate Google OAuth flow and redirect user."""
-        user_id = request.args.get("user_id", "")
-        url = generate_auth_url(state_manager, user_id)
+        try:
+            data = OAuthStartData(**request.args)
+        except ValidationError as exc:
+            return validation_error_response(exc)
+        url = generate_auth_url(state_manager, data.user_id or "")
         return redirect(url)
 
     @app.get("/v1/oauth/callback")
     def oauth_callback() -> str:
         """Handle OAuth callback and store credentials."""
-        state = request.args.get("state", "")
-        exchange_code(state_manager, state, request.url)
+        try:
+            data = OAuthCallbackData(**request.args)
+        except ValidationError as exc:
+            return validation_error_response(exc)
+        exchange_code(state_manager, data.state, request.url)
         return "Authentication successful"
 
     @app.post("/v1/inbound_call")
@@ -106,7 +117,7 @@ def create_app() -> Flask:
         try:
             data = InboundCallData(**request.form)  # type: ignore[arg-type]
         except ValidationError as exc:
-            return _validation_error_response(exc)
+            return validation_error_response(exc)
 
         call_sid = data.CallSid
         state_manager.create_session(
@@ -169,7 +180,7 @@ def create_app() -> Flask:
         try:
             data = RecordingStatusData(**request.form)  # type: ignore[arg-type]
         except ValidationError as exc:
-            return _validation_error_response(exc)
+            return validation_error_response(exc)
 
         logger.info(
             "Recording callback: call_sid=%s recording_sid=%s url=%s",
