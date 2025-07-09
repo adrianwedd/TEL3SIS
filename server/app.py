@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel, HttpUrl, ValidationError
+from datetime import datetime
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from loguru import logger
 from starlette.middleware.sessions import SessionMiddleware
@@ -58,6 +59,17 @@ class OAuthCallbackData(BaseModel):
     user: str | None = None
 
 
+class CallInfo(BaseModel):
+    id: int
+    call_sid: str
+    from_number: str
+    to_number: str
+    transcript_path: str
+    summary: str | None
+    self_critique: str | None
+    created_at: datetime
+
+
 class _SimpleLimiter:
     def __init__(self, limit: int, interval: float) -> None:
         self.limit = limit
@@ -99,7 +111,12 @@ def create_app() -> FastAPI:
     except ConfigError as exc:
         raise RuntimeError(str(exc)) from exc
 
-    app = FastAPI()
+    app = FastAPI(
+        title="TEL3SIS API",
+        version="1.0",
+        docs_url="/docs",
+        openapi_url="/openapi.json",
+    )
     app.add_middleware(SessionMiddleware, secret_key=config.secret_key)
 
     init_db()
@@ -208,24 +225,24 @@ def create_app() -> FastAPI:
         html = f"<pre>{transcript}</pre>"
         return HTMLResponse(html)
 
-    @app.get("/v1/calls")
+    @app.get("/v1/calls", response_model=list[CallInfo])
     async def list_calls():
         with get_session() as session:
             calls = session.query(Call).order_by(Call.created_at.desc()).all()
             data = [
-                {
-                    "id": c.id,
-                    "call_sid": c.call_sid,
-                    "from_number": c.from_number,
-                    "to_number": c.to_number,
-                    "transcript_path": c.transcript_path,
-                    "summary": c.summary,
-                    "self_critique": c.self_critique,
-                    "created_at": c.created_at.isoformat(),
-                }
+                CallInfo(
+                    id=c.id,
+                    call_sid=c.call_sid,
+                    from_number=c.from_number,
+                    to_number=c.to_number,
+                    transcript_path=c.transcript_path,
+                    summary=c.summary,
+                    self_critique=c.self_critique,
+                    created_at=c.created_at,
+                )
                 for c in calls
             ]
-        return JSONResponse(data)
+        return data
 
     @app.get("/v1/oauth/start")
     async def oauth_start(request: Request):
@@ -310,8 +327,8 @@ def create_app() -> FastAPI:
         )
         return Response(status_code=204)
 
-    @app.get("/v1/health")
-    async def health() -> JSONResponse:
+    @app.get("/v1/health", response_model=dict[str, str])
+    async def health() -> dict[str, str]:
         status: dict[str, str] = {}
 
         try:
@@ -335,7 +352,7 @@ def create_app() -> FastAPI:
         except Exception:
             status["chromadb"] = "error"
 
-        return JSONResponse(status)
+        return status
 
     @app.get("/v1/metrics")
     async def metrics():
