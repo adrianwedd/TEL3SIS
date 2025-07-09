@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import os
-from typing import Any, Dict, Optional, List, cast
+from typing import Any, Dict, Optional, List, Iterable, cast
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import redis
@@ -122,6 +122,17 @@ class StateManager:
 
     def delete_token(self, user_id: str) -> None:
         self._redis.delete(self._token_key(user_id))
+
+    def iter_tokens(self) -> Iterable[tuple[str, Dict[str, str]]]:
+        """Yield ``(user_id, token_data)`` for all stored tokens."""
+        pattern = self._token_key("*")
+        for key in self._redis.scan_iter(match=pattern):
+            blob = self._redis.get(key)
+            if not blob:
+                continue
+            user_id = key.split(":", 1)[1]
+            data = json.loads(self._decrypt(cast(str, blob)))
+            yield user_id, cast(Dict[str, str], data)
 
     # --- Escalation Flags --------------------------------------------
 
