@@ -161,6 +161,12 @@ class StateManager:
             history = []
         history.append({"speaker": speaker, "text": text})
         self._redis.hset(key, "history", json.dumps(history))
+        try:
+            from .dashboard_bp import stream_transcript_line
+
+            stream_transcript_line(call_sid, speaker, text)
+        except Exception:  # pragma: no cover - socket may not be configured
+            pass
 
     def get_history(self, call_sid: str) -> List[Dict[str, str]]:
         """Return conversation history for a call."""

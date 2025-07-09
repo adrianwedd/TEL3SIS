@@ -7,5 +7,17 @@
 <p>Self Critique: {{ call.self_critique }}</p>
 {% endif %}
 <audio controls src="{{ audio_path }}"></audio>
-<pre>{{ transcript }}</pre>
+<pre id="transcript">{{ transcript }}</pre>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+  const socket = io();
+  socket.emit('join', {call_sid: '{{ call.call_sid }}'});
+  socket.on('transcript_line', (data) => {
+    const pre = document.getElementById('transcript');
+    pre.textContent += '\n' + data.speaker + ': ' + data.text;
+  });
+  window.addEventListener('beforeunload', () => {
+    socket.emit('leave', {call_sid: '{{ call.call_sid }}'});
+  });
+</script>
 <p><a href="{{ url_for('dashboard.show_dashboard') }}">Back</a></p>
