@@ -20,6 +20,11 @@ class Config:
     twilio_auth_token: str = field(
         default_factory=lambda: os.environ.get("TWILIO_AUTH_TOKEN", "")
     )
+    embedding_model_name: str = field(
+        default_factory=lambda: os.environ.get(
+            "EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2"
+        )
+    )
 
     def __post_init__(self) -> None:
         missing = [name for name, value in self.__dict__.items() if not value]

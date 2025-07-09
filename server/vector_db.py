@@ -43,6 +43,7 @@ class VectorDB:
         *,
         collection_name: str = "memory",
         embedding_function: Optional[EmbeddingFunction] = None,
+        model_name: Optional[str] = None,
     ) -> None:
         persist_directory = persist_directory or os.getenv(
             "VECTOR_DB_PATH", "vector_store"
@@ -50,7 +51,8 @@ class VectorDB:
         self.client = chromadb.PersistentClient(path=persist_directory)
         self.collection = self.client.get_or_create_collection(
             collection_name,
-            embedding_function=embedding_function or STEmbeddingFunction(),
+            embedding_function=embedding_function
+            or STEmbeddingFunction(model_name=model_name),
         )
 
     def add_texts(
