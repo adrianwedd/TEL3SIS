@@ -224,6 +224,20 @@ python scripts/manage.py generate-api-key alice
 python scripts/manage.py cleanup --days 30
 ```
 
+### Maintenance Commands
+
+These utilities provide quick access to call history and cleanup tasks. After
+installing the package with `pip install -e .`, invoke them via the console
+script or directly with Python:
+
+```bash
+# list recent calls
+tel3sis-maintenance list-calls
+
+# prune calls older than 90 days
+tel3sis-maintenance prune --days 90
+```
+
 ---
 
 ## 📊 Monitoring
