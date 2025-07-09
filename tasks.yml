@@ -1273,3 +1273,61 @@ tasks:
       - "Mock Twilio and third-party APIs to verify endpoint flows."
     acceptance_criteria:
       - "All new tests pass and cover the CLI and API surfaces."
+
+  - id: 69
+    task_id: DEV-02
+    epic: "Phase 3: Stability"
+    title: "Adopt pip-tools for dependency management"
+    description: "Use pip-tools to maintain locked runtime and dev requirements."
+    component: tooling
+    area: DevOps
+    dependencies: [49]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add requirements.in and requirements-dev.in."
+      - "Run pip-compile to generate requirements.txt and requirements-dev.txt."
+      - "Update CI and Dockerfile to install compiled requirements."
+    acceptance_criteria:
+      - "Pip-compile produces up-to-date locked files."
+      - "CI installs from compiled requirements and passes."
+
+  - id: 70
+    task_id: OPS-06
+    epic: "Phase 4: Performance"
+    title: "Optimize Docker build with multi-stage and .dockerignore"
+    description: "Reduce image size and build context using multi-stage builds and .dockerignore."
+    component: infrastructure
+    area: CI/CD
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create .dockerignore to exclude tests and docs from the build context."
+      - "Refactor Dockerfile to use a builder stage and slim runtime stage."
+      - "Update docker-compose and CI workflows to use the new Dockerfile."
+    acceptance_criteria:
+      - "Docker image size decreases and build succeeds."
+      - "CI build passes with the multi-stage Dockerfile."
+
+  - id: 71
+    task_id: CI-04
+    epic: "Phase 4: Performance"
+    title: "Cache pip and Docker layers in CI"
+    description: "Use GitHub Actions caches to speed up lint/test jobs and Docker builds."
+    component: ci
+    area: CI/CD
+    dependencies: [38]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Configure actions/cache in ci.yml for pip wheels and Docker layers."
+      - "Verify caching works across workflow runs."
+    acceptance_criteria:
+      - "CI completes faster on subsequent runs with cache hits."
