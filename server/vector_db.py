@@ -1,26 +1,37 @@
 from __future__ import annotations
 
-import hashlib
 import os
+import hashlib
 from typing import Iterable, List, Sequence, Optional
 
 import chromadb
 from chromadb.api.types import EmbeddingFunction, Embeddings
+from sentence_transformers import SentenceTransformer
 
 
-class SimpleEmbeddingFunction(EmbeddingFunction):
-    """Deterministic embedding function based on SHA256 hash."""
+class STEmbeddingFunction(EmbeddingFunction):
+    """Embedding function backed by SentenceTransformers."""
 
-    def __init__(self, dim: int = 128) -> None:
-        self.dim = dim
+    def __init__(self, model_name: Optional[str] = None) -> None:
+        name = model_name or os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
+        try:
+            self.model = SentenceTransformer(name)
+            self._fallback = False
+        except Exception:
+            # Offline fallback using deterministic hash embeddings
+            self._fallback = True
+            self._dim = 128
 
     def __call__(self, texts: Sequence[str]) -> Embeddings:
-        embeddings: List[List[float]] = []
-        for text in texts:
-            digest = hashlib.sha256(text.encode()).digest()
-            data = list(digest) * ((self.dim + len(digest) - 1) // len(digest))
-            embeddings.append([b / 255 for b in data[: self.dim]])
-        return embeddings
+        if self._fallback:
+            embeddings: List[List[float]] = []
+            for text in texts:
+                digest = hashlib.sha256(text.encode()).digest()
+                data = list(digest) * ((self._dim + len(digest) - 1) // len(digest))
+                embeddings.append([b / 255 for b in data[: self._dim]])
+            return embeddings
+        vectors = self.model.encode(list(texts))
+        return vectors.tolist()
 
 
 class VectorDB:
@@ -39,7 +50,7 @@ class VectorDB:
         self.client = chromadb.PersistentClient(path=persist_directory)
         self.collection = self.client.get_or_create_collection(
             collection_name,
-            embedding_function=embedding_function or SimpleEmbeddingFunction(),
+            embedding_function=embedding_function or STEmbeddingFunction(),
         )
 
     def add_texts(

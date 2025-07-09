@@ -17,6 +17,7 @@ def _make_manager(monkeypatch: Any, tmp_path: Path) -> StateManager:
     key = AESGCM.generate_key(bit_length=128)
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(key).decode())
     monkeypatch.setenv("VECTOR_DB_PATH", str(tmp_path / "vectors"))
+    monkeypatch.setenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
     manager = StateManager(url="redis://localhost:6379/0")
     manager._redis = fakeredis.FakeRedis(decode_responses=True)
     return manager

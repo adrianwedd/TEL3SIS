@@ -37,3 +37,4 @@ prometheus_client==0.19.0
 
 pydantic==2.7.1
 langdetect==1.0.9
+sentence-transformers==2.7.0
