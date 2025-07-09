@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from importlib import reload
 from datetime import datetime, timedelta, UTC
+from pathlib import Path
+import tarfile
 
 import pytest
 from celery.contrib.testing.worker import start_worker
@@ -13,6 +15,9 @@ def celery_setup(monkeypatch, tmp_path):
     monkeypatch.setenv("CELERY_BROKER_URL", "memory://")
     monkeypatch.setenv("CELERY_RESULT_BACKEND", "cache+memory://")
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path}/test.db")
+    vector_dir = tmp_path / "vectors"
+    monkeypatch.setenv("VECTOR_DB_PATH", str(vector_dir))
+    vector_dir.mkdir()
 
     import server.celery_app as celery_app
     import server.database as db
@@ -155,3 +160,16 @@ def test_cleanup_old_calls(celery_worker, monkeypatch, tmp_path):
         calls = session.query(db.Call).all()
         assert len(calls) == 1
         assert calls[0].call_sid == "new"
+
+
+def test_backup_data(celery_worker, tmp_path):
+    tasks, _ = celery_worker
+
+    result = tasks.backup_data.delay()
+    path = result.get(timeout=5)
+    assert path.endswith(".tar.gz")
+    assert Path(path).exists()
+    with tarfile.open(path) as tar:
+        names = tar.getnames()
+    assert "test.db" in names
+    assert "vector_store" in names

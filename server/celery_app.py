@@ -18,7 +18,11 @@ def create_celery_app() -> Celery:
         "cleanup-old-calls": {
             "task": "server.tasks.cleanup_old_calls",
             "schedule": crontab(minute=0, hour=0),
-        }
+        },
+        "backup-data": {
+            "task": "server.tasks.backup_data",
+            "schedule": crontab(minute=0, hour=1),
+        },
     }
     return celery
 
