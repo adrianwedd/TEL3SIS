@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Any
 import pytest
 
@@ -73,7 +73,7 @@ def test_create_and_list_events(monkeypatch: Any) -> None:
     service = DummyService()
     _patch_build(monkeypatch, service)
 
-    start = datetime.utcnow()
+    start = datetime.now(UTC)
     end = start + timedelta(hours=1)
 
     result = create_event(manager, "user", "Meeting", start, end)
@@ -103,8 +103,8 @@ def test_auth_failure_triggers_sms(monkeypatch: Any) -> None:
             manager,
             "user",
             "Meeting",
-            datetime.utcnow(),
-            datetime.utcnow(),
+            datetime.now(UTC),
+            datetime.now(UTC),
             user_phone="123",
             twilio_phone="456",
         )

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import Column, DateTime, Integer, JSON, String, create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -29,7 +29,7 @@ class Call(Base):
     transcript_path = Column(String, nullable=False)
     summary = Column(String, nullable=False)
     self_critique = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class UserPreference(Base):

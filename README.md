@@ -98,6 +98,10 @@ TEL3SIS/
    ```bash
    pip install -r requirements.txt
    ```
+   ```bash
+   pre-commit install
+   ```
+   Install git hooks so `pre-commit` runs automatically.
 3. **Create `.env`**
 
    ```bash
