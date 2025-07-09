@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import os
 from flask import Flask, request, Response as FlaskResponse, redirect
+
+from .limits import limiter, call_rate_limit
 from pydantic import BaseModel, HttpUrl, ValidationError
 
 from .validation import validation_error_response
@@ -65,6 +67,7 @@ def create_app() -> Flask:
         raise RuntimeError(str(exc)) from exc
 
     app = Flask(__name__)
+    limiter.init_app(app)
     app.secret_key = config.secret_key
     app.register_blueprint(auth_bp)
     app.register_blueprint(calls_bp)
@@ -125,6 +128,7 @@ def create_app() -> Flask:
         return "Authentication successful"
 
     @app.post("/v1/inbound_call")
+    @limiter.limit(call_rate_limit)
     def inbound_call() -> FlaskResponse:  # type: ignore[return-type]
         """Handle POST requests from Twilio."""
 
