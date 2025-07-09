@@ -876,7 +876,7 @@ tasks:
     area: Security
     dependencies: [46]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -893,7 +893,7 @@ tasks:
     area: Interfaces
     dependencies: [46]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -929,7 +929,7 @@ tasks:
     area: CI/CD
     dependencies: [49]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -966,7 +966,7 @@ tasks:
     area: Monitoring
     dependencies: [33, 51]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1058,7 +1058,7 @@ tasks:
     area: Interfaces
     dependencies: [48]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1076,7 +1076,7 @@ tasks:
     area: UX
     dependencies: [6, 46]
     priority: 5
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1113,7 +1113,7 @@ tasks:
     area: Safety
     dependencies: [24, 48]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1121,3 +1121,38 @@ tasks:
       - "Return 429 responses when limits are exceeded."
     acceptance_criteria:
       - "Rapid repeated requests are blocked with HTTP 429."
+
+  - id: 61
+    task_id: CORE-19
+    epic: "Phase 2: Stability"
+    title: "Timezone-aware datetime handling"
+    description: "Replace deprecated datetime.utcnow() calls with timezone-aware datetimes."
+    component: server
+    area: Data
+    dependencies: []
+    priority: 2
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Use datetime.now(datetime.UTC) in all modules and tests."
+      - "Update database models and cleanup task."
+    acceptance_criteria:
+      - "No DeprecationWarning about datetime.utcnow during tests."
+
+  - id: 62
+    task_id: DOC-05
+    epic: "Phase 0: Initialization"
+    title: "Document pre-commit hooks"
+    description: "Explain how to install git hooks in README."
+    component: documentation
+    area: Setup
+    dependencies: []
+    priority: 1
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add step to Quick-Start for running `pre-commit install`."
+    acceptance_criteria:
+      - "README lists pre-commit installation step."

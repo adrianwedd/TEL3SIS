@@ -52,8 +52,8 @@ The PR may merge only after all three confirmations are present.
 
 - `pending` → `in_progress` → `in_review` → `done` or `blocked`.
 
-**Only `CoordinatorAgent` updates `tasks.yml`.**  
-Other agents reference the task ID in PR titles/descriptions; `CA` serializes all status changes after merge to prevent race conditions.
+**Agents must keep `tasks.yml` statuses up to date.**
+When committing, update the relevant task entry (e.g. mark it `done`). The `CoordinatorAgent` will consolidate statuses after merge to prevent race conditions.
 
 ---
 

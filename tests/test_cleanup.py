@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from importlib import reload
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 import server.database as db
 import server.tasks as tasks
@@ -24,7 +24,7 @@ def test_cleanup_old_calls(monkeypatch, tmp_path):
     old_audio = audio_dir / "old.mp3"
     old_transcript.write_text("old")
     old_audio.write_text("a")
-    old_date = datetime.utcnow() - timedelta(days=31)
+    old_date = datetime.now(UTC) - timedelta(days=31)
 
     with db.get_session() as session:
         session.add(
@@ -44,7 +44,7 @@ def test_cleanup_old_calls(monkeypatch, tmp_path):
     new_audio = audio_dir / "new.mp3"
     new_transcript.write_text("new")
     new_audio.write_text("a")
-    new_date = datetime.utcnow() - timedelta(days=5)
+    new_date = datetime.now(UTC) - timedelta(days=5)
 
     with db.get_session() as session:
         session.add(
