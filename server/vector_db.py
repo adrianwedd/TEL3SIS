@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import hashlib
 from typing import Iterable, List, Sequence, Optional
 
 import chromadb
@@ -14,22 +13,9 @@ class STEmbeddingFunction(EmbeddingFunction):
 
     def __init__(self, model_name: Optional[str] = None) -> None:
         name = model_name or os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
-        try:
-            self.model = SentenceTransformer(name)
-            self._fallback = False
-        except Exception:
-            # Offline fallback using deterministic hash embeddings
-            self._fallback = True
-            self._dim = 128
+        self.model = SentenceTransformer(name)
 
     def __call__(self, texts: Sequence[str]) -> Embeddings:
-        if self._fallback:
-            embeddings: List[List[float]] = []
-            for text in texts:
-                digest = hashlib.sha256(text.encode()).digest()
-                data = list(digest) * ((self._dim + len(digest) - 1) // len(digest))
-                embeddings.append([b / 255 for b in data[: self._dim]])
-            return embeddings
         vectors = self.model.encode(list(texts))
         return vectors.tolist()
 

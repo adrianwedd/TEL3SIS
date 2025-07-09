@@ -18,7 +18,7 @@ TEL3SIS is primarily a Flask-based monolithic application with Celery for asynch
 
 ## Data Modeling & Management
 - The data schema is simple and adequate for current features. Calls capture summary text and path to transcripts. User preferences store arbitrary JSON per phone number. OAuth tokens are encrypted with AES-GCM before storage.
-- Searching call summaries is delegated to ChromaDB via `VectorDB` for semantic retrieval. The deterministic SHA256-based embedding function is lightweight but may not capture real semantics well.
+- Searching call summaries is delegated to ChromaDB via `VectorDB` for semantic retrieval. Summaries are embedded using a Sentence Transformers model for better semantic recall.
 - Database queries for the dashboard rely on filters without indexes; with growing data, search performance could degrade.
 
 ## Configuration & Initialization
