@@ -165,3 +165,31 @@ def test_get_credentials_refreshes(monkeypatch: Any) -> None:
     assert creds.token == "new"
     data = manager.get_token("user")
     assert data["access_token"] == "new"
+
+
+def test_create_event_network_failure(monkeypatch: Any) -> None:
+    manager = _make_manager(monkeypatch)
+
+    def fail_build(*args, **kwargs):  # noqa: ANN001, ARG001
+        raise RuntimeError("network")
+
+    monkeypatch.setattr("tools.calendar.build", fail_build)
+
+    start = datetime.now(UTC)
+    end = start + timedelta(hours=1)
+    result = create_event(manager, "user", "Meeting", start, end)
+    assert result["error"].startswith("Sorry")
+
+
+def test_list_events_network_failure(monkeypatch: Any) -> None:
+    manager = _make_manager(monkeypatch)
+
+    def fail_build(*args, **kwargs):  # noqa: ANN001, ARG001
+        raise RuntimeError("network")
+
+    monkeypatch.setattr("tools.calendar.build", fail_build)
+
+    start = datetime.now(UTC)
+    end = start + timedelta(hours=1)
+    result = list_events(manager, "user", start, end)
+    assert result == []

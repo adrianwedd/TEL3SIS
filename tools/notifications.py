@@ -48,7 +48,7 @@ def send_email(transcript_path: str, to_email: str | None = None) -> None:
         SendGridAPIClient(api_key).send(message)
         logger.info("Sent transcript email to %s", to_email)
     except Exception as exc:  # noqa: BLE001
-        logger.error("Failed to send transcript email: %s", exc)
+        logger.error("Failed to send transcript email to %s: %s", to_email, exc)
 
 
 def send_sms(to_phone: str, from_phone: str, body: str) -> None:
@@ -66,4 +66,4 @@ def send_sms(to_phone: str, from_phone: str, body: str) -> None:
         resp.raise_for_status()
         logger.info("Sent SMS to %s", to_phone)
     except Exception as exc:  # noqa: BLE001
-        logger.error("Failed to send SMS: %s", exc)
+        logger.error("Failed to send SMS to %s: %s", to_phone, exc)

@@ -30,3 +30,12 @@ def test_get_weather(monkeypatch):
     result = get_weather("London")
     assert "20" in result
     assert "sunny" in result.lower()
+
+
+def test_get_weather_failure(monkeypatch):
+    def fake_get(url: str, timeout: int = 5):  # noqa: ARG001
+        raise requests.RequestException("boom")
+
+    monkeypatch.setattr(requests, "get", fake_get)
+    result = get_weather("Paris")
+    assert "unable to" in result.lower()
