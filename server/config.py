@@ -20,6 +20,21 @@ class Config:
     twilio_auth_token: str = field(
         default_factory=lambda: os.environ.get("TWILIO_AUTH_TOKEN", "")
     )
+    sendgrid_api_key: str = field(
+        default_factory=lambda: os.environ.get("SENDGRID_API_KEY", "")
+    )
+    sendgrid_from_email: str = field(
+        default_factory=lambda: os.environ.get("SENDGRID_FROM_EMAIL", "")
+    )
+    notify_email: str = field(
+        default_factory=lambda: os.environ.get("NOTIFY_EMAIL", "")
+    )
+    redis_url: str = field(
+        default_factory=lambda: os.environ.get("REDIS_URL", "redis://redis:6379/0")
+    )
+    database_url: str = field(
+        default_factory=lambda: os.environ.get("DATABASE_URL", "sqlite:///tel3sis.db")
+    )
     embedding_provider: str = field(
         default_factory=lambda: os.environ.get(
             "EMBEDDING_PROVIDER", "sentence_transformers"

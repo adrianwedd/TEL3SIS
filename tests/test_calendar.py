@@ -57,6 +57,12 @@ def _make_manager(monkeypatch: Any) -> StateManager:
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(key).decode())
     monkeypatch.setenv("VECTOR_DB_PATH", "vector")
     monkeypatch.setenv("EMBEDDING_MODEL_NAME", "dummy-model")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("SENDGRID_API_KEY", "sg")
+    monkeypatch.setenv("SENDGRID_FROM_EMAIL", "from@test")
+    monkeypatch.setenv("NOTIFY_EMAIL", "notify@test")
 
     class DummyModel:
         def __init__(self, name: str) -> None:

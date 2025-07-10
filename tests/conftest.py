@@ -1,11 +1,20 @@
 from __future__ import annotations
 
 from importlib import reload
+import os
 import sys
 from pathlib import Path
 
 import pytest
 from celery.contrib.testing.worker import start_worker
+
+os.environ.setdefault("SECRET_KEY", "x")
+os.environ.setdefault("BASE_URL", "http://localhost")
+os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
+os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
+os.environ.setdefault("SENDGRID_API_KEY", "sg")
+os.environ.setdefault("SENDGRID_FROM_EMAIL", "from@test")
+os.environ.setdefault("NOTIFY_EMAIL", "notify@test")
 
 
 @pytest.fixture

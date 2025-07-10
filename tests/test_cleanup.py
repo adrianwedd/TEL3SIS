@@ -59,6 +59,20 @@ def test_cleanup_old_calls(monkeypatch, tmp_path):
             )
         )
         session.commit()
+    from prometheus_client import REGISTRY
+
+    # Remove previously registered metrics to avoid duplicate errors when
+    # reloading the tasks module during tests.
+    for collector in [
+        getattr(tasks, "task_invocations", None),
+        getattr(tasks, "task_failures", None),
+        getattr(tasks, "task_latency", None),
+    ]:
+        if collector is not None:
+            try:
+                REGISTRY.unregister(collector)
+            except KeyError:
+                pass
 
     reload(tasks)
     monkeypatch.setattr(tasks, "DEFAULT_OUTPUT_DIR", audio_dir)
