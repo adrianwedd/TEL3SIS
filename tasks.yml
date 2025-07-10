@@ -1331,3 +1331,40 @@ tasks:
       - "Verify caching works across workflow runs."
     acceptance_criteria:
       - "CI completes faster on subsequent runs with cache hits."
+
+  - id: 72
+    task_id: CI-05
+    epic: "Phase 6: UI + Ops"
+    title: "Publish Docker image on release"
+    description: "Create release workflow that builds and pushes tagged images to GHCR and attaches release notes."
+    component: ci
+    area: CI/CD
+    dependencies: [38, 70]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add .github/workflows/release.yml triggered on push tags."
+      - "Build Docker image and push to ghcr.io/tel3sis."
+      - "Create GitHub release with notes and link to the image."
+    acceptance_criteria:
+      - "Tagging a release uploads the container image and creates a release page."
+
+  - id: 73
+    task_id: QA-04
+    epic: "Phase 6: UI + Ops"
+    title: "Test Docker Compose deployment"
+    description: "Ensure the composed services start correctly using a CI job."
+    component: testing
+    area: Quality
+    dependencies: [38]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Spin up docker-compose in GitHub Actions."
+      - "Run health checks against the web and worker services."
+    acceptance_criteria:
+      - "CI job passes with all containers healthy."

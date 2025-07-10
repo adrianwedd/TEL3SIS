@@ -4,6 +4,7 @@ nav:
   - API Usage: api_usage.md
   - Reviews:
       - Build, Test & Deploy Review: reviews/build_test_deploy_review.md
+      - Build, Test & Deployment Review: reviews/build_test_deployment_review.md
       - Interfaces & Interactions Review: reviews/interfaces_interactions_review.md
       - Core Logic Architecture Review: reviews/core_logic_architecture_review.md
 

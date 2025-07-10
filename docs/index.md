@@ -288,6 +288,15 @@ If these variables are unset, the system logs a warning and skips the notificati
 
 ---
 
+## 📚 Reviews
+
+- [Build, Test & Deploy Review](reviews/build_test_deploy_review.md)
+- [Build, Test & Deployment Review](reviews/build_test_deployment_review.md)
+- [Interfaces & Interactions Review](reviews/interfaces_interactions_review.md)
+- [Core Logic Architecture Review](reviews/core_logic_architecture_review.md)
+
+---
+
 ## 🤝 Contributing
 
 1. Fork & clone
