@@ -1,8 +1,8 @@
 import base64
 import sys
 import types
-from importlib import reload
 from pathlib import Path
+from .db_utils import migrate_sqlite
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -128,7 +128,6 @@ sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.tran
 sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
-from server import database as db  # noqa: E402
 import server.app as server_app  # noqa: E402
 import server.state_manager as sm  # noqa: E402
 import server.vector_db as vdb  # noqa: E402
@@ -172,8 +171,7 @@ def setup_app(monkeypatch, tmp_path):
     monkeypatch.setattr(vdb.chromadb, "PersistentClient", lambda *a, **k: DummyClient())
     monkeypatch.setattr(sm, "redis", types.SimpleNamespace(Redis=fakeredis.FakeRedis))
 
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
     key = db.create_api_key("tester")
 
     app = server_app.create_app()

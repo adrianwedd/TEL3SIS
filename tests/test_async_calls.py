@@ -1,13 +1,12 @@
 import base64
 import types
-from importlib import reload
 
 
 # Reuse dummy vocode modules from test_api_key_auth
 import tests.test_api_key_auth  # noqa: F401
 from fastapi.testclient import TestClient
 
-from server import database as db
+from .db_utils import migrate_sqlite
 
 
 def test_async_inbound_call(monkeypatch, tmp_path):
@@ -18,8 +17,7 @@ def test_async_inbound_call(monkeypatch, tmp_path):
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
     key = db.create_api_key("tester")
 
     from server import app as server_app

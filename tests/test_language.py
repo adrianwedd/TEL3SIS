@@ -7,6 +7,7 @@ from importlib import reload
 from pathlib import Path
 
 import pytest
+from .db_utils import migrate_sqlite
 
 # Dummy vocode modules for server import
 
@@ -103,12 +104,11 @@ sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.teleph
 
 from server import app as server_app  # noqa: E402
 from server import tasks  # noqa: E402
-from server import database as db  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from tools import language  # noqa: E402
 
 
-def _setup_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> str:
+def _setup_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> tuple[str, object]:
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
     monkeypatch.setenv("SECRET_KEY", "x")
@@ -117,15 +117,14 @@ def _setup_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> str:
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
-    reload(db)
+    db_module = migrate_sqlite(monkeypatch, tmp_path)
     reload(tasks)
-    db.init_db()
-    key = db.create_api_key("tester")
-    return key
+    key = db_module.create_api_key("tester")
+    return key, db_module
 
 
 def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    key = _setup_env(monkeypatch, tmp_path)
+    key, db_module = _setup_env(monkeypatch, tmp_path)
 
     class DummyStateManager:
         def create_session(self, *_, **__):
@@ -168,7 +167,7 @@ def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
     )
     assert resp.status_code == 200
     assert captured["lang"] == "fr"
-    assert db.get_user_preference(from_num, "language") == "fr"
+    assert db_module.get_user_preference(from_num, "language") == "fr"
 
     transcript = tmp_path / "call.txt"
     transcript.write_text("hola mundo")
@@ -185,7 +184,7 @@ def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
 
     tasks.transcribe_audio(str(transcript), "CA1", from_num, to_num)
 
-    assert db.get_user_preference(from_num, "language") == "es"
+    assert db_module.get_user_preference(from_num, "language") == "es"
 
     captured.clear()
     resp = client.post(

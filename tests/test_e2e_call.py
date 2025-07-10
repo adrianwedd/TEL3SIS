@@ -2,10 +2,11 @@ import os
 import types
 import sys
 import base64
-from importlib import reload
 from pathlib import Path
 
 import pytest
+from .db_utils import migrate_sqlite
+from server import database as db
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -137,7 +138,6 @@ os.environ.setdefault("TWILIO_AUTH_TOKEN", "your_auth_token")
 os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
 from server import app as server_app  # noqa: E402
-from server import database as db  # noqa: E402
 from server import recordings as rec  # noqa: E402
 from server import tasks  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -152,9 +152,8 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "your_auth_token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     monkeypatch.setenv("ESCALATION_PHONE_NUMBER", "+15550001111")
-    reload(db)
-    db.init_db()
-    key = db.create_api_key("tester")
+    db_module = migrate_sqlite(monkeypatch, tmp_path)
+    key = db_module.create_api_key("tester")
 
     class DummyStateManager:
         def create_session(self, *_: object, **__: object) -> None:
@@ -251,8 +250,8 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     assert Path(result).exists()
     assert transcript_path.exists()
 
-    with db.get_session() as session:
-        call = session.query(db.Call).filter_by(call_sid=call_sid).one()
+    with db_module.get_session() as session:
+        call = session.query(db_module.Call).filter_by(call_sid=call_sid).one()
         assert call.summary
 
 

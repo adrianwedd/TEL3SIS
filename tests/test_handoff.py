@@ -6,11 +6,10 @@ import types
 import sys
 import os
 import base64
-from importlib import reload
 
 from server.handoff import dial_twiml
 from server import app as server_app  # noqa: E402
-from server import database as db  # noqa: E402
+from .db_utils import migrate_sqlite
 from fastapi.testclient import TestClient
 
 dummy = types.ModuleType("vocode")
@@ -158,8 +157,7 @@ def test_dial_twiml_no_env(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
     key = db.create_api_key("tester")
 
     class DummyStateManager:
@@ -214,16 +212,17 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
     }
 
 
-def test_inbound_call_validation(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_inbound_call_validation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     monkeypatch.setenv("SECRET_KEY", "x")
     monkeypatch.setenv("BASE_URL", "http://localhost")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
+    db_module = migrate_sqlite(monkeypatch, tmp_path)
     app = server_app.create_app()
     client = TestClient(app)
-    key = db.create_api_key("tester")
+    key = db_module.create_api_key("tester")
 
     resp = client.post(
         "/v1/inbound_call",

@@ -29,13 +29,13 @@ def celery_setup(monkeypatch, tmp_path):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
     import server.celery_app as celery_app
-    import server.database as db
     import server.tasks as tasks
+    from .db_utils import migrate_sqlite
+
+    db = migrate_sqlite(monkeypatch, tmp_path)
 
     reload(celery_app)
     celery_app.celery_app.conf.task_default_queue = "default"
-    reload(db)
-    db.init_db()
     reload(tasks)
     return celery_app.celery_app, tasks, db
 

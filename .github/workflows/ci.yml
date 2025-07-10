@@ -35,6 +35,17 @@ jobs:
         run: pip install pre-commit
       - name: Run pre-commit hooks
         run: pre-commit run --all-files --show-diff-on-failure
+      - name: Run migrations
+        env:
+          SECRET_KEY: x
+          BASE_URL: http://localhost
+          TWILIO_ACCOUNT_SID: sid
+          TWILIO_AUTH_TOKEN: token
+          SENDGRID_API_KEY: sg
+          SENDGRID_FROM_EMAIL: from@test
+          NOTIFY_EMAIL: notify@test
+          DATABASE_URL: sqlite:///test.db
+        run: alembic upgrade head
       - name: Run pytest
         run: pytest -vv
 

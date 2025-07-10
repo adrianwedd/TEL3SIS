@@ -3,7 +3,7 @@ import sys
 import os
 import base64
 import fakeredis
-from importlib import reload
+from .db_utils import migrate_sqlite
 
 # Dummy vocode modules
 dummy = types.ModuleType("vocode")
@@ -131,7 +131,6 @@ os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
 os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
-from server import database as db  # noqa: E402
 import server.state_manager as sm  # noqa: E402
 
 
@@ -141,8 +140,7 @@ def test_rate_limits(monkeypatch, tmp_path):
     monkeypatch.setenv("CALL_RATE_LIMIT", "1/minute")
     monkeypatch.setenv("API_RATE_LIMIT", "1/minute")
     monkeypatch.setenv("RATE_LIMIT_REDIS_URL", "memory://")
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
     key = db.create_api_key("tester")
 
     monkeypatch.setattr(sm, "redis", types.SimpleNamespace(Redis=fakeredis.FakeRedis))

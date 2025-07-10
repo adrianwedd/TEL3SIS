@@ -1,10 +1,10 @@
 import base64
 import sys
 import types
-from importlib import reload
 from pathlib import Path
 import httpx
 import pytest
+from .db_utils import migrate_sqlite
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -128,7 +128,6 @@ sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.tran
 sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
-from server import database as db  # noqa: E402
 from server.app import create_app  # noqa: E402
 
 
@@ -140,8 +139,7 @@ def setup_client(monkeypatch, tmp_path):
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
-    reload(db)
-    db.init_db()
+    migrate_sqlite(monkeypatch, tmp_path)
     app = create_app()
     transport = httpx.ASGITransport(app=app)
     client = httpx.AsyncClient(transport=transport, base_url="http://test")

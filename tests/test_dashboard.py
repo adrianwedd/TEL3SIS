@@ -2,8 +2,8 @@ import types
 import sys
 import os
 import base64
-from importlib import reload
 from pathlib import Path
+from .db_utils import migrate_sqlite
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -127,7 +127,6 @@ sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.tran
 sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
-from server import database as db  # noqa: E402
 from server.app import create_app  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
@@ -146,8 +145,7 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
     db.create_user("admin", "pass", role="admin")
     transcript_dir = tmp_path / "transcripts"
     transcript_dir.mkdir()
@@ -190,7 +188,7 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     assert b"hello world" in resp.content
 
 
-def test_oauth_callback_validation(monkeypatch) -> None:
+def test_oauth_callback_validation(monkeypatch, tmp_path) -> None:
     from server.app import create_app
 
     monkeypatch.setenv("SECRET_KEY", "x")
@@ -199,9 +197,10 @@ def test_oauth_callback_validation(monkeypatch) -> None:
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
+    db_module = migrate_sqlite(monkeypatch, tmp_path)
     app = create_app()
     client = TestClient(app)
-    key = db.create_api_key("tester")
+    key = db_module.create_api_key("tester")
 
     resp = client.get("/v1/oauth/callback", headers={"X-API-Key": key})
     assert resp.status_code == 400
@@ -233,8 +232,7 @@ def test_dashboard_prefix_search_with_formatted_number(monkeypatch, tmp_path):
         "TOKEN_ENCRYPTION_KEY",
         base64.b64encode(b"0" * 16).decode(),
     )
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
     db.create_user("admin", "pass", role="admin")
     transcript_dir = tmp_path / "transcripts"
     transcript_dir.mkdir()
