@@ -8,6 +8,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
+from server.config import Config
 from server.state_manager import StateManager
 from tools.notifications import send_sms
 
@@ -34,7 +35,7 @@ def _build_flow(state: str) -> Any:
     client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
     if not client_id or not client_secret:
         raise RuntimeError("Google OAuth client not configured")
-    redirect_uri = os.environ.get("BASE_URL", "") + "/oauth/callback"
+    redirect_uri = Config().base_url + "/oauth/callback"
     return Flow.from_client_config(
         {
             "web": {

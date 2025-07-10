@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from datetime import datetime, UTC
 
 from sqlalchemy import Column, DateTime, Integer, JSON, String, create_engine
@@ -9,10 +8,19 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from flask_login import UserMixin
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///tel3sis.db")
+from .config import Config
 
-engine = create_engine(DATABASE_URL, future=True)
-SessionLocal = sessionmaker(bind=engine, future=True)
+engine = None
+SessionLocal = None
+
+
+def _ensure_engine() -> None:
+    """Initialize the SQLAlchemy engine and session maker."""
+    global engine, SessionLocal
+    if engine is None:
+        cfg = Config()
+        engine = create_engine(cfg.database_url, future=True)
+        SessionLocal = sessionmaker(bind=engine, future=True)
 
 
 class Base(DeclarativeBase):
@@ -61,11 +69,13 @@ class APIKey(Base):
 
 def init_db() -> None:
     """Create database tables if they do not exist."""
+    _ensure_engine()
     Base.metadata.create_all(bind=engine)
 
 
 def get_session() -> Session:
     """Return a new database session."""
+    _ensure_engine()
     return SessionLocal()
 
 
