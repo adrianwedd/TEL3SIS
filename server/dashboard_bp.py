@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 
 from flask import Blueprint, render_template, request, abort, redirect, url_for
 from flask_login import login_required, current_user
@@ -64,7 +65,8 @@ def show_dashboard() -> str:  # type: ignore[return-type]
     with get_session() as session:
         q = session.query(Call)
         if query_param:
-            phone_like = f"{query_param}%" if query_param.strip("+").isdigit() else None
+            sanitized = re.sub(r"[\s\-()]", "", query_param)
+            phone_like = f"{sanitized}%" if sanitized.strip("+").isdigit() else None
             if phone_like:
                 q = q.filter(
                     or_(

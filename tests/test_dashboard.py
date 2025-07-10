@@ -220,3 +220,58 @@ def test_dashboard_theme_toggle_template() -> None:
         html = render_template("dashboard/list.html", calls=[], q="")
 
     assert '<button class="theme-toggle"' in html
+
+
+def test_dashboard_prefix_search_with_formatted_number(monkeypatch, tmp_path):
+    db_url = f"sqlite:///{tmp_path}/test.db"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv(
+        "TOKEN_ENCRYPTION_KEY",
+        base64.b64encode(b"0" * 16).decode(),
+    )
+    reload(db)
+    db.init_db()
+    db.create_user("admin", "pass", role="admin")
+    transcript_dir = tmp_path / "transcripts"
+    transcript_dir.mkdir()
+    transcript_path = transcript_dir / "t.txt"
+    transcript_path.write_text("hi")
+    db.save_call_summary(
+        "sid1",
+        "+12345678900",
+        "999",
+        str(transcript_path),
+        "summary",
+        "crit",
+    )
+    key = db.create_api_key("tester")
+
+    app = create_app()
+    client = TestClient(app)
+
+    resp = client.get("/v1/dashboard", headers={"X-API-Key": key})
+    assert resp.status_code == 302
+
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
+    monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
+    from urllib.parse import urlparse, parse_qs
+
+    state = parse_qs(
+        urlparse(
+            client.get("/v1/login/oauth", headers={"X-API-Key": key}).headers[
+                "Location"
+            ]
+        ).query
+    )["state"][0]
+
+    client.get(
+        f"/v1/oauth/callback?state={state}&user=admin", headers={"X-API-Key": key}
+    )
+
+    resp = client.get("/v1/dashboard?q=+1-234-567", headers={"X-API-Key": key})
+    assert resp.status_code == 200
+    assert b"+12345678900" in resp.content

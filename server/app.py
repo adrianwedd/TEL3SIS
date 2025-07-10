@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import secrets
 from pathlib import Path
 
@@ -212,9 +213,8 @@ def create_app() -> FastAPI:
             if query_param:
                 from sqlalchemy import or_
 
-                phone_like = (
-                    f"{query_param}%" if query_param.strip("+").isdigit() else None
-                )
+                sanitized = re.sub(r"[\s\-()]", "", query_param)
+                phone_like = f"{sanitized}%" if sanitized.strip("+").isdigit() else None
                 if phone_like:
                     db_query = db_query.filter(
                         or_(
