@@ -101,24 +101,24 @@ dummy.streaming.models.telephony.TwilioConfig = TwilioConfig
 sys.modules["vocode"] = dummy
 sys.modules["vocode.streaming"] = dummy.streaming
 sys.modules["vocode.streaming.agent"] = dummy.streaming.agent
-sys.modules["vocode.streaming.agent.chat_gpt_agent"] = (
-    dummy.streaming.agent.chat_gpt_agent
-)
+sys.modules[
+    "vocode.streaming.agent.chat_gpt_agent"
+] = dummy.streaming.agent.chat_gpt_agent
 sys.modules["vocode.streaming.agent.base_agent"] = dummy.streaming.agent.base_agent
-sys.modules["vocode.streaming.agent.default_factory"] = (
-    dummy.streaming.agent.default_factory
-)
+sys.modules[
+    "vocode.streaming.agent.default_factory"
+] = dummy.streaming.agent.default_factory
 sys.modules["vocode.streaming.telephony"] = dummy.streaming.telephony
 sys.modules["vocode.streaming.telephony.server"] = dummy.streaming.telephony.server
-sys.modules["vocode.streaming.telephony.server.base"] = (
-    dummy.streaming.telephony.server.base
-)
-sys.modules["vocode.streaming.telephony.config_manager"] = (
-    dummy.streaming.telephony.config_manager
-)
-sys.modules["vocode.streaming.telephony.config_manager.in_memory_config_manager"] = (
-    dummy.streaming.telephony.config_manager.in_memory_config_manager
-)
+sys.modules[
+    "vocode.streaming.telephony.server.base"
+] = dummy.streaming.telephony.server.base
+sys.modules[
+    "vocode.streaming.telephony.config_manager"
+] = dummy.streaming.telephony.config_manager
+sys.modules[
+    "vocode.streaming.telephony.config_manager.in_memory_config_manager"
+] = dummy.streaming.telephony.config_manager.in_memory_config_manager
 sys.modules["vocode.streaming.models"] = dummy.streaming.models
 sys.modules["vocode.streaming.models.agent"] = dummy.streaming.models.agent
 sys.modules["vocode.streaming.models.actions"] = dummy.streaming.models.actions
