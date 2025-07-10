@@ -1,16 +1,16 @@
 # Part 1 – Core Logic & Architecture Review
 
-TEL3SIS is primarily a Flask-based monolithic application with Celery for asynchronous tasks. Redis is used for transient state management, SQLAlchemy (SQLite by default) stores persistent call data, and ChromaDB provides vector-based retrieval. Agents wrap the LLM logic and tool integrations (e.g., weather API, Google Calendar). The high-level architecture is documented in the README with a diagram showing Twilio inbound calls flowing through Flask, Vocode streaming, tools, and a StateManager before hitting Celery workers.
+TEL3SIS is primarily a FastAPI-based monolithic application with Celery for asynchronous tasks. Redis is used for transient state management, SQLAlchemy (SQLite by default) stores persistent call data, and ChromaDB provides vector-based retrieval. Agents wrap the LLM logic and tool integrations (e.g., weather API, Google Calendar). The high-level architecture is documented in the README with a diagram showing Twilio inbound calls flowing through FastAPI, Vocode streaming, tools, and a StateManager before hitting Celery workers.
 
 ## Architectural Design
-- **Monolithic Flask app with Celery** – All components run as part of a single service (web server + worker). This is appropriate for early-phase development and simpler deployment. Docker Compose orchestrates web, Redis, Celery worker, and beat services.
+- **Monolithic FastAPI app with Celery** – All components run as part of a single service (web server + worker). This is appropriate for early-phase development and simpler deployment. Docker Compose orchestrates web, Redis, Celery worker, and beat services.
 - **Stateful components** – `StateManager` wraps Redis and provides token storage, conversation history, and escalation flags. It also integrates with a vector database to search past summaries.
 - **Separation of concerns** – The codebase distinguishes between server routes, tasks, tools, and agents. Core telephony logic resides in `server/app.py`, Celery tasks in `server/tasks.py`, tool integrations under `tools/`, and LLM agent wrapper logic in `agents/`.
-- **Bottlenecks** – Flask is synchronous; inbound call handling uses `asyncio.run()` to execute asynchronous route code. This blocks a worker thread per request and could become a bottleneck under high call volume. Moving to an async framework or running asynchronous tasks in Celery could improve scalability.
+- **Bottlenecks** – FastAPI handles async requests natively, but heavy workloads should still be offloaded to Celery to avoid blocking worker threads.
 - **Celery** – Celery tasks handle transcription, summaries, and cleanup. Configuration is relatively straightforward with schedule for cleanup tasks set in `celery_app.py`.
 
 ## Core Components & Services
-- **Server** – `create_app` initializes Flask with API key authentication, OAuth routes, Twilio call handler, recording callback, and `/metrics` endpoint.
+- **Server** – `create_app` initializes FastAPI with API key authentication, OAuth routes, Twilio call handler, recording callback, and `/metrics` endpoint.
 - **Agent Factory** – `SafeAgentFactory` returns a `SafeFunctionCallingAgent` with an integrated safety filter. Function-calling dispatch supports tools via JSON schemas and handles permission errors from OAuth-based tools.
 - **Tools** – Each tool (weather, calendar, notifications) encapsulates external service logic. Error handling varies; `get_weather` logs and returns a friendly message on failure.
 - **StateManager** – Manages Redis sessions, encrypted OAuth tokens, and vector memory. Configuration requires a base64-encoded AES key, raising `ConfigError` when missing or malformed.
@@ -37,7 +37,7 @@ TEL3SIS is primarily a Flask-based monolithic application with Celery for asynch
 - Secure handling of API keys and OAuth tokens with AES-GCM encryption and `.env` management.
 
 ## Weaknesses / Opportunities
-- Inbound call handling remains synchronous; heavy async workloads could block the Flask worker.
+- Inbound call handling remains synchronous; heavy async workloads could block the FastAPI worker.
 - Configuration is dispersed—only some variables are validated by `Config`.
 - Database models lack indexes for frequently queried fields (e.g., `Call.created_at`, `Call.from_number`).
 - External API integrations have inconsistent error-handling patterns.

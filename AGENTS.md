@@ -113,7 +113,7 @@ CoordinatorAgent parses these to route discussion.
 
 | Path | Owner Role | Purpose |
 |------|------------|---------|
-| `server/*.py` | CG | Flask + telephony |
+| `server/*.py` | CG | FastAPI + telephony |
 | `agents/*.py` | CG, SO | Agent configs & filters |
 | `tools/*.py` | CG | External integrations |
 | `state/*.py` | CG | Redis/DB wrappers |

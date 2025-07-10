@@ -26,7 +26,7 @@
 Caller
   │
   ▼        ┌──────────────────────┐
-Twilio ►──►│  Flask Telephony API │◄───┐
+Twilio ►──►│  FastAPI Telephony API │◄───┐
            └──────────────────────┘    │  (async via Celery)
               │      ▲                 │
               │      │                 │
@@ -68,7 +68,7 @@ Twilio ►──►│  Flask Telephony API │◄───┐
 TEL3SIS/
 ├── agents/               # Core & tool‑aware agent configs
 ├── server/
-│   ├── app.py            # Flask entrypoint
+│   ├── app.py            # FastAPI entrypoint
 │   ├── celery_app.py     # Celery factory
 │   └── state_manager.py  # Redis wrapper
 ├── tools/                # Calendar, Weather, SMS, etc.
@@ -250,7 +250,7 @@ tel3sis-maintenance prune --days 90
 
 ## 📊 Monitoring
 
-* **Prometheus** scraps `/metrics` exposed by the Flask app
+* **Prometheus** scraps `/metrics` exposed by the FastAPI app
 * Alert rules live in `ops/prometheus/*_rules.yml` and define when latency is too high
 * Alerts trigger if STT/LLM/TTS average latency stays above **3 s** for over a minute
 * Alertmanager reads `ops/prometheus/alertmanager.yml` and posts to Slack via `SLACK_WEBHOOK_URL` in `.env`

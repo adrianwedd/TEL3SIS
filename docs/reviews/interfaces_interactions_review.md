@@ -29,7 +29,7 @@ This review summarizes how users and external systems interact with TEL3SIS. It 
 - **OpenAI/Whisper/ElevenLabs** – LLM, STT and TTS via `vocode-python`.
 
 ## Strengths
-- Clear separation of routes using Flask blueprints.
+- Clear separation of routes using FastAPI routers.
 - Pydantic models validate request data for most endpoints.
 - CLI scripts help with development (local calls, red‑team testing).
 - Integrations degrade gracefully when credentials are missing.
