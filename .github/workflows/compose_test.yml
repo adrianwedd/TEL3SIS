@@ -1,0 +1,34 @@
+name: Compose Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Start services
+        run: docker compose up -d
+      - name: Wait for health checks
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq curl
+          for i in {1..30}; do
+            status=$(curl -s http://localhost:3000/v1/health || true)
+            echo "$status"
+            if echo "$status" | jq -e 'all(.[]=="ok")'; then
+              echo "All services healthy"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Services failed to become healthy" >&2
+          docker compose ps
+          docker compose logs
+          exit 1
+      - name: Stop services
+        if: always()
+        run: docker compose down
+
