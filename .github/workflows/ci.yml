@@ -12,6 +12,12 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install ruff
         run: pip install ruff
       - name: Run ruff
@@ -24,6 +30,12 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
       - name: Install git-secrets
@@ -51,5 +63,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Docker build
-        run: docker build --target runtime -t tel3sis .
+      - uses: docker/setup-buildx-action@v3
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: runtime
+          load: true
+          tags: tel3sis:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
