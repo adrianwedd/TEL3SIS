@@ -179,3 +179,14 @@ def verify_api_key(key: str) -> bool:
             if check_password_hash(api_key.key_hash, key):
                 return True
     return False
+
+
+def delete_user(username: str) -> bool:
+    """Delete the user with ``username`` if it exists."""
+    with get_session() as session:
+        user = session.query(User).filter_by(username=username).one_or_none()
+        if user is None:
+            return False
+        session.delete(user)
+        session.commit()
+        return True
