@@ -1,7 +1,6 @@
 import asyncio
 import base64
 import types
-from importlib import reload
 from pathlib import Path
 import sys
 
@@ -9,7 +8,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 import httpx
 import tests.test_api_key_auth  # noqa: F401
-from server import database as db
+from .db_utils import migrate_sqlite
 from server import fast_app as server_app
 
 
@@ -21,8 +20,7 @@ def test_concurrent_inbound_calls(monkeypatch, tmp_path):
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
     key = db.create_api_key("tester")
 
     class DummyStateManager:

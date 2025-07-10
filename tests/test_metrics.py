@@ -3,7 +3,9 @@ import types
 import time
 import os
 import base64
-from importlib import reload
+from pathlib import Path
+import pytest
+from .db_utils import migrate_sqlite
 
 from server.latency_logging import log_stt
 
@@ -137,11 +139,10 @@ os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode
 
 
 from server.app import create_app  # noqa: E402
-from server import database as db  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 
-def test_metrics_endpoint() -> None:
+def test_metrics_endpoint(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     os.environ.setdefault("SECRET_KEY", "x")
     os.environ.setdefault("BASE_URL", "http://localhost")
     os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
@@ -149,8 +150,7 @@ def test_metrics_endpoint() -> None:
     os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     app = create_app()
     client = TestClient(app)
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
     key = db.create_api_key("tester")
 
     @log_stt

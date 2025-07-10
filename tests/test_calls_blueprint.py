@@ -2,9 +2,8 @@ import types
 import sys
 import os
 import base64
-from importlib import reload
 from fastapi.testclient import TestClient
-from server import database as db  # noqa: E402
+from .db_utils import migrate_sqlite
 from server.app import create_app  # noqa: E402
 
 # Reuse the dummy vocode modules from test_metrics
@@ -144,8 +143,7 @@ def test_list_calls(monkeypatch, tmp_path):
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
     db.save_call_summary("abc", "111", "222", "/path", "summary", "crit")
     key = db.create_api_key("tester")
 

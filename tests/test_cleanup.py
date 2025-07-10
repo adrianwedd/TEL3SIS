@@ -1,17 +1,16 @@
 from __future__ import annotations
 
-from importlib import reload
 from datetime import datetime, timedelta, UTC
 
-import server.database as db
+from importlib import reload
+from .db_utils import migrate_sqlite
 import server.tasks as tasks
 
 
 def test_cleanup_old_calls(monkeypatch, tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
-    reload(db)
-    db.init_db()
+    db = migrate_sqlite(monkeypatch, tmp_path)
 
     audio_dir = tmp_path / "audio"
     transcript_dir = tmp_path / "transcripts"

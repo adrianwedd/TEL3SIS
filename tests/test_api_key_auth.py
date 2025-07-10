@@ -1,9 +1,9 @@
 import base64
 import sys
 import types
-from importlib import reload
 from pathlib import Path
 import pytest
+from .db_utils import migrate_sqlite
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -127,8 +127,6 @@ sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.tran
 sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
-from server import database as db  # noqa: E402
-
 
 async def setup_app(monkeypatch, tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
@@ -140,21 +138,20 @@ async def setup_app(monkeypatch, tmp_path):
     monkeypatch.setenv("EMBEDDING_MODEL_NAME", "dummy-model")
     monkeypatch.setattr("server.vector_db.SentenceTransformer", Dummy)
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
-    reload(db)
-    db.init_db()
-    key = db.create_api_key("tester")
+    db_module = migrate_sqlite(monkeypatch, tmp_path)
+    key = db_module.create_api_key("tester")
     from server.app import create_app  # noqa: E402
     import httpx
 
     app = create_app()
     transport = httpx.ASGITransport(app=app)
     client = httpx.AsyncClient(transport=transport, base_url="http://test")
-    return client, key
+    return client, key, db_module
 
 
 @pytest.mark.asyncio
 async def test_missing_key(monkeypatch, tmp_path):
-    client, _ = await setup_app(monkeypatch, tmp_path)
+    client, _, _ = await setup_app(monkeypatch, tmp_path)
     resp = await client.get("/v1/calls")
     await client.aclose()
     assert resp.status_code == 401
@@ -162,7 +159,7 @@ async def test_missing_key(monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_invalid_key(monkeypatch, tmp_path):
-    client, _ = await setup_app(monkeypatch, tmp_path)
+    client, _, _ = await setup_app(monkeypatch, tmp_path)
     resp = await client.get("/v1/calls", headers={"X-API-Key": "bad"})
     await client.aclose()
     assert resp.status_code == 401
@@ -170,8 +167,8 @@ async def test_invalid_key(monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_valid_key(monkeypatch, tmp_path):
-    client, key = await setup_app(monkeypatch, tmp_path)
-    db.save_call_summary("abc", "111", "222", "/p", "s", None)
+    client, key, db_module = await setup_app(monkeypatch, tmp_path)
+    db_module.save_call_summary("abc", "111", "222", "/p", "s", None)
     resp = await client.get("/v1/calls", headers={"X-API-Key": key})
     await client.aclose()
     assert resp.status_code == 200
