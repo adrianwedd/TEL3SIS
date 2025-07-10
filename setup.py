@@ -6,6 +6,7 @@ setup(
     packages=find_packages(),
     entry_points={
         "console_scripts": [
+            "tel3sis=tel3sis.cli:cli",
             "tel3sis-manage=scripts.manage:cli",
             "tel3sis-maintenance=scripts.maintenance:cli",
         ]
