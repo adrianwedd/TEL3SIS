@@ -38,3 +38,18 @@ def test_cli_manage_api_key(monkeypatch):
     result = runner.invoke(cli, ["manage", "generate-api-key", "tester"])
     assert result.exit_code == 0
     assert "abc" in result.output
+
+
+def test_cli_manage_delete_user(monkeypatch):
+    calls = {}
+
+    monkeypatch.setattr("scripts.manage.db.init_db", lambda: None)
+    monkeypatch.setattr(
+        "scripts.manage.db.delete_user", lambda u: calls.setdefault("user", u) or True
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["manage", "delete-user", "bob"])
+
+    assert result.exit_code == 0
+    assert calls["user"] == "bob"
