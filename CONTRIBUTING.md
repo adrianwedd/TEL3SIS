@@ -29,6 +29,17 @@ Thank you for helping improve **TEL3SIS**! Please follow the guidelines below to
    git secrets --scan -r
    ```
 
+### Installing `pre-commit`
+
+If you prefer to install `pre-commit` outside the bundled development
+requirements, grab it directly from PyPI and set up the git hooks:
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+
 ### Updating dependencies
 
 Runtime packages live in `requirements.in` and development tools in
