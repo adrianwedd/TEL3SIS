@@ -1368,3 +1368,264 @@ tasks:
       - "Run health checks against the web and worker services."
     acceptance_criteria:
       - "CI job passes with all containers healthy."
+
+  - id: 74
+    task_id: REF-01
+    epic: "Phase 3: Stability"
+    title: "Complete FastAPI migration and remove Flask remnants"
+    description: "Eliminate legacy Flask code to finalize the FastAPI transition."
+    component: server
+    area: Core Logic
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Remove unused Flask blueprints and app modules."
+      - "Ensure FastAPI entrypoint handles all routes and middleware."
+      - "Update documentation to reflect FastAPI-only implementation."
+    acceptance_criteria:
+      - "No Flask imports remain in the repository."
+      - "Server starts and responds using FastAPI exclusively."
+
+  - id: 75
+    task_id: CONF-02
+    epic: "Phase 3: Stability"
+    title: "Implement centralized configuration management"
+    description: "Refactor application to source settings from a single Config dataclass."
+    component: config
+    area: Setup
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add remaining environment variables to server.config.Config."
+      - "Replace os.getenv calls with Config attributes."
+      - "Adjust tests and documentation for the new configuration flow."
+    acceptance_criteria:
+      - "All modules import configuration solely from Config."
+      - "Tests pass with updated configuration usage."
+
+  - id: 76
+    task_id: CI-06
+    epic: "Phase 6: UI + Ops"
+    title: "Add dependency vulnerability scanning to CI/CD"
+    description: "Integrate pip-audit or a similar tool to scan Python packages for vulnerabilities on each PR."
+    component: ci
+    area: CI/CD
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Install pip-audit in the CI environment."
+      - "Fail the workflow if high-severity issues are detected."
+    acceptance_criteria:
+      - "CI workflow reports dependency vulnerabilities."
+
+  - id: 77
+    task_id: PERF-02
+    epic: "Phase 4: Performance"
+    title: "Implement caching for LLM and external API responses"
+    description: "Use Redis to cache expensive API calls, reducing latency and cost."
+    component: server
+    area: Performance
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add Redis caching wrapper around LLM and tool calls."
+      - "Invalidate cache entries on a reasonable schedule."
+    acceptance_criteria:
+      - "Repeated requests hit the cache and respond faster."
+
+  - id: 78
+    task_id: DOC-07
+    epic: "Phase 6: UI + Ops"
+    title: "Develop production deployment guide"
+    description: "Write documentation outlining recommended production setup including worker scaling and HA services."
+    component: documentation
+    area: Ops
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Describe deploying with multiple Celery workers and PgBouncer."
+      - "Explain configuring Redis Sentinel or Cluster."
+      - "Provide example cloud environment settings."
+    acceptance_criteria:
+      - "README or docs include a clear production deployment section."
+
+  - id: 79
+    task_id: UX-05
+    epic: "Phase 5: Safety & Reflection"
+    title: "Enhance end-user voice error handling"
+    description: "Create friendly audio responses for common failures and integrate them into the call handler."
+    component: agent
+    area: UX
+    dependencies: []
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Record or synthesize standard error phrases."
+      - "Detect common failure modes and play the appropriate response."
+    acceptance_criteria:
+      - "Users hear a helpful message when a tool or LLM call fails."
+
+  - id: 80
+    task_id: QA-05
+    epic: "Phase 3: Stability"
+    title: "Create shared `vocode` mocking utility for tests"
+    description: "Consolidate duplicated vocode mocking helpers into a reusable fixture."
+    component: testing
+    area: Quality
+    dependencies: []
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Provide a test utility that mocks vocode classes used across tests."
+      - "Update existing tests to import from the new utility."
+    acceptance_criteria:
+      - "No duplicated vocode mock implementations remain."
+
+  - id: 81
+    task_id: CLI-02
+    epic: "Phase 6: UI + Ops"
+    title: "Expand CLI user management capabilities"
+    description: "Add subcommands to list, delete, and update users and their preferences."
+    component: tools
+    area: DX
+    dependencies: []
+    priority: 4
+    status: in_progress
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Implement `list-users`, `delete-user`, and `update-user` subcommands."
+      - "Document new commands in README and docs."
+    acceptance_criteria:
+      - "`tel3sis manage --help` shows all user subcommands."
+      - "Tests cover each CLI action."
+
+  - id: 82
+    task_id: UIX-01
+    epic: "Phase 4: Performance"
+    title: "Implement latency monitoring and optimization strategy for VUI"
+    description: "Track end-to-end conversation latency and optimize each stage to reduce delays."
+    component: infrastructure
+    area: Monitoring
+    dependencies: []
+    priority: 1
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add detailed latency metrics to Prometheus/Grafana."
+      - "Profile STT, LLM, and TTS stages separately."
+      - "Tune timeouts and caching based on observed metrics."
+    acceptance_criteria:
+      - "Dashboard shows average latency per conversation step."
+      - "Optimizations reduce overall turn latency."
+
+  - id: 83
+    task_id: UIX-02
+    epic: "Phase 6: UI + Ops"
+    title: "Enhance dashboard with filtering, sorting, and pagination"
+    description: "Refactor call history UI to support server-side pagination and flexible query controls."
+    component: ui
+    area: UX
+    dependencies: []
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add pagination parameters to list_calls endpoint."
+      - "Provide filters for date, phone number, and error status."
+      - "Allow sorting by duration and timestamp."
+    acceptance_criteria:
+      - "Dashboard performs well with large call volumes."
+
+  - id: 84
+    task_id: UIX-03
+    epic: "Phase 6: UI + Ops"
+    title: "Develop an analytical overview dashboard"
+    description: "Create high-level analytics view showing call volume, duration, and tool usage trends."
+    component: ui
+    area: UX
+    dependencies: []
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Build charts for call counts over time and average duration."
+      - "Visualize tool usage success and failure rates."
+    acceptance_criteria:
+      - "Admins can view KPIs for system health at a glance."
+
+  - id: 85
+    task_id: UIX-04
+    epic: "Phase 5: Safety & Reflection"
+    title: "Implement barge-in (interruption handling) in VUI"
+    description: "Allow the agent to stop speaking and listen when the user interrupts."
+    component: agent
+    area: UX
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Detect incoming audio during playback."
+      - "Stop synthesis and switch to transcribing the interruption."
+    acceptance_criteria:
+      - "Users can interrupt the agent naturally during a call."
+
+  - id: 86
+    task_id: UIX-05
+    epic: "Phase 6: UI + Ops"
+    title: "Add actionability to the dashboard"
+    description: "Enable admins to delete call records or trigger re-analysis from the web UI."
+    component: ui
+    area: UX
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add buttons for deleting or reprocessing calls."
+      - "Secure actions behind proper permissions."
+    acceptance_criteria:
+      - "Authorized admins can modify call records via the dashboard."
+
+  - id: 87
+    task_id: UIX-06
+    epic: "Phase 6: UI + Ops"
+    title: "Implement global search for call history"
+    description: "Add full-text search over transcripts, summaries, and phone numbers in the dashboard."
+    component: ui
+    area: UX
+    dependencies: []
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create search API endpoint supporting keyword queries."
+      - "Integrate search bar into the dashboard UI."
+    acceptance_criteria:
+      - "Admins can quickly locate specific calls using search terms."
