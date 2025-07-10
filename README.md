@@ -216,7 +216,10 @@ Use feature branches named `<phase>/<task_id>-short-desc`, then open a PR refere
 
 ## 🧪 Testing
 
+Install development dependencies first:
+
 ```bash
+pip install -r requirements-dev.txt
 pytest -q
 ```
 
