@@ -20,6 +20,11 @@ class Config:
     twilio_auth_token: str = field(
         default_factory=lambda: os.environ.get("TWILIO_AUTH_TOKEN", "")
     )
+    embedding_provider: str = field(
+        default_factory=lambda: os.environ.get(
+            "EMBEDDING_PROVIDER", "sentence_transformers"
+        )
+    )
     embedding_model_name: str = field(
         default_factory=lambda: os.environ.get(
             "EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2"

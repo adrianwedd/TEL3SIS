@@ -106,7 +106,7 @@ TEL3SIS/
 
    ```bash
    cp .env.example .env
-   # ➜ populate Twilio, OpenAI, ElevenLabs, Deepgram, EMBEDDING_MODEL_NAME, etc.
+   # ➜ populate Twilio, OpenAI, ElevenLabs, Deepgram, EMBEDDING_PROVIDER, EMBEDDING_MODEL_NAME, etc.
    ```
 
 4. **Launch stack**
@@ -155,7 +155,9 @@ python server/app.py
 | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` | Twilio credentials for SMS and escalation |
 | `OPENAI_API_KEY` | LLM access |
 | `ELEVEN_LABS_API_KEY` | TTS voice |
+| `EMBEDDING_PROVIDER` | `openai` or `sentence_transformers` |
 | `EMBEDDING_MODEL_NAME` | SentenceTransformers model name or path |
+| `OPENAI_EMBEDDING_MODEL` | Model name when using OpenAI embeddings |
 | `REDIS_URL` | Redis connection for state & Celery broker |
 | `CELERY_BROKER_URL` | Broker URL for Celery |
 | `CELERY_RESULT_BACKEND` | Result backend for Celery |

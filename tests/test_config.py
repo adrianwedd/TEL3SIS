@@ -168,5 +168,7 @@ def test_create_app_invalid_token_key(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_config_embedding_model(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("EMBEDDING_MODEL_NAME", "test-model")
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
     cfg = Config()
     assert cfg.embedding_model_name == "test-model"
+    assert cfg.embedding_provider == "openai"
