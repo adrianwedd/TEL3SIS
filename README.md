@@ -221,17 +221,17 @@ pytest -q
 ```
 
 * Unit tests live under `tests/`
-* End‑to‑end call emulation via `scripts/dev_test_call.py`
-* STT latency reduction via `scripts/warmup_whisper.py`
-* Management commands via `scripts/manage.py`
+* End‑to‑end call emulation via `tel3sis dev-call`
+* STT latency reduction via `tel3sis warmup`
+* Management commands via `tel3sis manage`
 
 ### Management CLI
 
 ```bash
-python scripts/manage.py create-user alice secret --role admin
-python scripts/manage.py generate-api-key alice
-python scripts/manage.py migrate
-python scripts/manage.py cleanup --days 30
+tel3sis manage create-user alice secret --role admin
+tel3sis manage generate-api-key alice
+tel3sis manage migrate
+tel3sis manage cleanup --days 30
 ```
 
 ### Maintenance Commands
