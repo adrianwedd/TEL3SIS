@@ -230,6 +230,7 @@ pytest -q
 ```bash
 python scripts/manage.py create-user alice secret --role admin
 python scripts/manage.py generate-api-key alice
+python scripts/manage.py migrate
 python scripts/manage.py cleanup --days 30
 ```
 

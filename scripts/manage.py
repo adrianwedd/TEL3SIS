@@ -1,4 +1,6 @@
 import click
+from alembic import command as alembic_command
+from alembic.config import Config as AlembicConfig
 
 from server import database as db
 from server import tasks
@@ -27,6 +29,14 @@ def generate_api_key_cmd(owner: str) -> None:
     db.init_db()
     key = db.create_api_key(owner)
     click.echo(key)
+
+
+@cli.command()
+def migrate() -> None:
+    """Apply database migrations."""
+    alembic_cfg = AlembicConfig("alembic.ini")
+    alembic_command.upgrade(alembic_cfg, "head")
+    click.echo("Database migrated to head.")
 
 
 @cli.command()

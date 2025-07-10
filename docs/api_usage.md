@@ -4,7 +4,7 @@ This document describes the HTTP endpoints under `/v1` exposed by the TEL3SIS se
 
 ## Authentication
 
-Generate an API key using `tel3sis-manage generate-api-key <owner>` and include it in the `X-API-Key` header:
+Generate an API key using `tel3sis-manage generate-api-key <owner>` and include it in the `X-API-Key` header. Initialize the database with `tel3sis-manage migrate`:
 
 ```bash
 X-API-Key: YOUR_API_KEY
