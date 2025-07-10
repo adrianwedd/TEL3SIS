@@ -1,0 +1,10 @@
+# Development dependencies for TEL3SIS
+-r requirements.in
+pytest
+pytest-asyncio
+numpy
+fakeredis
+mkdocs
+pre-commit
+ruff
+pip-tools
