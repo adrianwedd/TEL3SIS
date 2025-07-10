@@ -137,6 +137,8 @@ async def setup_app(monkeypatch, tmp_path):
     monkeypatch.setenv("BASE_URL", "http://localhost")
     monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("EMBEDDING_MODEL_NAME", "dummy-model")
+    monkeypatch.setattr("server.vector_db.SentenceTransformer", Dummy)
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     reload(db)
     db.init_db()

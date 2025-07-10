@@ -39,3 +39,41 @@ def test_embedding_function_model_name(monkeypatch: pytest.MonkeyPatch) -> None:
     func = vdb.STEmbeddingFunction()
     assert isinstance(func.model, DummyModel)
     assert func.model.name == "dummy-model"
+
+
+class DummyEmbeddingResp:
+    def __init__(self, n: int) -> None:
+        self.data = [type("Obj", (), {"embedding": [0.0, 0.0]})() for _ in range(n)]
+
+
+class DummyOpenAIClient:
+    def __init__(self) -> None:
+        self.embeddings = type(
+            "Embeddings",
+            (),
+            {"create": lambda self, input, model: DummyEmbeddingResp(len(input))},
+        )()
+
+
+class DummyOpenAIEmbedding:
+    def __call__(self, input: list[str]):  # noqa: ANN001
+        return [[0.0, 0.0] for _ in input]
+
+
+def test_openai_embedding_function(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    func = vdb.OpenAIEmbeddingFunction(model_name="foo", api_key="sk-test")
+    monkeypatch.setattr(func, "client", DummyOpenAIClient())
+    vecs = func(["a", "b"])
+    assert len(vecs) == 2
+
+
+def test_vector_db_openai_provider(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setattr(
+        vdb, "OpenAIEmbeddingFunction", lambda model_name=None: DummyOpenAIEmbedding()
+    )
+    db = vdb.VectorDB(persist_directory=str(tmp_path))
+    db.add_texts(["x"])
+    assert db.search("x")[0] == "x"
