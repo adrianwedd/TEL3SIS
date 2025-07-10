@@ -7,6 +7,7 @@ from typing import Any, List
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from loguru import logger
 
 from server.config import Config
 from server.state_manager import StateManager
@@ -116,13 +117,17 @@ def create_event(
 ) -> dict:
     """Create a calendar event and return the API response."""
     creds = _get_credentials(state_manager, user_id, user_phone, twilio_phone)
-    service = build("calendar", "v3", credentials=creds)
     event = {
         "summary": summary,
         "start": {"dateTime": start.isoformat(), "timeZone": timezone},
         "end": {"dateTime": end.isoformat(), "timeZone": timezone},
     }
-    return service.events().insert(calendarId="primary", body=event).execute()
+    try:
+        service = build("calendar", "v3", credentials=creds)
+        return service.events().insert(calendarId="primary", body=event).execute()
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Failed to create event for %s: %s", user_id, exc)
+        return {"error": "Sorry, I'm unable to create the calendar event right now."}
 
 
 def list_events(
@@ -136,16 +141,20 @@ def list_events(
 ) -> List[dict]:
     """Return upcoming calendar events between two times."""
     creds = _get_credentials(state_manager, user_id, user_phone, twilio_phone)
-    service = build("calendar", "v3", credentials=creds)
-    resp = (
-        service.events()
-        .list(
-            calendarId="primary",
-            timeMin=time_min.isoformat(),
-            timeMax=time_max.isoformat(),
-            singleEvents=True,
-            orderBy="startTime",
+    try:
+        service = build("calendar", "v3", credentials=creds)
+        resp = (
+            service.events()
+            .list(
+                calendarId="primary",
+                timeMin=time_min.isoformat(),
+                timeMax=time_max.isoformat(),
+                singleEvents=True,
+                orderBy="startTime",
+            )
+            .execute()
         )
-        .execute()
-    )
-    return resp.get("items", [])
+        return resp.get("items", [])
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Failed to list events for %s: %s", user_id, exc)
+        return []
