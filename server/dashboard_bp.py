@@ -64,15 +64,26 @@ def show_dashboard() -> str:  # type: ignore[return-type]
     with get_session() as session:
         q = session.query(Call)
         if query_param:
-            like = f"%{query_param}%"
-            q = q.filter(
-                or_(
-                    Call.from_number.like(like),
-                    Call.to_number.like(like),
-                    Call.summary.like(like),
-                    Call.self_critique.like(like),
+            phone_like = f"{query_param}%" if query_param.strip("+").isdigit() else None
+            if phone_like:
+                q = q.filter(
+                    or_(
+                        Call.from_number.like(phone_like),
+                        Call.to_number.like(phone_like),
+                        Call.summary.like(f"%{query_param}%"),
+                        Call.self_critique.like(f"%{query_param}%"),
+                    )
                 )
-            )
+            else:
+                like = f"%{query_param}%"
+                q = q.filter(
+                    or_(
+                        Call.from_number.like(like),
+                        Call.to_number.like(like),
+                        Call.summary.like(like),
+                        Call.self_critique.like(like),
+                    )
+                )
         calls = q.order_by(Call.created_at.desc()).all()
     return render_template("dashboard/list.html", calls=calls, q=query_param)
 
