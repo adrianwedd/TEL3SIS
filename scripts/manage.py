@@ -22,6 +22,17 @@ def create_user_cmd(username: str, password: str, role: str) -> None:
     click.echo(f"Created user '{username}' with role '{role}'.")
 
 
+@cli.command("delete-user")
+@click.argument("username")
+def delete_user_cmd(username: str) -> None:
+    """Delete a user account by ``username``."""
+    db.init_db()
+    if db.delete_user(username):
+        click.echo(f"Deleted user '{username}'.")
+    else:
+        click.echo(f"User '{username}' not found.")
+
+
 @cli.command("generate-api-key")
 @click.argument("owner")
 def generate_api_key_cmd(owner: str) -> None:
