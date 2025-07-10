@@ -304,6 +304,23 @@ We follow the **Conventional Commits** spec.
 
 ---
 
+## 🚀 Releases
+
+Tag a version using `v*` to build and publish the Docker image. Example:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow publishes `ghcr.io/<org>/tel3sis:<tag>`. Pull it with:
+
+```bash
+docker pull ghcr.io/<org>/tel3sis:v0.1.0
+```
+
+---
+
 ## 📜 License
 
 MIT. See `LICENSE`.
