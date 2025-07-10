@@ -14,8 +14,7 @@ Thank you for helping improve **TEL3SIS**! Please follow the guidelines below to
 1. **Clone the repository**
 2. **Install development tools**
    ```bash
-   pip install -r requirements.txt
-   pip install pre-commit
+   pip install -r requirements-dev.txt
    sudo apt-get install -y git-secrets
    git secrets --install -f
    ```
@@ -29,6 +28,17 @@ Thank you for helping improve **TEL3SIS**! Please follow the guidelines below to
    ```bash
    git secrets --scan -r
    ```
+
+### Updating dependencies
+
+Runtime packages live in `requirements.in` and development tools in
+`requirements-dev.in`. After modifying these files, run:
+
+```bash
+pip-compile requirements.in
+pip-compile requirements-dev.in
+```
+Commit the updated `.txt` files with your change.
 
 ## Branch Naming
 
