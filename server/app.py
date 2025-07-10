@@ -210,17 +210,30 @@ def create_app() -> FastAPI:
         with get_session() as session:
             db_query = session.query(Call)
             if query_param:
-                like = f"%{query_param}%"
                 from sqlalchemy import or_
 
-                db_query = db_query.filter(
-                    or_(
-                        Call.from_number.like(like),
-                        Call.to_number.like(like),
-                        Call.summary.like(like),
-                        Call.self_critique.like(like),
-                    )
+                phone_like = (
+                    f"{query_param}%" if query_param.strip("+").isdigit() else None
                 )
+                if phone_like:
+                    db_query = db_query.filter(
+                        or_(
+                            Call.from_number.like(phone_like),
+                            Call.to_number.like(phone_like),
+                            Call.summary.like(f"%{query_param}%"),
+                            Call.self_critique.like(f"%{query_param}%"),
+                        )
+                    )
+                else:
+                    like = f"%{query_param}%"
+                    db_query = db_query.filter(
+                        or_(
+                            Call.from_number.like(like),
+                            Call.to_number.like(like),
+                            Call.summary.like(like),
+                            Call.self_critique.like(like),
+                        )
+                    )
             calls = db_query.order_by(Call.created_at.desc()).all()
         body = (
             "\n".join(

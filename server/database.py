@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from datetime import datetime, UTC
 
-from sqlalchemy import Column, DateTime, Integer, JSON, String, create_engine
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Integer,
+    JSON,
+    String,
+    create_engine,
+    Index,
+)
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
@@ -29,6 +37,10 @@ class Base(DeclarativeBase):
 
 class Call(Base):
     __tablename__ = "calls"
+    __table_args__ = (
+        Index("ix_calls_created_at", "created_at"),
+        Index("ix_calls_from_number", "from_number"),
+    )
 
     id = Column(Integer, primary_key=True)
     call_sid = Column(String, unique=True, nullable=False)
