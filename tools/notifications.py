@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 import re
 
@@ -8,6 +7,8 @@ from loguru import logger
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import requests
+
+from server.config import Config
 
 __all__ = ["send_email", "send_sms", "sanitize_transcript"]
 
@@ -26,9 +27,10 @@ def sanitize_transcript(text: str) -> str:
 
 def send_email(transcript_path: str, to_email: str | None = None) -> None:
     """Send the transcript file via SendGrid email."""
-    api_key = os.environ.get("SENDGRID_API_KEY")
-    from_email = os.environ.get("SENDGRID_FROM_EMAIL")
-    to_email = to_email or os.environ.get("NOTIFY_EMAIL")
+    cfg = Config()
+    api_key = cfg.sendgrid_api_key
+    from_email = cfg.sendgrid_from_email
+    to_email = to_email or cfg.notify_email
 
     if not api_key or not from_email or not to_email:
         logger.warning("SendGrid not configured; skipping email notification")
@@ -51,8 +53,9 @@ def send_email(transcript_path: str, to_email: str | None = None) -> None:
 
 def send_sms(to_phone: str, from_phone: str, body: str) -> None:
     """Send an SMS via Twilio."""
-    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
-    auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+    cfg = Config()
+    account_sid = cfg.twilio_account_sid
+    auth_token = cfg.twilio_auth_token
     if not account_sid or not auth_token:
         logger.warning("Twilio not configured; skipping SMS notification")
         return
