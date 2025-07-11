@@ -33,6 +33,28 @@ def delete_user_cmd(username: str) -> None:
         click.echo(f"User '{username}' not found.")
 
 
+@cli.command("list-users")
+def list_users_cmd() -> None:
+    """List all users in the system."""
+    db.init_db()
+    users = db.list_users()
+    for user in users:
+        click.echo(f"{user.id}: {user.username} ({user.role})")
+
+
+@cli.command("update-user")
+@click.argument("username")
+@click.option("--password", default=None, help="New password")
+@click.option("--role", default=None, help="New role")
+def update_user_cmd(username: str, password: str | None, role: str | None) -> None:
+    """Update user password and/or role."""
+    db.init_db()
+    if db.update_user(username, password=password, role=role):
+        click.echo(f"Updated user '{username}'.")
+    else:
+        click.echo(f"User '{username}' not found.")
+
+
 @cli.command("generate-api-key")
 @click.argument("owner")
 def generate_api_key_cmd(owner: str) -> None:

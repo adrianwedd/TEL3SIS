@@ -190,3 +190,25 @@ def delete_user(username: str) -> bool:
         session.delete(user)
         session.commit()
         return True
+
+
+def list_users() -> list[User]:
+    """Return all users sorted by username."""
+    with get_session() as session:
+        return session.query(User).order_by(User.username).all()
+
+
+def update_user(
+    username: str, password: str | None = None, role: str | None = None
+) -> bool:
+    """Update user credentials and/or role. Return False if not found."""
+    with get_session() as session:
+        user = session.query(User).filter_by(username=username).one_or_none()
+        if user is None:
+            return False
+        if password is not None:
+            user.password_hash = generate_password_hash(password)
+        if role is not None:
+            user.role = role
+        session.commit()
+        return True

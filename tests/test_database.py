@@ -44,3 +44,18 @@ def test_create_and_delete_user(tmp_path, monkeypatch):
     with db.get_session() as session:
         assert session.query(db.User).filter_by(username="alice").count() == 0
     assert db.delete_user("alice") is False
+
+
+def test_list_and_update_user(tmp_path, monkeypatch):
+    db_url = f"sqlite:///{tmp_path}/test.db"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    db = migrate_sqlite(monkeypatch, tmp_path)
+    db.create_user("alice", "pw", role="user")
+    db.create_user("bob", "pw", role="admin")
+
+    users = db.list_users()
+    assert [u.username for u in users] == ["alice", "bob"]
+
+    assert db.update_user("alice", password="new", role="admin") is True
+    updated = [u for u in db.list_users() if u.username == "alice"][0]
+    assert updated.role == "admin"
