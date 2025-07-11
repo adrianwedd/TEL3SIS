@@ -53,3 +53,41 @@ def test_cli_manage_delete_user(monkeypatch):
 
     assert result.exit_code == 0
     assert calls["user"] == "bob"
+
+
+def test_cli_manage_list_users(monkeypatch):
+    monkeypatch.setattr("scripts.manage.db.init_db", lambda: None)
+    monkeypatch.setattr(
+        "scripts.manage.db.list_users",
+        lambda: [types.SimpleNamespace(id=1, username="alice", role="admin")],
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["manage", "list-users"])
+
+    assert result.exit_code == 0
+    assert "alice" in result.output
+
+
+def test_cli_manage_update_user(monkeypatch):
+    calls: dict[str, str | None] = {}
+    monkeypatch.setattr("scripts.manage.db.init_db", lambda: None)
+
+    def _update(
+        username: str, password: str | None = None, role: str | None = None
+    ) -> bool:
+        calls["username"] = username
+        calls["password"] = password
+        calls["role"] = role
+        return True
+
+    monkeypatch.setattr("scripts.manage.db.update_user", _update)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["manage", "update-user", "bob", "--password", "pw", "--role", "user"],
+    )
+
+    assert result.exit_code == 0
+    assert calls == {"username": "bob", "password": "pw", "role": "user"}
