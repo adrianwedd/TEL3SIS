@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: pip install PyGithub PyYAML
+        run: pip install -r requirements-dev.txt
       - name: Run CoordinatorAgent
         env:
           GITHUB_TOKEN: ${{ steps.app.outputs.token }}

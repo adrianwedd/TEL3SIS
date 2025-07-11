@@ -145,6 +145,19 @@ python server/app.py
 ```
 > Use this only for lightweight debugging; Docker remains the canonical environment.
 
+### Local development and testing
+
+Set up a virtual environment with all development dependencies to run the test suite and pre-commit hooks:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements-dev.txt
+pre-commit install
+pytest -q
+```
+
+
 ---
 
 ## ⚙️ Environment Variables
