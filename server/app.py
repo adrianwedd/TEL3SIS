@@ -68,6 +68,15 @@ class RecordingStatusData(BaseModel):
     RecordingUrl: HttpUrl
 
 
+class InboundSMSData(BaseModel):
+    """Data payload for Twilio SMS webhooks."""
+
+    MessageSid: str
+    From: str
+    To: str
+    Body: str
+
+
 class OAuthStartData(BaseModel):
     user_id: str | None = None
 
@@ -578,6 +587,21 @@ def create_app(cfg: Config | None = None) -> FastAPI:
             status_code=response.status_code,
             media_type=response.media_type,
         )
+
+    @app.post("/v1/inbound_sms", summary="Handle inbound SMS", tags=["sms"])
+    async def inbound_sms(request: Request):
+        try:
+            form = await request.form()
+            data = InboundSMSData(**form)
+        except ValidationError as exc:
+            return _json_validation_error(exc)
+
+        sms_id = data.MessageSid
+        state_manager.create_session(sms_id, {"from": data.From, "to": data.To})
+        agent = SMSAgent(state_manager, sms_id)
+        response_text = await agent.handle_message(data.Body)
+        send_sms(data.From, data.To, response_text)
+        return Response(status_code=204)
 
     @app.post(
         "/v1/recording_status",

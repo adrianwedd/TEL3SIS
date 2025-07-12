@@ -28,6 +28,7 @@ from .tasks import echo
 from tools.notifications import send_sms
 from tools.calendar import generate_auth_url, exchange_code
 from agents.core_agent import build_core_agent, SafeAgentFactory
+from agents.sms_agent import SMSAgent
 from .latency_logging import log_call
 from .validation import validation_error_response
 
@@ -42,6 +43,15 @@ class RecordingStatusData(BaseModel):
     CallSid: str
     RecordingSid: str
     RecordingUrl: HttpUrl
+
+
+class InboundSMSData(BaseModel):
+    """Data payload for Twilio SMS webhooks."""
+
+    MessageSid: str
+    From: str
+    To: str
+    Body: str
 
 
 class OAuthStartData(BaseModel):
@@ -168,6 +178,21 @@ def create_app(cfg: Config | None = None) -> FastAPI:
             status_code=response.status_code,
             media_type=response.media_type,
         )
+
+    @app.post("/v1/inbound_sms")
+    async def inbound_sms(request: Request):
+        try:
+            form = await request.form()
+            data = InboundSMSData(**form)
+        except ValidationError as exc:
+            return validation_error_response(exc)
+
+        sms_id = data.MessageSid
+        state_manager.create_session(sms_id, {"from": data.From, "to": data.To})
+        agent = SMSAgent(state_manager, sms_id)
+        response_text = await agent.handle_message(data.Body)
+        send_sms(data.From, data.To, response_text)
+        return Response(status_code=204)
 
     @app.post("/v1/recording_status")
     async def recording_status(request: Request):
