@@ -44,6 +44,9 @@ def install() -> types.ModuleType:
     dummy.streaming.models.telephony = types.ModuleType(
         "vocode.streaming.models.telephony"
     )
+    dummy.streaming.streaming_conversation = types.ModuleType(
+        "vocode.streaming.streaming_conversation"
+    )
 
     class Dummy:
         def __init__(self, *args: object, **kwargs: object) -> None:
@@ -62,6 +65,7 @@ def install() -> types.ModuleType:
     dummy.streaming.models.message.EndOfTurn = Dummy
     dummy.streaming.models.transcriber.WhisperCPPTranscriberConfig = Dummy
     dummy.streaming.models.synthesizer.ElevenLabsSynthesizerConfig = Dummy
+    dummy.streaming.streaming_conversation.StreamingConversation = Dummy
 
     class TelephonyServer:
         def __init__(self, *_: object, **__: object) -> None:
@@ -129,6 +133,9 @@ def install() -> types.ModuleType:
         "vocode.streaming.models.synthesizer"
     ] = dummy.streaming.models.synthesizer
     sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
+    sys.modules[
+        "vocode.streaming.streaming_conversation"
+    ] = dummy.streaming.streaming_conversation
 
     return dummy
 
