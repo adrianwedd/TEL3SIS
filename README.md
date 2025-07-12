@@ -134,6 +134,7 @@ Detailed examples for every `/v1` endpoint can be found in [docs/api_usage.md](d
 
 ## 📚 Documentation
 For a deep dive into the system design, see the [core logic architecture review](docs/reviews/core_logic_architecture_review.md).
+Production deployment recommendations are covered in [docs/production.md](docs/production.md).
 
 ---
 **Local (non‑Docker) setup**  
