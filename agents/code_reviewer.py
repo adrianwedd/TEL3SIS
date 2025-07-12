@@ -7,6 +7,7 @@ from difflib import SequenceMatcher
 from typing import Optional
 
 from server.config import Config
+from server.cache import redis_cache
 
 from github import Github
 
@@ -17,6 +18,7 @@ class LocalLLM:
     def __init__(self, model_name: str = "distilgpt2") -> None:
         self.model_name = model_name
 
+    @redis_cache(ttl=3600)
     def generate(self, prompt: str) -> str:
         """Return a stub solution for the given prompt."""
         return "pass\n"
