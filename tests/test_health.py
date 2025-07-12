@@ -9,6 +9,35 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import fakeredis
 from fastapi.testclient import TestClient
 
+chroma = types.ModuleType("chromadb")
+
+
+class _DummyCollection:
+    def add(self, **_: object) -> None:
+        pass
+
+    def query(self, **_: object):
+        return {"documents": [[]]}
+
+
+class _DummyClient:
+    def __init__(self, *_: object, **__: object) -> None:
+        pass
+
+    def get_or_create_collection(self, *_: object, **__: object):
+        return _DummyCollection()
+
+    def heartbeat(self) -> int:
+        return 1
+
+
+chroma.PersistentClient = _DummyClient
+sys.modules["chromadb"] = chroma
+sys.modules["chromadb.api"] = types.ModuleType("chromadb.api")
+sys.modules["chromadb.api.types"] = types.SimpleNamespace(
+    EmbeddingFunction=object, Embeddings=list
+)
+
 dummy = types.ModuleType("vocode")
 dummy.streaming = types.ModuleType("vocode.streaming")
 dummy.streaming.agent = types.ModuleType("vocode.streaming.agent")
