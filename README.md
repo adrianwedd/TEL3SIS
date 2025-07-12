@@ -243,12 +243,19 @@ pytest -q
 
 ### Management CLI
 
+#### User Management Commands
+
 ```bash
 tel3sis manage create-user alice secret --role admin
 tel3sis manage list-users
 tel3sis manage update-user alice --password newpass --role user
-tel3sis manage generate-api-key alice
 tel3sis manage delete-user alice
+```
+
+#### System Maintenance
+
+```bash
+tel3sis manage generate-api-key alice
 tel3sis manage migrate
 tel3sis manage cleanup --days 30
 ```
