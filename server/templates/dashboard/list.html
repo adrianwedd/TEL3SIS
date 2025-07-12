@@ -13,6 +13,14 @@
     <a href="{{ url_for('dashboard.call_detail', call_id=call.id) }}">
       {{ call.created_at.strftime('%Y-%m-%d %H:%M') }} - {{ call.from_number }} → {{ call.to_number }}
     </a>
+    <form method="post" action="{{ url_for('dashboard.delete_call', call_id=call.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" />
+      <button type="submit" onclick="return confirm('Delete this call?');">Delete</button>
+    </form>
+    <form method="post" action="{{ url_for('dashboard.reprocess_call', call_id=call.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" />
+      <button type="submit">Reprocess</button>
+    </form>
   </li>
 {% else %}
   <li>No calls found.</li>

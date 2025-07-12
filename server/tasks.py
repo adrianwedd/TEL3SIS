@@ -229,6 +229,23 @@ def reprocess_call(call_id: int) -> bool:
 
 
 @celery_app.task
+def delete_call_record(call_id: int) -> bool:
+    """Delete a call and associated files."""
+    with monitor_task("delete_call_record"):
+        with get_session() as session:
+            call = session.get(Call, call_id)
+            if call is None:
+                return False
+            transcript = Path(call.transcript_path)
+            audio = DEFAULT_OUTPUT_DIR / f"{transcript.stem}.mp3"
+            transcript.unlink(missing_ok=True)
+            audio.unlink(missing_ok=True)
+            session.delete(call)
+            session.commit()
+        return True
+
+
+@celery_app.task
 def clear_cache_task(pattern: str = "cache:*") -> int:
     """Clear cached entries matching ``pattern``."""
     from .cache import clear_cache

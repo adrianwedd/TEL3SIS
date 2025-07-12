@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from apispec import APISpec
 from pydantic import BaseModel, Field, HttpUrl, ValidationError
@@ -27,6 +27,7 @@ from vocode.streaming.models.telephony import TwilioConfig
 
 from .database import (
     Call,
+    User,
     get_session,
     get_user_preference,
     init_db,
@@ -36,7 +37,7 @@ from .database import (
 from .config import Config, ConfigError
 from .handoff import dial_twiml
 from .state_manager import StateManager
-from .tasks import echo
+from .tasks import echo, reprocess_call, delete_call_record
 from tools.notifications import send_sms
 from tools.calendar import exchange_code, generate_auth_url
 from agents.core_agent import build_core_agent, SafeAgentFactory
@@ -149,6 +150,13 @@ def _aggregate_metrics() -> dict[str, Any]:
     }
 
 
+def _check_admin(username: str) -> bool:
+    """Return True if ``username`` has admin role."""
+    with get_session() as session:
+        user = session.query(User).filter_by(username=username).one_or_none()
+        return bool(user and user.role == "admin")
+
+
 def create_app(cfg: Config | None = None) -> FastAPI:
     try:
         config = cfg or Config()
@@ -245,7 +253,12 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         exchange_code(state_manager, data.state, str(request.url))
         return RedirectResponse("/v1/dashboard")
 
-    @app.get("/v1/dashboard", summary="Render call dashboard", tags=["dashboard"])
+    @app.get(
+        "/v1/dashboard",
+        summary="Render call dashboard",
+        tags=["dashboard"],
+        name="dashboard.show_dashboard",
+    )
     async def dashboard(request: Request, q: str | None = None):
         if "user" not in request.session:
             return RedirectResponse("/v1/login/oauth")
@@ -277,20 +290,16 @@ def create_app(cfg: Config | None = None) -> FastAPI:
                         )
                     )
             calls = db_query.order_by(Call.created_at.desc()).all()
-        body = (
-            "\n".join(
-                f"<li><a href='/v1/dashboard/{c.id}'>{c.from_number}</a></li>"
-                for c in calls
-            )
-            or "<li>No calls found.</li>"
+        return templates.TemplateResponse(
+            "dashboard/list.html",
+            {"request": request, "calls": calls, "q": query_param},
         )
-        html = f"<ul>{body}</ul>"
-        return HTMLResponse(html)
 
     @app.get(
         "/v1/dashboard/{call_id}",
         summary="Dashboard call detail",
         tags=["dashboard"],
+        name="dashboard.call_detail",
     )
     async def dashboard_detail(request: Request, call_id: int):
         if "user" not in request.session:
@@ -300,13 +309,22 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         if not call:
             raise HTTPException(status_code=404)
         transcript = Path(call.transcript_path).read_text()
-        html = f"<pre>{transcript}</pre>"
-        return HTMLResponse(html)
+        audio_path = f"/recordings/audio/{Path(call.transcript_path).stem}.mp3"
+        return templates.TemplateResponse(
+            "dashboard/detail.html",
+            {
+                "request": request,
+                "call": call,
+                "transcript": transcript,
+                "audio_path": audio_path,
+            },
+        )
 
     @app.get(
         "/v1/dashboard/analytics",
         summary="Analytics overview",
         tags=["dashboard"],
+        name="dashboard.analytics",
     )
     async def dashboard_analytics(request: Request):
         if "user" not in request.session:
@@ -316,6 +334,36 @@ def create_app(cfg: Config | None = None) -> FastAPI:
             "dashboard/analytics.html",
             {"request": request, "metrics": metrics},
         )
+
+    @app.post(
+        "/v1/dashboard/{call_id}/delete",
+        summary="Delete call record",
+        tags=["dashboard"],
+        name="dashboard.delete_call",
+    )
+    async def dashboard_delete_call(request: Request, call_id: int):
+        if "user" not in request.session:
+            return RedirectResponse("/v1/login/oauth")
+        if not _check_admin(request.session["user"]):
+            raise HTTPException(status_code=403)
+        delete_call_record.delay(call_id)
+        url = app.url_path_for("dashboard.show_dashboard")
+        return RedirectResponse(url, status_code=303)
+
+    @app.post(
+        "/v1/dashboard/{call_id}/reprocess",
+        summary="Reprocess call record",
+        tags=["dashboard"],
+        name="dashboard.reprocess_call",
+    )
+    async def dashboard_reprocess_call(request: Request, call_id: int):
+        if "user" not in request.session:
+            return RedirectResponse("/v1/login/oauth")
+        if not _check_admin(request.session["user"]):
+            raise HTTPException(status_code=403)
+        reprocess_call.delay(call_id)
+        url = app.url_path_for("dashboard.call_detail", call_id=call_id)
+        return RedirectResponse(url, status_code=303)
 
     @app.get(
         "/v1/calls",
