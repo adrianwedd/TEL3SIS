@@ -203,3 +203,23 @@ def refresh_tokens_task(threshold_seconds: int = 300) -> int:
             manager.set_token(user_id, creds.token, refresh_token, new_exp)
             refreshed += 1
         return refreshed
+
+
+@celery_app.task
+def reprocess_call(call_id: int) -> bool:
+    """Re-run summary and critique generation for a call."""
+    with monitor_task("reprocess_call"):
+        with get_session() as session:
+            call = session.get(Call, call_id)
+            if call is None:
+                return False
+            transcript = Path(call.transcript_path)
+            if not transcript.exists():
+                return False
+            text = transcript.read_text()
+            summary = summarize_text(text)
+            critique = generate_self_critique(text)
+            call.summary = summary
+            call.self_critique = critique
+            session.commit()
+        return True

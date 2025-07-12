@@ -3,7 +3,15 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
-from flask import Blueprint, render_template, request, abort, redirect, url_for
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    abort,
+    redirect,
+    url_for,
+    session,
+)
 from flask_login import login_required, current_user
 from flask_socketio import SocketIO, join_room, leave_room
 from sqlalchemy import or_
@@ -14,6 +22,9 @@ from typing import Any, Dict
 from .validation import validation_error_response
 
 from .database import Call, get_session
+from .recordings import DEFAULT_OUTPUT_DIR
+from .tasks import reprocess_call as reprocess_call_task
+import secrets
 
 bp = Blueprint("dashboard", __name__, template_folder="templates")
 socketio = SocketIO(cors_allowed_origins="*")
@@ -48,9 +59,11 @@ class DashboardQuery(BaseModel):
 
 @bp.before_request
 def require_login():  # type: ignore[return-type]
-    """Redirect anonymous users to OAuth login."""
+    """Redirect anonymous users and setup CSRF token."""
     if not current_user.is_authenticated:
         return redirect(url_for("auth.oauth_login"))
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_urlsafe(16)
 
 
 @bp.get("/v1/dashboard")
@@ -111,6 +124,39 @@ def call_detail(call_id: int) -> str:  # type: ignore[return-type]
         transcript=transcript,
         audio_path=audio_path,
     )
+
+
+@bp.post("/v1/calls/<int:call_id>/delete")
+@login_required
+def delete_call(call_id: int) -> str:  # type: ignore[return-type]
+    """Remove a call and associated files."""
+    if current_user.role != "admin":
+        abort(403)
+    if request.form.get("csrf_token") != session.get("csrf_token"):
+        abort(400)
+    with get_session() as session_db:
+        call = session_db.get(Call, call_id)
+        if call is None:
+            abort(404)
+        transcript = Path(call.transcript_path)
+        audio = DEFAULT_OUTPUT_DIR / f"{transcript.stem}.mp3"
+        transcript.unlink(missing_ok=True)
+        audio.unlink(missing_ok=True)
+        session_db.delete(call)
+        session_db.commit()
+    return redirect(url_for("dashboard.show_dashboard"))
+
+
+@bp.post("/v1/calls/<int:call_id>/reprocess")
+@login_required
+def reprocess_call(call_id: int) -> str:  # type: ignore[return-type]
+    """Trigger async re-analysis of a call."""
+    if current_user.role != "admin":
+        abort(403)
+    if request.form.get("csrf_token") != session.get("csrf_token"):
+        abort(400)
+    reprocess_call_task.delay(call_id)
+    return redirect(url_for("dashboard.call_detail", call_id=call_id))
 
 
 def _aggregate_metrics() -> Dict[str, Any]:
