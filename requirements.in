@@ -18,6 +18,7 @@ google-auth
 google-auth-oauthlib
 prometheus_client
 pydantic
+pydantic-settings
 langdetect
 sentence-transformers
 fastapi

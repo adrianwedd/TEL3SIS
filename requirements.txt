@@ -347,6 +347,8 @@ pydantic==2.11.7
     #   chromadb
     #   fastapi
     #   openai
+pydantic-settings==2.10.1
+    # via -r requirements.in
 pydantic-core==2.33.2
     # via pydantic
 pygithub==2.6.1
