@@ -7,6 +7,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
 from apispec import APISpec
 from pydantic import BaseModel, Field, HttpUrl, ValidationError
 from datetime import datetime
@@ -133,6 +134,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         openapi_url="/openapi.json",
     )
+    templates = Jinja2Templates(directory="server/templates")
     app.state.spec = APISpec(
         title=app.title,
         version=app.version,
@@ -273,6 +275,22 @@ def create_app() -> FastAPI:
         transcript = Path(call.transcript_path).read_text()
         html = f"<pre>{transcript}</pre>"
         return HTMLResponse(html)
+
+    @app.get(
+        "/v1/dashboard/analytics",
+        summary="Analytics overview",
+        tags=["dashboard"],
+    )
+    async def dashboard_analytics(request: Request):
+        if "user" not in request.session:
+            return RedirectResponse("/v1/login/oauth")
+        from .dashboard_bp import _aggregate_metrics
+
+        metrics = _aggregate_metrics()
+        return templates.TemplateResponse(
+            "dashboard/analytics.html",
+            {"request": request, "metrics": metrics},
+        )
 
     @app.get(
         "/v1/calls",
