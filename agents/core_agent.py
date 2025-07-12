@@ -22,27 +22,10 @@ from vocode.streaming.models.agent import ChatGPTAgentConfig
 from vocode.streaming.models.transcriber import WhisperCPPTranscriberConfig
 from vocode.streaming.models.synthesizer import ElevenLabsSynthesizerConfig
 from server.config import Config
-
-from tools.weather import get_weather
+from tools import registry
 from tools.safety import safety_check
 from server.state_manager import StateManager
 from tools.calendar import AuthError
-
-
-WEATHER_FUNCTION = {
-    "name": "get_weather",
-    "description": "Get the current weather for a location.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "location": {
-                "type": "string",
-                "description": "City or region name",
-            }
-        },
-        "required": ["location"],
-    },
-}
 
 
 @dataclass
@@ -73,7 +56,11 @@ class FunctionCallingAgent(ChatGPTAgent):
         **kwargs: Any,
     ) -> None:
         super().__init__(agent_config, **kwargs)
-        self.function_map = {"get_weather": get_weather}
+        if agent_config.functions is not None:
+            agent_config.functions.extend(registry.schemas())
+        else:
+            agent_config.functions = registry.schemas()
+        self.function_map = {name: tool.run for name, tool in registry.tools.items()}
         if function_map:
             self.function_map.update(function_map)
         self.state_manager = state_manager
@@ -209,7 +196,7 @@ def build_core_agent(
     agent_config = FunctionChatGPTAgentConfig(
         prompt_preamble="You are TEL3SIS, a helpful voice assistant.",
         openai_api_key=cfg.openai_api_key,
-        functions=[WEATHER_FUNCTION],
+        functions=registry.schemas(),
     )
 
     transcriber_config = WhisperCPPTranscriberConfig.from_telephone_input_device()

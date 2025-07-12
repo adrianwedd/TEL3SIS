@@ -1672,7 +1672,7 @@ tasks:
     area: Core
     dependencies: [88]
     priority: 3
-    status: pending
+    status: in_review
     assigned_to: null
     command: null
     actionable_steps:
