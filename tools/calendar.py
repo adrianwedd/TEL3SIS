@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Any, List
 
 from google.auth.transport.requests import Request
+from .base import Tool
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from loguru import logger
@@ -22,6 +23,8 @@ __all__ = [
     "create_event",
     "list_events",
     "AuthError",
+    "CreateEventTool",
+    "ListEventsTool",
 ]
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
@@ -158,3 +161,45 @@ def list_events(
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to list events for %s: %s", user_id, exc)
         return []
+
+
+class CreateEventTool(Tool):
+    """Tool wrapper around :func:`create_event`."""
+
+    name = "create_event"
+    description = "Create an event in the user's Google Calendar."
+    parameters = {
+        "type": "object",
+        "properties": {
+            "state_manager": {"type": "object"},
+            "user_id": {"type": "string"},
+            "summary": {"type": "string"},
+            "start": {"type": "string", "format": "date-time"},
+            "end": {"type": "string", "format": "date-time"},
+            "timezone": {"type": "string", "default": "UTC"},
+        },
+        "required": ["state_manager", "user_id", "summary", "start", "end"],
+    }
+
+    def run(self, **kwargs: Any) -> dict:  # type: ignore[override]
+        return create_event(**kwargs)
+
+
+class ListEventsTool(Tool):
+    """Tool wrapper around :func:`list_events`."""
+
+    name = "list_events"
+    description = "List calendar events between two times."
+    parameters = {
+        "type": "object",
+        "properties": {
+            "state_manager": {"type": "object"},
+            "user_id": {"type": "string"},
+            "time_min": {"type": "string", "format": "date-time"},
+            "time_max": {"type": "string", "format": "date-time"},
+        },
+        "required": ["state_manager", "user_id", "time_min", "time_max"],
+    }
+
+    def run(self, **kwargs: Any) -> List[dict]:  # type: ignore[override]
+        return list_events(**kwargs)
