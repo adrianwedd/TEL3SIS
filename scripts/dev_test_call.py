@@ -10,6 +10,7 @@ from vocode.streaming.streaming_conversation import StreamingConversation
 
 from agents.core_agent import SafeFunctionCallingAgent, build_core_agent
 from server.state_manager import StateManager
+from tel3sis import BargeInController, enable_barge_in, handle_barge_in
 
 
 async def main() -> None:
@@ -24,12 +25,15 @@ async def main() -> None:
     transcriber = WhisperCPPTranscriber(config.transcriber)
     synthesizer = DefaultSynthesizerFactory().create_synthesizer(config.synthesizer)
 
+    barge_in = BargeInController(synthesizer, transcriber, state_manager, "local")
+
     conversation = StreamingConversation(
         output_device=speaker,
         transcriber=transcriber,
         agent=agent,
         synthesizer=synthesizer,
     )
+    enable_barge_in(conversation, barge_in)
 
     conversation.warmup_synthesizer()
     await conversation.start()
@@ -39,6 +43,7 @@ async def main() -> None:
     try:
         while conversation.is_active():
             chunk = await mic.get_audio()
+            handle_barge_in(conversation, barge_in, chunk)
             conversation.receive_audio(chunk)
     except KeyboardInterrupt:
         logger.info("Stopping conversation...")
