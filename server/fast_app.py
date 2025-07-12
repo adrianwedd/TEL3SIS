@@ -30,6 +30,7 @@ from .tasks import echo
 from tools.notifications import send_sms
 from tools.calendar import generate_auth_url, exchange_code
 from agents.core_agent import build_core_agent, SafeAgentFactory
+from .latency_logging import log_call
 from .validation import validation_error_response
 
 
@@ -109,6 +110,7 @@ def create_app() -> FastAPI:
         return "Authentication successful"
 
     @app.post("/v1/inbound_call")
+    @log_call
     async def inbound_call(request: Request):
         try:
             form = await request.form()

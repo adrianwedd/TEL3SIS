@@ -39,6 +39,7 @@ from .tasks import echo
 from tools.notifications import send_sms
 from tools.calendar import exchange_code, generate_auth_url
 from agents.core_agent import build_core_agent, SafeAgentFactory
+from .latency_logging import log_call
 
 
 class InboundCallData(BaseModel):
@@ -295,6 +296,7 @@ def create_app() -> FastAPI:
         return RedirectResponse(url)
 
     @app.post("/v1/inbound_call", summary="Handle inbound call", tags=["calls"])
+    @log_call
     async def inbound_call(request: Request):
         try:
             form = await request.form()
