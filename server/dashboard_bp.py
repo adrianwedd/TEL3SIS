@@ -8,6 +8,8 @@ from flask_login import login_required, current_user
 from flask_socketio import SocketIO, join_room, leave_room
 from sqlalchemy import or_
 from pydantic import BaseModel, StrictStr, ValidationError
+from collections import defaultdict
+from typing import Any, Dict
 
 from .validation import validation_error_response
 
@@ -109,3 +111,40 @@ def call_detail(call_id: int) -> str:  # type: ignore[return-type]
         transcript=transcript,
         audio_path=audio_path,
     )
+
+
+def _aggregate_metrics() -> Dict[str, Any]:
+    """Return aggregate call metrics from the database."""
+    with get_session() as session:
+        calls = session.query(Call).all()
+
+    total = len(calls)
+    durations = []
+    tools = defaultdict(int)
+    for call in calls:
+        try:
+            text = Path(call.transcript_path).read_text()
+        except Exception:
+            text = ""
+        durations.append(len(text.split()) / 2)
+        text_lower = f"{text.lower()} {(call.summary or '').lower()}"
+        for name in ["weather", "calendar", "sms", "email"]:
+            if name in text_lower:
+                tools[name] += 1
+
+    avg_duration = sum(durations) / total if total else 0.0
+    return {
+        "total_calls": total,
+        "avg_duration": avg_duration,
+        "tool_usage": dict(tools),
+    }
+
+
+@bp.get("/v1/dashboard/analytics")
+@login_required
+def analytics() -> str:  # type: ignore[return-type]
+    """Render analytics overview for admins."""
+    if current_user.role != "admin":
+        abort(403)
+    metrics = _aggregate_metrics()
+    return render_template("dashboard/analytics.html", metrics=metrics)

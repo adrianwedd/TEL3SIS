@@ -2,6 +2,7 @@
 {% block title %}Call Dashboard{% endblock %}
 {% block content %}
 <h1>Call History</h1>
+<p><a href="{{ url_for('dashboard.analytics') }}">View Analytics</a></p>
 <form method="get">
   <input type="text" name="q" placeholder="Search" value="{{ q }}" />
   <button type="submit">Search</button>
