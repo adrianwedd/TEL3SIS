@@ -9,7 +9,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import httpx
 import tests.test_api_key_auth  # noqa: F401
 from .db_utils import migrate_sqlite
-from server import fast_app as server_app
+from server import app as server_app
 
 
 def test_concurrent_inbound_calls(monkeypatch, tmp_path):

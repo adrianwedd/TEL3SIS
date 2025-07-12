@@ -12,23 +12,6 @@ X-API-Key: YOUR_API_KEY
 
 ## Endpoints
 
-### `GET /v1/login`
-Display the login form for the web dashboard.
-
-### `POST /v1/login`
-Submit form credentials to log in. Example request using `curl`:
-
-```bash
-curl -X POST https://example.com/v1/login \
-  -F 'username=admin' \
-  -F 'password=secret'
-```
-
-Returns a redirect to the dashboard on success or the login form with an error message.
-
-### `GET /v1/logout`
-Invalidate the current session and redirect to the login form.
-
 ### `GET /v1/login/oauth`
 Begin an OAuth login flow. Redirects the user to the provider.
 

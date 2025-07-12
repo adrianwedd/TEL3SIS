@@ -1,10 +1,6 @@
 # Runtime dependencies for TEL3SIS
 loguru
 cryptography
-Flask
-Flask-Login
-Flask-Limiter
-Flask-SocketIO
 oauthlib
 openai
 PyGithub
