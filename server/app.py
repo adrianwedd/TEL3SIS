@@ -5,7 +5,14 @@ from pathlib import Path
 from collections import defaultdict
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Request,
+    Response,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from apispec import APISpec
@@ -40,8 +47,12 @@ from .state_manager import StateManager
 from .tasks import echo, reprocess_call, delete_call_record
 from tools.notifications import send_sms
 from tools.calendar import exchange_code, generate_auth_url
-from agents.core_agent import build_core_agent, SafeAgentFactory
-from agents.sms_agent import SMSAgent
+from agents.core_agent import (
+    build_core_agent,
+    SafeAgentFactory,
+    SafeFunctionCallingAgent,
+)
+from .chat import manager as chat_manager, uuid4
 from .latency_logging import log_call
 
 
@@ -611,6 +622,30 @@ def create_app(cfg: Config | None = None) -> FastAPI:
             data.RecordingUrl,
         )
         return Response(status_code=204)
+
+    @app.websocket("/chat/ws")
+    async def chat_ws(websocket: WebSocket, session_id: str | None = None):
+        """Bidirectional WebSocket chat with the core agent."""
+
+        sid = session_id or str(uuid4())
+        await chat_manager.connect(sid, websocket)
+        config_obj = build_core_agent(state_manager, sid)
+        agent = SafeFunctionCallingAgent(
+            config_obj.agent, state_manager=state_manager, call_sid=sid
+        )
+
+        await websocket.send_json({"session_id": sid})
+        try:
+            while True:
+                text = await websocket.receive_text()
+                state_manager.append_history(sid, "user", text)
+                async for resp in agent.generate_response(text, sid):
+                    if hasattr(resp.message, "text"):
+                        msg_text = getattr(resp.message, "text")
+                        state_manager.append_history(sid, "assistant", msg_text)
+                        await chat_manager.send_text(sid, msg_text)
+        except WebSocketDisconnect:
+            chat_manager.disconnect(sid)
 
     @app.get(
         "/v1/health",
