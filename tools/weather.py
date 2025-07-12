@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import requests
 from loguru import logger
+from server.cache import redis_cache
 
 __all__ = ["get_weather"]
 
 
+@redis_cache(ttl=3600)
 def get_weather(location: str) -> str:
     """Return a simple weather report for the given location."""
     url = f"https://wttr.in/{location}?format=j1"

@@ -226,3 +226,12 @@ def reprocess_call(call_id: int) -> bool:
             call.self_critique = critique
             session.commit()
         return True
+
+
+@celery_app.task
+def clear_cache_task(pattern: str = "cache:*") -> int:
+    """Clear cached entries matching ``pattern``."""
+    from .cache import clear_cache
+
+    with monitor_task("clear_cache_task"):
+        return clear_cache(pattern)
