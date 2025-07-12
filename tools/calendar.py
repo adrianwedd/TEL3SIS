@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-import os
 from datetime import datetime
 from typing import Any, List
 
@@ -32,8 +30,9 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 def _build_flow(state: str) -> Any:
     from google_auth_oauthlib.flow import Flow
 
-    client_id = os.environ.get("GOOGLE_CLIENT_ID")
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    cfg = Config()
+    client_id = cfg.google_client_id
+    client_secret = cfg.google_client_secret
     if not client_id or not client_secret:
         raise RuntimeError("Google OAuth client not configured")
     redirect_uri = Config().base_url + "/oauth/callback"
@@ -88,12 +87,13 @@ def _get_credentials(
             url = generate_auth_url(state_manager, user_id)
             send_sms(user_phone, twilio_phone, f"Please authenticate here: {url}")
         raise AuthError("No credentials")
+    cfg = Config()
     creds = Credentials(
         data["access_token"],
         refresh_token=data.get("refresh_token"),
         token_uri="https://oauth2.googleapis.com/token",
-        client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-        client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+        client_id=cfg.google_client_id,
+        client_secret=cfg.google_client_secret,
     )
     if data.get("expires_at"):
         creds.expiry = datetime.fromtimestamp(int(data["expires_at"]))

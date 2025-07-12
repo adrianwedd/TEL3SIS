@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import os
 from typing import Iterable, List, Sequence, Optional
+
+from server.config import Config
 
 import chromadb
 from chromadb.api.types import EmbeddingFunction, Embeddings
@@ -14,10 +15,9 @@ class OpenAIEmbeddingFunction(EmbeddingFunction):
     def __init__(
         self, model_name: str | None = None, api_key: str | None = None
     ) -> None:
-        self.model_name = model_name or os.getenv(
-            "OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"
-        )
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY", "")
+        cfg = Config()
+        self.model_name = model_name or cfg.openai_embedding_model
+        self.api_key = api_key or cfg.openai_api_key
         try:
             from openai import OpenAI
 
@@ -41,7 +41,8 @@ class STEmbeddingFunction(EmbeddingFunction):
     """Embedding function backed by SentenceTransformers."""
 
     def __init__(self, model_name: Optional[str] = None) -> None:
-        name = model_name or os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
+        cfg = Config()
+        name = model_name or cfg.embedding_model_name
         try:
             self.model = SentenceTransformer(name)
         except Exception:  # noqa: BLE001
@@ -65,12 +66,11 @@ class VectorDB:
         embedding_function: Optional[EmbeddingFunction] = None,
         model_name: Optional[str] = None,
     ) -> None:
-        persist_directory = persist_directory or os.getenv(
-            "VECTOR_DB_PATH", "vector_store"
-        )
+        cfg = Config()
+        persist_directory = persist_directory or cfg.vector_db_path
         self.client = chromadb.PersistentClient(path=persist_directory)
         if not embedding_function:
-            provider = os.getenv("EMBEDDING_PROVIDER", "sentence_transformers")
+            provider = cfg.embedding_provider
             if provider.lower() == "openai":
                 embedding_function = OpenAIEmbeddingFunction(model_name=model_name)
             else:

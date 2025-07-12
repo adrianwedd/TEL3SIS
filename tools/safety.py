@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import os
 import re
 from typing import Any
+
+from server.config import Config
 
 from loguru import logger
 
@@ -24,7 +25,7 @@ def safety_check(text: str, *, client: Any | None = None) -> bool:
     """Return ``True`` if the proposed response passes the safety check."""
 
     if client is None:
-        api_key = os.getenv("OPENAI_API_KEY")
+        api_key = Config().openai_api_key
         if not api_key:
             return _heuristic_check(text)
         try:
@@ -37,7 +38,7 @@ def safety_check(text: str, *, client: Any | None = None) -> bool:
 
     try:
         resp = client.chat.completions.create(
-            model=os.getenv("OPENAI_SAFETY_MODEL", "gpt-3.5-turbo"),
+            model=Config().openai_safety_model,
             messages=[
                 {
                     "role": "system",

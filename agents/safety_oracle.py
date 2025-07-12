@@ -1,13 +1,12 @@
 """SafetyOracle agent utilities."""
 
 from __future__ import annotations
-
-import os
 import re
 from dataclasses import dataclass
 from typing import List, Optional
 
 from github import Github
+from server.config import Config
 
 
 @dataclass
@@ -19,10 +18,9 @@ class SafetyOracle:
     banned_patterns: Optional[List[str]] = None
 
     def __post_init__(self) -> None:
-        self._github = Github(self.token or os.getenv("GITHUB_TOKEN"))
-        self._repo = self._github.get_repo(
-            self.repo_name or os.getenv("GITHUB_REPOSITORY", "")
-        )
+        cfg = Config()
+        self._github = Github(self.token or cfg.github_token)
+        self._repo = self._github.get_repo(self.repo_name or cfg.github_repository)
         if self.banned_patterns is None:
             self.banned_patterns = [
                 r"openai\.api_key",

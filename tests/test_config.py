@@ -151,19 +151,19 @@ def test_create_app_missing_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TWILIO_ACCOUNT_SID", raising=False)
     monkeypatch.delenv("TWILIO_AUTH_TOKEN", raising=False)
     with pytest.raises(RuntimeError):
-        create_app()
+        create_app(Config())
 
 
 def test_create_app_missing_token_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("TOKEN_ENCRYPTION_KEY", raising=False)
     with pytest.raises(RuntimeError):
-        create_app()
+        create_app(Config())
 
 
 def test_create_app_invalid_token_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"abc").decode())
     with pytest.raises(RuntimeError):
-        create_app()
+        create_app(Config())
 
 
 def test_config_embedding_model(monkeypatch: pytest.MonkeyPatch) -> None:

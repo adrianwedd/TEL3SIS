@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Optional
+
+from server.config import Config
 
 from github import Github
 
@@ -31,10 +32,9 @@ class CodeReviewer:
     llm: Optional[LocalLLM] = None
 
     def __post_init__(self) -> None:
-        self._github = Github(self.token or os.getenv("GITHUB_TOKEN"))
-        self._repo = self._github.get_repo(
-            self.repo_name or os.getenv("GITHUB_REPOSITORY", "")
-        )
+        cfg = Config()
+        self._github = Github(self.token or cfg.github_token)
+        self._repo = self._github.get_repo(self.repo_name or cfg.github_repository)
         if self.llm is None:
             self.llm = LocalLLM()
 

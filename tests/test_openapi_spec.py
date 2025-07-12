@@ -129,6 +129,7 @@ sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synt
 sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
 
 from server.app import create_app  # noqa: E402
+from server.config import Config  # noqa: E402
 
 
 def setup_client(monkeypatch, tmp_path):
@@ -140,7 +141,7 @@ def setup_client(monkeypatch, tmp_path):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     migrate_sqlite(monkeypatch, tmp_path)
-    app = create_app()
+    app = create_app(Config())
     transport = httpx.ASGITransport(app=app)
     client = httpx.AsyncClient(transport=transport, base_url="http://test")
     return client

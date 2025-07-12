@@ -9,6 +9,7 @@ import base64
 
 from server.handoff import dial_twiml
 from server import app as server_app  # noqa: E402
+from server.config import Config
 from .db_utils import migrate_sqlite
 from fastapi.testclient import TestClient
 
@@ -196,7 +197,7 @@ def test_inbound_call_escalation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
-    app = server_app.create_app()
+    app = server_app.create_app(Config())
     client = TestClient(app)
 
     resp = client.post(
@@ -220,7 +221,7 @@ def test_inbound_call_validation(monkeypatch: pytest.MonkeyPatch, tmp_path) -> N
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
     db_module = migrate_sqlite(monkeypatch, tmp_path)
-    app = server_app.create_app()
+    app = server_app.create_app(Config())
     client = TestClient(app)
     key = db_module.create_api_key("tester")
 

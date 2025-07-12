@@ -6,7 +6,7 @@ __test__ = False
 
 from dataclasses import dataclass
 from typing import Optional
-import os
+from server.config import Config
 import xml.etree.ElementTree as ET
 from github import Github
 
@@ -21,10 +21,9 @@ class TestCrafterPro:
     threshold: float = 80.0
 
     def __post_init__(self) -> None:
-        self._github = Github(self.token or os.getenv("GITHUB_TOKEN"))
-        self._repo = self._github.get_repo(
-            self.repo_name or os.getenv("GITHUB_REPOSITORY", "")
-        )
+        cfg = Config()
+        self._github = Github(self.token or cfg.github_token)
+        self._repo = self._github.get_repo(self.repo_name or cfg.github_repository)
 
     def read_coverage(self) -> float:
         """Return line coverage percentage from ``coverage.xml``."""

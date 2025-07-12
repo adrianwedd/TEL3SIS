@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, ValidationError, HttpUrl
@@ -55,9 +53,9 @@ class OAuthCallbackData(BaseModel):
     user: str | None = None
 
 
-def create_app() -> FastAPI:
+def create_app(cfg: Config | None = None) -> FastAPI:
     try:
-        config = Config()
+        config = cfg or Config()
     except ConfigError as exc:
         raise RuntimeError(str(exc)) from exc
 
@@ -146,7 +144,7 @@ def create_app() -> FastAPI:
         async def escalate():
             summary = state_manager.get_summary(call_sid) or ""
             send_sms(
-                to_phone=os.environ.get("ESCALATION_PHONE_NUMBER", ""),
+                to_phone=config.escalation_phone_number,
                 from_phone=data.From,
                 body=summary,
             )

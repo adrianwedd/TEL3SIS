@@ -2,18 +2,20 @@
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
+
+from server.config import Config
 
 from loguru import logger
 
 
 def configure_logging() -> None:
     """Configure Loguru based on environment variables."""
-    level = os.getenv("LOG_LEVEL", "INFO")
-    rotation = os.getenv("LOG_ROTATION", "10 MB")
-    log_file = os.getenv("LOG_FILE", "logs/tel3sis.log")
+    cfg = Config()
+    level = cfg.log_level
+    rotation = cfg.log_rotation
+    log_file = cfg.log_file
     Path(log_file).parent.mkdir(parents=True, exist_ok=True)
 
     logger.remove()

@@ -103,6 +103,7 @@ sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.teleph
 
 
 from server import app as server_app  # noqa: E402
+from server.config import Config  # noqa: E402
 from server import tasks  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from tools import language  # noqa: E402
@@ -152,7 +153,7 @@ def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
 
     monkeypatch.setattr(server_app, "build_core_agent", fake_build_core_agent)
 
-    app = server_app.create_app()
+    app = server_app.create_app(Config())
     client = TestClient(app)
 
     from_num = "+15005550006"
