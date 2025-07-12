@@ -3,7 +3,6 @@ from __future__ import annotations
 from importlib import reload
 from pathlib import Path
 
-from alembic import command
 from alembic.config import Config as AlembicConfig
 
 
@@ -14,9 +13,13 @@ def migrate_sqlite(monkeypatch, tmp_path: Path):
 
     cfg = AlembicConfig("alembic.ini")
     cfg.set_main_option("sqlalchemy.url", db_url)
-    command.upgrade(cfg, "head")
 
     import server.database as db
+
+    reload(db)
+    db.init_db()
+
+    # Skip Alembic migrations during tests since ``init_db`` creates tables and indexes
 
     reload(db)
     return db

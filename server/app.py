@@ -8,7 +8,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from apispec import APISpec
-from pydantic import BaseModel, HttpUrl, ValidationError
+from pydantic import BaseModel, Field, HttpUrl, ValidationError
 from datetime import datetime
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from logging_config import logger
@@ -72,6 +72,18 @@ class CallInfo(BaseModel):
     summary: str | None
     self_critique: str | None
     created_at: datetime
+
+
+class ListCallsQuery(BaseModel):
+    """Parameters for filtering and paginating call history."""
+
+    start: datetime | None = None
+    end: datetime | None = None
+    phone: str | None = None
+    error: bool | None = None
+    page: int = Field(1, ge=1)
+    page_size: int = Field(20, ge=1, le=100)
+    sort: str = "-timestamp"
 
 
 class _SimpleLimiter:
@@ -264,13 +276,46 @@ def create_app() -> FastAPI:
 
     @app.get(
         "/v1/calls",
-        response_model=list[CallInfo],
         summary="List past calls",
         tags=["calls"],
     )
-    async def list_calls():
+    async def list_calls(request: Request):
+        try:
+            params = ListCallsQuery(**request.query_params)
+        except (
+            ValidationError
+        ) as exc:  # pragma: no cover - validated in blueprint tests
+            return _json_validation_error(exc)
+
         with get_session() as session:
-            calls = session.query(Call).order_by(Call.created_at.desc()).all()
+            q = session.query(Call)
+            if params.phone:
+                like = f"%{params.phone}%"
+                from sqlalchemy import or_
+
+                q = q.filter(
+                    or_(Call.from_number.like(like), Call.to_number.like(like))
+                )
+            if params.start:
+                q = q.filter(Call.created_at >= params.start)
+            if params.end:
+                q = q.filter(Call.created_at <= params.end)
+            if params.error is True:
+                q = q.filter(Call.self_critique.is_not(None))
+            elif params.error is False:
+                q = q.filter(Call.self_critique.is_(None))
+
+            if params.sort.startswith("-"):
+                q = q.order_by(Call.created_at.desc())
+            else:
+                q = q.order_by(Call.created_at.asc())
+
+            total = q.count()
+            calls = (
+                q.offset((params.page - 1) * params.page_size)
+                .limit(params.page_size)
+                .all()
+            )
             data = [
                 CallInfo(
                     id=c.id,
@@ -284,7 +329,7 @@ def create_app() -> FastAPI:
                 )
                 for c in calls
             ]
-        return data
+        return {"total": total, "items": data}
 
     @app.get("/v1/oauth/start", summary="Begin OAuth flow", tags=["auth"])
     async def oauth_start(request: Request):
