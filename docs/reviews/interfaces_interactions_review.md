@@ -10,9 +10,7 @@ This review summarizes how users and external systems interact with TEL3SIS. It 
 - **`/v1/calls`** – return JSON list of call records.
 - **`/v1/dashboard`** – authenticated dashboard listing calls.
 - **`/v1/dashboard/<call_id>`** – detailed view with transcript and audio.
-- **`/v1/login` / `/v1/login` (POST)** – form‑based login for the dashboard.
 - **`/v1/login/oauth`** – start OAuth login flow.
-- **`/v1/logout`** – end session.
 - **`/v1/metrics`** – Prometheus metrics endpoint.
 
 ## CLI Tools

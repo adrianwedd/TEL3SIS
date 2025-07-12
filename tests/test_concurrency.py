@@ -11,7 +11,7 @@ import pytest
 
 import tests.test_api_key_auth  # noqa: F401
 from .db_utils import migrate_sqlite
-from server import fast_app as server_app
+from server import app as server_app
 
 
 def test_concurrent_call_performance(

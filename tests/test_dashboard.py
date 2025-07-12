@@ -207,20 +207,6 @@ def test_oauth_callback_validation(monkeypatch, tmp_path) -> None:
     assert resp.json()["error"] == "invalid_request"
 
 
-def test_dashboard_theme_toggle_template() -> None:
-    """Ensure dashboard template includes theme toggle button."""
-    from flask import Flask, render_template
-    from server.dashboard_bp import bp as dashboard_bp
-
-    app = Flask(__name__)
-    app.register_blueprint(dashboard_bp)
-
-    with app.test_request_context("/v1/dashboard", headers={"Cookie": "theme=dark"}):
-        html = render_template("dashboard/list.html", calls=[], q="")
-
-    assert '<button class="theme-toggle"' in html
-
-
 def test_dashboard_prefix_search_with_formatted_number(monkeypatch, tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)

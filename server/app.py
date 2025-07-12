@@ -4,6 +4,8 @@ import os
 import re
 import secrets
 from pathlib import Path
+from collections import defaultdict
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -120,6 +122,33 @@ def _json_validation_error(exc: ValidationError) -> JSONResponse:
     return JSONResponse(
         {"error": "invalid_request", "details": exc.errors()}, status_code=400
     )
+
+
+def _aggregate_metrics() -> dict[str, Any]:
+    """Return aggregate call metrics from the database."""
+    with get_session() as session:
+        calls = session.query(Call).all()
+
+    total = len(calls)
+    durations: list[float] = []
+    tools: dict[str, int] = defaultdict(int)
+    for call in calls:
+        try:
+            text = Path(call.transcript_path).read_text()
+        except Exception:
+            text = ""
+        durations.append(len(text.split()) / 2)
+        text_lower = f"{text.lower()} {(call.summary or '').lower()}"
+        for name in ["weather", "calendar", "sms", "email"]:
+            if name in text_lower:
+                tools[name] += 1
+
+    avg_duration = sum(durations) / total if total else 0.0
+    return {
+        "total_calls": total,
+        "avg_duration": avg_duration,
+        "tool_usage": dict(tools),
+    }
 
 
 def create_app() -> FastAPI:
@@ -284,8 +313,6 @@ def create_app() -> FastAPI:
     async def dashboard_analytics(request: Request):
         if "user" not in request.session:
             return RedirectResponse("/v1/login/oauth")
-        from .dashboard_bp import _aggregate_metrics
-
         metrics = _aggregate_metrics()
         return templates.TemplateResponse(
             "dashboard/analytics.html",
