@@ -67,6 +67,32 @@ def test_async_recording_status(monkeypatch):
 
     monkeypatch.setattr(server_app, "verify_api_key", lambda *_: True)
 
+    class DummyStateManager:
+        def create_session(self, *_: object, **__: object) -> None:
+            pass
+
+        def get_session(self, *_: object) -> dict[str, str]:
+            return {}
+
+        def is_escalation_required(self, *_: object) -> bool:
+            return False
+
+        def get_summary(self, *_: object) -> str:
+            return ""
+
+    monkeypatch.setattr(server_app, "StateManager", lambda: DummyStateManager())
+
+    called: dict[str, tuple] = {}
+
+    def fake_process(url: str, sid: str, f: str, t: str) -> None:
+        called["args"] = (url, sid, f, t)
+
+    monkeypatch.setattr(
+        server_app,
+        "process_recording",
+        types.SimpleNamespace(delay=fake_process),
+    )
+
     app = create_app(Config())
     client = TestClient(app)
     resp = client.post(
@@ -79,3 +105,4 @@ def test_async_recording_status(monkeypatch):
         headers={"X-API-Key": "dummy"},
     )
     assert resp.status_code == 204
+    assert called["args"] == ("http://example.com", "CA1", "", "")

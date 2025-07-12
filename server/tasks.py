@@ -10,7 +10,11 @@ import tarfile
 import time
 from contextlib import contextmanager
 
-from .recordings import transcribe_recording, DEFAULT_OUTPUT_DIR
+from .recordings import (
+    transcribe_recording,
+    DEFAULT_OUTPUT_DIR,
+    download_recording,
+)
 
 import tools.notifications as notifications
 from .database import (
@@ -80,6 +84,23 @@ def summarize_text(text: str, max_words: int = 30) -> str:
     with monitor_task("summarize_text"):
         words = text.strip().split()
         return " ".join(words[:max_words])
+
+
+@celery_app.task
+def process_recording(
+    recording_url: str,
+    call_sid: str,
+    from_number: str,
+    to_number: str,
+) -> str:
+    """Download a recording and generate a summary."""
+    with monitor_task("process_recording"):
+        cfg = Config()
+        audio_path = download_recording(
+            recording_url,
+            auth=(cfg.twilio_account_sid, cfg.twilio_auth_token),
+        )
+        return transcribe_audio(str(audio_path), call_sid, from_number, to_number)
 
 
 def transcribe_audio(
