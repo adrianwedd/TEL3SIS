@@ -100,10 +100,14 @@ class FunctionCallingAgent(ChatGPTAgent):
         except json.JSONDecodeError as exc:
             logger.error("Invalid arguments for %s: %s", function_call.name, exc)
             return None
-        result = func(**params)
-        if asyncio.iscoroutine(result):
-            result = await result
-        return str(result) if result is not None else None
+        try:
+            result = func(**params)
+            if asyncio.iscoroutine(result):
+                result = await result
+            return str(result) if result is not None else None
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Tool call failed for %s: %s", function_call.name, exc)
+            raise
 
     async def call_function(self, function_call: FunctionCall, agent_input: AgentInput) -> None:  # type: ignore[override]
         try:
@@ -112,6 +116,19 @@ class FunctionCallingAgent(ChatGPTAgent):
             fallback = "I need your permission to do that. I'll text you a link."
             self.produce_interruptible_agent_response_event_nonblocking(
                 AgentResponseMessage(message=BaseMessage(text=fallback)),
+                is_interruptible=True,
+            )
+            self.produce_interruptible_agent_response_event_nonblocking(
+                AgentResponseMessage(message=EndOfTurn())
+            )
+            return
+        except Exception:
+            self.produce_interruptible_agent_response_event_nonblocking(
+                AgentResponseMessage(
+                    message=BaseMessage(
+                        text="I am having trouble reaching that service right now. Please try again later."
+                    )
+                ),
                 is_interruptible=True,
             )
             self.produce_interruptible_agent_response_event_nonblocking(
@@ -141,15 +158,26 @@ class SafeFunctionCallingAgent(FunctionCallingAgent):
     ) -> AsyncGenerator[GeneratedResponse, None]:
         parts: List[str] = []
         responses: List[GeneratedResponse] = []
-        async for resp in super().generate_response(
-            human_input,
-            conversation_id,
-            is_interrupt=is_interrupt,
-            bot_was_in_medias_res=bot_was_in_medias_res,
-        ):
-            if hasattr(resp.message, "text"):
-                parts.append(getattr(resp.message, "text"))
-            responses.append(resp)
+        try:
+            async for resp in super().generate_response(
+                human_input,
+                conversation_id,
+                is_interrupt=is_interrupt,
+                bot_was_in_medias_res=bot_was_in_medias_res,
+            ):
+                if hasattr(resp.message, "text"):
+                    parts.append(getattr(resp.message, "text"))
+                responses.append(resp)
+        except Exception as exc:
+            logger.error("LLM error: %s", exc)
+            yield GeneratedResponse(
+                message=BaseMessage(
+                    text="I am experiencing technical difficulties. Let us continue another time."
+                ),
+                is_interruptible=True,
+            )
+            yield GeneratedResponse(message=EndOfTurn(), is_interruptible=True)
+            return
 
         full_text = "".join(parts)
         if not safety_check(full_text):
