@@ -4,7 +4,6 @@ import os
 import base64
 from fastapi.testclient import TestClient
 from .db_utils import migrate_sqlite
-from server.app import create_app  # noqa: E402
 
 # Reuse the dummy vocode modules from test_metrics
 
@@ -134,6 +133,8 @@ os.environ.setdefault("TWILIO_ACCOUNT_SID", "sid")
 os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
 os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
+from server.app import create_app  # noqa: E402
+
 
 def test_list_calls(monkeypatch, tmp_path):
     db_url = f"sqlite:///{tmp_path}/test.db"
@@ -154,3 +155,30 @@ def test_list_calls(monkeypatch, tmp_path):
     assert resp.status_code == 200
     data = resp.json()
     assert data[0]["call_sid"] == "abc"
+
+
+def test_list_calls_pagination_filter(monkeypatch, tmp_path):
+    db_url = f"sqlite:///{tmp_path}/test.db"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
+    db = migrate_sqlite(monkeypatch, tmp_path)
+    db.save_call_summary("sid1", "111", "222", "/p1", "s1", "c1")
+    db.save_call_summary("sid2", "333", "444", "/p2", "s2", "c2")
+    key = db.create_api_key("tester")
+
+    app = create_app()
+    client = TestClient(app)
+
+    resp = client.get("/v1/calls?limit=1&offset=1", headers={"X-API-Key": key})
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+
+    resp = client.get("/v1/calls?filter=333", headers={"X-API-Key": key})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["from_number"] == "333"

@@ -179,7 +179,7 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     resp = client.get("/v1/dashboard", headers={"X-API-Key": key})
     assert resp.status_code == 200
 
-    resp = client.get("/v1/dashboard?q=111", headers={"X-API-Key": key})
+    resp = client.get("/v1/dashboard?filter=111", headers={"X-API-Key": key})
     assert resp.status_code == 200
     assert b"111" in resp.content
 
@@ -216,7 +216,16 @@ def test_dashboard_theme_toggle_template() -> None:
     app.register_blueprint(dashboard_bp)
 
     with app.test_request_context("/v1/dashboard", headers={"Cookie": "theme=dark"}):
-        html = render_template("dashboard/list.html", calls=[], q="")
+        html = render_template(
+            "dashboard/list.html",
+            calls=[],
+            filter="",
+            limit=20,
+            offset=0,
+            sort="-created_at",
+            next_offset=None,
+            prev_offset=None,
+        )
 
     assert '<button class="theme-toggle"' in html
 
@@ -270,6 +279,6 @@ def test_dashboard_prefix_search_with_formatted_number(monkeypatch, tmp_path):
         f"/v1/oauth/callback?state={state}&user=admin", headers={"X-API-Key": key}
     )
 
-    resp = client.get("/v1/dashboard?q=+1-234-567", headers={"X-API-Key": key})
+    resp = client.get("/v1/dashboard?filter=+1-234-567", headers={"X-API-Key": key})
     assert resp.status_code == 200
     assert b"+12345678900" in resp.content

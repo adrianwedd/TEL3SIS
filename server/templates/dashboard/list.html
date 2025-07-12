@@ -3,8 +3,14 @@
 {% block content %}
 <h1>Call History</h1>
 <form method="get">
-  <input type="text" name="q" placeholder="Search" value="{{ q }}" />
-  <button type="submit">Search</button>
+  <input type="text" name="filter" placeholder="Search" value="{{ filter }}" />
+  <select name="limit">
+    <option value="10" {% if limit == 10 %}selected{% endif %}>10</option>
+    <option value="20" {% if limit == 20 %}selected{% endif %}>20</option>
+    <option value="50" {% if limit == 50 %}selected{% endif %}>50</option>
+  </select>
+  <input type="hidden" name="sort" value="{{ sort }}" />
+  <button type="submit">Apply</button>
 </form>
 <ul>
 {% for call in calls %}
@@ -17,4 +23,12 @@
   <li>No calls found.</li>
 {% endfor %}
 </ul>
+<div class="pagination">
+  {% if prev_offset is not none %}
+    <a href="{{ url_for('dashboard.show_dashboard', offset=prev_offset, limit=limit, filter=filter, sort=sort) }}">Previous</a>
+  {% endif %}
+  {% if next_offset is not none %}
+    <a href="{{ url_for('dashboard.show_dashboard', offset=next_offset, limit=limit, filter=filter, sort=sort) }}">Next</a>
+  {% endif %}
+</div>
 {% endblock %}

@@ -268,9 +268,50 @@ def create_app() -> FastAPI:
         summary="List past calls",
         tags=["calls"],
     )
-    async def list_calls():
+    async def list_calls(
+        filter: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+        sort: str = "-created_at",
+    ) -> list[CallInfo]:
+        """Return paginated list of calls."""
         with get_session() as session:
-            calls = session.query(Call).order_by(Call.created_at.desc()).all()
+            query = session.query(Call)
+            if filter:
+                from sqlalchemy import or_
+
+                sanitized = re.sub(r"[\s\-()]", "", filter)
+                phone_like = f"{sanitized}%" if sanitized.strip("+").isdigit() else None
+                if phone_like:
+                    query = query.filter(
+                        or_(
+                            Call.from_number.like(phone_like),
+                            Call.to_number.like(phone_like),
+                            Call.summary.like(f"%{filter}%"),
+                            Call.self_critique.like(f"%{filter}%"),
+                        )
+                    )
+                else:
+                    like = f"%{filter}%"
+                    query = query.filter(
+                        or_(
+                            Call.from_number.like(like),
+                            Call.to_number.like(like),
+                            Call.summary.like(like),
+                            Call.self_critique.like(like),
+                        )
+                    )
+
+            field = sort.lstrip("-")
+            desc = sort.startswith("-")
+            column = getattr(Call, field, None)
+            if column is not None:
+                query = query.order_by(column.desc() if desc else column.asc())
+            else:
+                query = query.order_by(Call.created_at.desc())
+
+            calls = query.offset(offset).limit(limit).all()
+
             data = [
                 CallInfo(
                     id=c.id,

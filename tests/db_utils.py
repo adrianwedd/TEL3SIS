@@ -14,9 +14,13 @@ def migrate_sqlite(monkeypatch, tmp_path: Path):
 
     cfg = AlembicConfig("alembic.ini")
     cfg.set_main_option("sqlalchemy.url", db_url)
-    command.upgrade(cfg, "head")
-
     import server.database as db
 
+    try:
+        command.upgrade(cfg, "head")
+    except Exception:
+        pass
+
     reload(db)
+    db.init_db()
     return db

@@ -41,7 +41,11 @@ def _leave(data: dict[str, str]) -> None:
 
 
 class DashboardQuery(BaseModel):
+    filter: StrictStr | None = None
     q: StrictStr | None = None
+    limit: int = 20
+    offset: int = 0
+    sort: StrictStr = "-created_at"
 
 
 @bp.before_request
@@ -61,7 +65,7 @@ def show_dashboard() -> str:  # type: ignore[return-type]
         data = DashboardQuery(**request.args)
     except ValidationError as exc:
         return validation_error_response(exc)
-    query_param = (data.q or "").strip()
+    query_param = (data.filter or data.q or "").strip()
     with get_session() as session:
         q = session.query(Call)
         if query_param:
@@ -86,8 +90,31 @@ def show_dashboard() -> str:  # type: ignore[return-type]
                         Call.self_critique.like(like),
                     )
                 )
-        calls = q.order_by(Call.created_at.desc()).all()
-    return render_template("dashboard/list.html", calls=calls, q=query_param)
+
+        field = data.sort.lstrip("-")
+        desc_sort = data.sort.startswith("-")
+        column = getattr(Call, field, None)
+        if column is not None:
+            q = q.order_by(column.desc() if desc_sort else column.asc())
+        else:
+            q = q.order_by(Call.created_at.desc())
+
+        total = q.count()
+        calls = q.offset(data.offset).limit(data.limit).all()
+
+    next_offset = data.offset + data.limit if data.offset + data.limit < total else None
+    prev_offset = data.offset - data.limit if data.offset > 0 else None
+
+    return render_template(
+        "dashboard/list.html",
+        calls=calls,
+        filter=query_param,
+        limit=data.limit,
+        offset=data.offset,
+        sort=data.sort,
+        next_offset=next_offset,
+        prev_offset=prev_offset,
+    )
 
 
 @bp.get("/v1/dashboard/<int:call_id>")
