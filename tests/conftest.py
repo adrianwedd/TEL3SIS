@@ -7,6 +7,41 @@ from pathlib import Path
 
 import pytest
 from celery.contrib.testing.worker import start_worker
+from tests.utils.vocode_mocks import install as install_vocode
+import types
+
+install_vocode()
+
+# Stub chromadb globally to avoid heavy dependency
+chroma = types.ModuleType("chromadb")
+
+
+class _DummyCollection:
+    def add(self, **_: object) -> None:
+        pass
+
+    def query(self, **_: object):
+        return {"documents": [[]]}
+
+
+class _DummyClient:
+    def __init__(self, *_: object, **__: object) -> None:
+        pass
+
+    def get_or_create_collection(self, *_: object, **__: object):
+        return _DummyCollection()
+
+    def heartbeat(self) -> int:
+        return 1
+
+
+chroma.PersistentClient = _DummyClient
+sys.modules.setdefault("chromadb", chroma)
+sys.modules.setdefault("chromadb.api", types.ModuleType("chromadb.api"))
+sys.modules.setdefault(
+    "chromadb.api.types",
+    types.SimpleNamespace(EmbeddingFunction=object, Embeddings=list),
+)
 
 os.environ.setdefault("SECRET_KEY", "x")
 os.environ.setdefault("BASE_URL", "http://localhost")

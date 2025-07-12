@@ -145,3 +145,74 @@ def test_dashboard_prefix_search_with_formatted_number(monkeypatch, tmp_path):
     resp = client.get("/v1/dashboard?q=+1-234-567", headers={"X-API-Key": key})
     assert resp.status_code == 200
     assert b"+12345678900" in resp.content
+
+
+def test_admin_actions(monkeypatch, tmp_path):
+    db_url = f"sqlite:///{tmp_path}/test.db"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv(
+        "TOKEN_ENCRYPTION_KEY",
+        base64.b64encode(b"0" * 16).decode(),
+    )
+    db = migrate_sqlite(monkeypatch, tmp_path)
+    db.create_user("admin", "pass", role="admin")
+    db.create_user("alice", "pass", role="user")
+    transcript_dir = tmp_path / "trans"
+    transcript_dir.mkdir()
+    transcript = transcript_dir / "t.txt"
+    transcript.write_text("hi")
+    with db.get_session() as session:
+        call = db.Call(
+            call_sid="sid1",
+            from_number="111",
+            to_number="222",
+            transcript_path=str(transcript),
+            summary="s",
+            self_critique=None,
+        )
+        session.add(call)
+        session.commit()
+        call_id = call.id
+    key = db.create_api_key("tester")
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
+    monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
+    app = create_app(Config())
+    client = TestClient(app)
+    from urllib.parse import urlparse, parse_qs
+
+    def login(user: str) -> None:
+        state = parse_qs(
+            urlparse(
+                client.get("/v1/login/oauth", headers={"X-API-Key": key}).headers[
+                    "Location"
+                ]
+            ).query
+        )["state"][0]
+        client.get(
+            f"/v1/oauth/callback?state={state}&user={user}", headers={"X-API-Key": key}
+        )
+
+    calls: list[tuple[str, int]] = []
+    monkeypatch.setattr(
+        "server.app.delete_call_record.delay", lambda cid: calls.append(("delete", cid))
+    )
+    monkeypatch.setattr(
+        "server.app.reprocess_call.delay", lambda cid: calls.append(("reprocess", cid))
+    )
+
+    login("admin")
+    resp = client.post(f"/v1/dashboard/{call_id}/reprocess", headers={"X-API-Key": key})
+    assert resp.status_code == 303
+    resp = client.post(f"/v1/dashboard/{call_id}/delete", headers={"X-API-Key": key})
+    assert resp.status_code == 303
+    assert ("reprocess", call_id) in calls
+    assert ("delete", call_id) in calls
+
+    client = TestClient(app)
+    login("alice")
+    resp = client.post(f"/v1/dashboard/{call_id}/delete", headers={"X-API-Key": key})
+    assert resp.status_code == 403
