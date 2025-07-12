@@ -44,7 +44,8 @@ from .database import (
 from .config import Config, ConfigError
 from .handoff import dial_twiml
 from .state_manager import StateManager
-from .tasks import echo, reprocess_call, delete_call_record
+from .tasks import echo, reprocess_call, delete_call_record, process_recording
+from agents.sms_agent import SMSAgent
 from tools.notifications import send_sms
 from tools.calendar import exchange_code, generate_auth_url
 from agents.core_agent import (
@@ -620,6 +621,13 @@ def create_app(cfg: Config | None = None) -> FastAPI:
             data.CallSid,
             data.RecordingSid,
             data.RecordingUrl,
+        )
+        session = state_manager.get_session(data.CallSid)
+        process_recording.delay(
+            data.RecordingUrl,
+            data.CallSid,
+            session.get("from", ""),
+            session.get("to", ""),
         )
         return Response(status_code=204)
 

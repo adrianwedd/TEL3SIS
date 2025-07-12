@@ -100,6 +100,18 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     )
     monkeypatch.setattr(tasks, "generate_self_critique", lambda *_: "crit")
 
+    def fake_process(url: str, call_id: str, f: str, t: str) -> str:
+        audio = rec.download_recording(
+            url, output_dir=tmp_path / "audio", auth=("sid", "token")
+        )
+        return tasks.transcribe_audio(str(audio), call_id, f, t)
+
+    monkeypatch.setattr(
+        server_app,
+        "process_recording",
+        types.SimpleNamespace(delay=fake_process),
+    )
+
     app = server_app.create_app(Config())
     client = TestClient(app)
 
@@ -123,14 +135,7 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
     )
     assert resp.status_code == 204
 
-    path = rec.download_recording(
-        "http://twilio.test/record",
-        auth=(os.environ["TWILIO_ACCOUNT_SID"], os.environ["TWILIO_AUTH_TOKEN"]),
-    )
-    result = tasks.transcribe_audio(str(path), call_sid, "+15005550006", "+15005550010")
-
     assert sent == {"to": "+15550001111", "from": "+15005550006", "body": "summary"}
-    assert Path(result).exists()
     assert transcript_path.exists()
 
     with db_module.get_session() as session:
