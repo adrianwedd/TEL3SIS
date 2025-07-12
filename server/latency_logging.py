@@ -89,3 +89,8 @@ def log_llm(func: Callable[..., Any]) -> Callable[..., Any]:
 
 def log_tts(func: Callable[..., Any]) -> Callable[..., Any]:
     return log_vocode_step("tts")(func)
+
+
+def log_call(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Measure overall call handling latency."""
+    return log_vocode_step("call")(func)
