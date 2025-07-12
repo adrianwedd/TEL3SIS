@@ -31,3 +31,16 @@ def test_save_call_summary(tmp_path, monkeypatch):
         result = session.query(db.Call).filter_by(call_sid="abc").one()
         assert result.summary == "summary"
         assert result.self_critique == "crit"
+
+
+def test_create_and_delete_user(tmp_path, monkeypatch):
+    db_url = f"sqlite:///{tmp_path}/test.db"
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    db = migrate_sqlite(monkeypatch, tmp_path)
+    db.create_user("alice", "pw")
+    with db.get_session() as session:
+        assert session.query(db.User).filter_by(username="alice").count() == 1
+    assert db.delete_user("alice") is True
+    with db.get_session() as session:
+        assert session.query(db.User).filter_by(username="alice").count() == 0
+    assert db.delete_user("alice") is False
