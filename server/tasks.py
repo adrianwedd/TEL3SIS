@@ -108,6 +108,11 @@ def transcribe_audio(
             summary,
             critique,
         )
+        try:
+            manager = StateManager()
+            manager.set_summary(call_sid, summary, from_number=from_number)
+        except Exception:  # noqa: BLE001 - non-critical failure
+            pass
         return str(path)
 
 

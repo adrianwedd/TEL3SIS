@@ -82,14 +82,32 @@ class VectorDB:
         )
 
     def add_texts(
-        self, texts: Iterable[str], ids: Optional[Iterable[str]] = None
+        self,
+        texts: Iterable[str],
+        ids: Optional[Iterable[str]] = None,
+        *,
+        metadatas: Optional[Iterable[dict[str, str]]] = None,
     ) -> None:
         docs = list(texts)
         if not docs:
             return
         id_list = list(ids) if ids is not None else [str(hash(doc)) for doc in docs]
-        self.collection.add(documents=docs, ids=id_list)
+        kwargs: dict[str, object] = {}
+        if metadatas is not None:
+            kwargs["metadatas"] = list(metadatas)
+        self.collection.add(documents=docs, ids=id_list, **kwargs)
 
-    def search(self, query: str, n_results: int = 3) -> List[str]:
-        result = self.collection.query(query_texts=[query], n_results=n_results)
+    def search(
+        self,
+        query: str,
+        n_results: int = 3,
+        *,
+        where: Optional[dict[str, str]] = None,
+    ) -> List[str]:
+        kwargs: dict[str, object] = {}
+        if where is not None:
+            kwargs["where"] = where
+        result = self.collection.query(
+            query_texts=[query], n_results=n_results, **kwargs
+        )
         return result.get("documents", [[]])[0]
