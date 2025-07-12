@@ -16,9 +16,11 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y jq curl
           for i in {1..30}; do
-            status=$(curl -s http://localhost:3000/v1/health || true)
-            echo "$status"
-            if echo "$status" | jq -e 'all(.[]=="ok")'; then
+            web=$(curl -s http://localhost:3000/v1/health || true)
+            echo "Web: $web"
+            worker=$(docker compose exec -T celeryworker celery -A server.celery_app inspect ping -t 1 2>/dev/null || true)
+            echo "Worker: $worker"
+            if echo "$web" | jq -e 'all(.[]=="ok")' >/dev/null && echo "$worker" | grep -q 'pong'; then
               echo "All services healthy"
               exit 0
             fi
