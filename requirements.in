@@ -27,3 +27,4 @@ click
 quart
 uvicorn
 apispec
+scikit-learn
