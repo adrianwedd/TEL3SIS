@@ -45,5 +45,7 @@ def summarize_conversation(
         summary = summarize_text.run(text, max_words=max_words)
     except AttributeError:  # pragma: no cover - fallback if not a task
         summary = summarize_text(text, max_words=max_words)
-    state_manager.set_summary(call_sid, summary)
+    session = state_manager.get_session(call_sid)
+    from_number = session.get("from")
+    state_manager.set_summary(call_sid, summary, from_number=from_number)
     return summary

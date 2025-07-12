@@ -77,7 +77,11 @@ class StateManager:
         self._redis.hset(self._key(call_sid), mapping=data)
         from_number = data.get("from")
         if from_number:
-            sims = self._summary_db.search(from_number)
+            sims = self._summary_db.search(
+                "",
+                where={"from_number": from_number},
+                n_results=3,
+            )
             if sims:
                 self._redis.hset(
                     self._key(call_sid), "similar_summaries", json.dumps(sims)
@@ -181,10 +185,17 @@ class StateManager:
             return []
         return cast(List[Dict[str, str]], json.loads(history_json))
 
-    def set_summary(self, call_sid: str, summary: str) -> None:
-        """Store a summary for later handoff."""
+    def set_summary(
+        self, call_sid: str, summary: str, from_number: str | None = None
+    ) -> None:
+        """Store a summary for later handoff and vector recall."""
         self._redis.hset(self._key(call_sid), mapping={"summary": summary})
-        self._summary_db.add_texts([summary], ids=[call_sid])
+        metadata = [{"from_number": from_number}] if from_number else None
+        self._summary_db.add_texts(
+            [summary],
+            ids=[call_sid],
+            metadatas=metadata,
+        )
 
     def get_summary(self, call_sid: str) -> Optional[str]:
         """Return saved summary if available."""
