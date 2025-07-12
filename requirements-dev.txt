@@ -445,6 +445,8 @@ pydantic==2.7.1
     #   chromadb
     #   fastapi
     #   openai
+pydantic-settings==2.10.1
+    # via -r /workspace/TEL3SIS/requirements.in
 pydantic-core==2.18.2
     # via pydantic
 pygithub==2.3.0
