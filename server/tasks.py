@@ -3,8 +3,9 @@ from __future__ import annotations
 from logging_config import logger
 from pathlib import Path
 
+from server.config import Config
+
 from datetime import datetime, timedelta, UTC
-import os
 import tarfile
 import time
 from contextlib import contextmanager
@@ -140,13 +141,14 @@ def cleanup_old_calls(days: int = 30) -> int:
 def backup_data(upload_to_s3: bool | None = None) -> str:
     """Create a compressed backup of the SQLite DB and vector store."""
     with monitor_task("backup_data"):
-        db_url = os.getenv("DATABASE_URL", "sqlite:///tel3sis.db")
+        cfg = Config()
+        db_url = cfg.database_url
         if not db_url.startswith("sqlite:///"):
             raise ValueError("Only SQLite DATABASE_URL supported")
         db_path = Path(db_url.split("sqlite:///")[-1])
-        vector_dir = Path(os.getenv("VECTOR_DB_PATH", "vector_store"))
+        vector_dir = Path(cfg.vector_db_path)
 
-        backup_dir = Path(os.getenv("BACKUP_DIR", "backups"))
+        backup_dir = Path(cfg.backup_dir)
         backup_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         tar_path = backup_dir / f"backup_{timestamp}.tar.gz"
@@ -159,7 +161,7 @@ def backup_data(upload_to_s3: bool | None = None) -> str:
 
         logger.info("Backup created at %s", tar_path)
 
-        s3_bucket = os.getenv("BACKUP_S3_BUCKET")
+        s3_bucket = cfg.backup_s3_bucket
         if upload_to_s3 or s3_bucket:
             if not boto3:
                 raise RuntimeError("boto3 not installed for S3 upload")
@@ -176,6 +178,7 @@ def backup_data(upload_to_s3: bool | None = None) -> str:
 def refresh_tokens_task(threshold_seconds: int = 300) -> int:
     """Refresh OAuth tokens nearing expiration."""
     with monitor_task("refresh_tokens_task"):
+        cfg = Config()
         manager = StateManager()
         now = int(datetime.now(UTC).timestamp())
         refreshed = 0
@@ -190,8 +193,8 @@ def refresh_tokens_task(threshold_seconds: int = 300) -> int:
                 data["access_token"],
                 refresh_token=refresh_token,
                 token_uri="https://oauth2.googleapis.com/token",
-                client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-                client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+                client_id=cfg.google_client_id,
+                client_secret=cfg.google_client_secret,
             )
             creds.expiry = datetime.fromtimestamp(expires_at, UTC)
             try:

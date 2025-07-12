@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import redis
 
 from .vector_db import VectorDB
-from .config import ConfigError
+from .config import Config, ConfigError
 
 
 class StateManager:
@@ -22,17 +22,17 @@ class StateManager:
         *,
         summary_db: Optional[VectorDB] = None,
     ) -> None:
-        self.url = url or os.getenv("REDIS_URL", "redis://redis:6379/0")
+        cfg = Config()
+        self.url = url or cfg.redis_url
         self.prefix = prefix
         self._redis = redis.Redis.from_url(self.url, decode_responses=True)
 
         self._summary_db = summary_db or VectorDB(collection_name="summaries")
 
-        self._encryption_key = self._load_encryption_key()
+        self._encryption_key = self._load_encryption_key(cfg.token_encryption_key)
 
-    def _load_encryption_key(self) -> bytes:
+    def _load_encryption_key(self, key_b64: str) -> bytes:
         """Return the AES key from ``TOKEN_ENCRYPTION_KEY`` env variable."""
-        key_b64 = os.getenv("TOKEN_ENCRYPTION_KEY")
         if not key_b64:
             raise ConfigError(
                 "Missing required environment variable: TOKEN_ENCRYPTION_KEY"

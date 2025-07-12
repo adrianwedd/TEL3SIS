@@ -22,6 +22,7 @@ def test_async_inbound_call(monkeypatch, tmp_path):
 
     from server import app as server_app
     from server.app import create_app
+    from server.config import Config
 
     class DummyStateManager:
         def create_session(self, *a, **k):
@@ -44,7 +45,7 @@ def test_async_inbound_call(monkeypatch, tmp_path):
         server_app, "echo", types.SimpleNamespace(delay=lambda *_, **__: None)
     )
 
-    app = create_app()
+    app = create_app(Config())
     client = TestClient(app)
     resp = client.post(
         "/v1/inbound_call",
@@ -62,10 +63,11 @@ def test_async_recording_status(monkeypatch):
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     from server import app as server_app
     from server.app import create_app
+    from server.config import Config
 
     monkeypatch.setattr(server_app, "verify_api_key", lambda *_: True)
 
-    app = create_app()
+    app = create_app(Config())
     client = TestClient(app)
     resp = client.post(
         "/v1/recording_status",

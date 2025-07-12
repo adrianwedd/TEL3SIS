@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-import os
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, AsyncGenerator
 
@@ -23,6 +21,7 @@ from vocode.streaming.models.message import BaseMessage, EndOfTurn
 from vocode.streaming.models.agent import ChatGPTAgentConfig
 from vocode.streaming.models.transcriber import WhisperCPPTranscriberConfig
 from vocode.streaming.models.synthesizer import ElevenLabsSynthesizerConfig
+from server.config import Config
 
 from tools.weather import get_weather
 from tools.safety import safety_check
@@ -178,9 +177,10 @@ def build_core_agent(
 ) -> CoreAgentConfig:
     """Return TEL3SIS ChatGPT agent with STT and TTS providers configured."""
 
+    cfg = Config()
     agent_config = FunctionChatGPTAgentConfig(
         prompt_preamble="You are TEL3SIS, a helpful voice assistant.",
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        openai_api_key=cfg.openai_api_key,
         functions=[WEATHER_FUNCTION],
     )
 
@@ -188,7 +188,7 @@ def build_core_agent(
     setattr(transcriber_config, "language", language)
 
     synthesizer_config = ElevenLabsSynthesizerConfig.from_telephone_output_device(
-        api_key=os.getenv("ELEVEN_LABS_API_KEY")
+        api_key=cfg.eleven_labs_api_key
     )
     setattr(synthesizer_config, "language", language)
 

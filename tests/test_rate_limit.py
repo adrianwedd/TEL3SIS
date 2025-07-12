@@ -146,6 +146,7 @@ def test_rate_limits(monkeypatch, tmp_path):
     monkeypatch.setattr(sm, "redis", types.SimpleNamespace(Redis=fakeredis.FakeRedis))
 
     from server.app import create_app  # noqa: E402
+    from server.config import Config
     import server.app as server_app  # noqa: E402
     from fastapi.testclient import TestClient
 
@@ -158,7 +159,7 @@ def test_rate_limits(monkeypatch, tmp_path):
         server_app, "echo", types.SimpleNamespace(delay=lambda *a, **k: None)
     )
 
-    app = create_app()
+    app = create_app(Config())
     client = TestClient(app)
 
     resp = client.get("/v1/calls", headers={"X-API-Key": key})
