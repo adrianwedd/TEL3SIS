@@ -88,6 +88,14 @@ class ListCallsQuery(BaseModel):
     sort: str = "-timestamp"
 
 
+class SearchQuery(BaseModel):
+    """Parameters for search endpoint."""
+
+    q: str
+    page: int = Field(1, ge=1)
+    page_size: int = Field(20, ge=1, le=100)
+
+
 class _SimpleLimiter:
     def __init__(self, limit: int, interval: float) -> None:
         self.limit = limit
@@ -420,6 +428,75 @@ def create_app(cfg: Config | None = None) -> FastAPI:
                 )
                 for c in calls
             ]
+        return {"total": total, "items": data}
+
+    @app.get(
+        "/v1/search",
+        summary="Keyword search over call history",
+        tags=["calls"],
+    )
+    async def search_calls(request: Request):
+        try:
+            params = SearchQuery(**request.query_params)
+        except ValidationError as exc:
+            return _json_validation_error(exc)
+
+        query = params.q.strip()
+        with get_session() as session:
+            db_query = session.query(Call)
+            if query:
+                from sqlalchemy import or_
+
+                sanitized = re.sub(r"[\s\-()]", "", query)
+                phone_like = (
+                    f"%{sanitized}%" if sanitized.strip("+").isdigit() else None
+                )
+                like = f"%{query}%"
+                filters = [Call.summary.like(like), Call.self_critique.like(like)]
+                if phone_like:
+                    filters.extend(
+                        [
+                            Call.from_number.like(phone_like),
+                            Call.to_number.like(phone_like),
+                        ]
+                    )
+                db_query = db_query.filter(or_(*filters))
+            calls = db_query.order_by(Call.created_at.desc()).all()
+
+        matches: list[Call] = []
+        q_lower = query.lower()
+        sanitized = re.sub(r"[\s\-()]", "", query)
+        for call in calls:
+            text = ""
+            try:
+                text = Path(call.transcript_path).read_text().lower()
+            except Exception:
+                pass
+            if (
+                q_lower in text
+                or q_lower in (call.summary or "").lower()
+                or q_lower in (call.self_critique or "").lower()
+                or sanitized
+                in re.sub(r"[\s\-()]", "", call.from_number + call.to_number)
+            ):
+                matches.append(call)
+
+        total = len(matches)
+        start = (params.page - 1) * params.page_size
+        subset = matches[start : start + params.page_size]
+        data = [
+            CallInfo(
+                id=c.id,
+                call_sid=c.call_sid,
+                from_number=c.from_number,
+                to_number=c.to_number,
+                transcript_path=c.transcript_path,
+                summary=c.summary,
+                self_critique=c.self_critique,
+                created_at=c.created_at,
+            )
+            for c in subset
+        ]
         return {"total": total, "items": data}
 
     @app.get("/v1/oauth/start", summary="Begin OAuth flow", tags=["auth"])
