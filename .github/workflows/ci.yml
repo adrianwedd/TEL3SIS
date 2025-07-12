@@ -38,11 +38,20 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
-      - name: Install git-secrets
+      - name: Install git-secrets and jq
         run: |
           sudo apt-get update
-          sudo apt-get install -y git-secrets
+          sudo apt-get install -y git-secrets jq
           git secrets --install -f
+      - name: Run pip-audit
+        run: |
+          pip-audit -r requirements.txt -r requirements-dev.txt \
+            --format cyclonedx-json --progress-spinner off > audit.json
+          if jq -e '.vulnerabilities[] | select(.ratings[]?.severity == "HIGH" or .ratings[]?.severity == "CRITICAL")' audit.json >/dev/null; then
+            echo "High severity vulnerabilities detected" >&2
+            cat audit.json
+            exit 1
+          fi
       - name: Run pre-commit hooks
         run: pre-commit run --all-files --show-diff-on-failure
       - name: Run migrations
