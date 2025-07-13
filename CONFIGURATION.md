@@ -1,6 +1,8 @@
 # Configuration Reference
 
-TEL3SIS loads all settings from environment variables (typically via a `.env` file).
+TEL3SIS loads all settings from environment variables (typically via a `.env` file)
+using `server.config.Settings`, a Pydantic `BaseSettings` model. Instantiating
+`Settings` raises `ConfigError` if required variables are missing.
 The table below lists each variable, whether it is required, and its default value if optional.
 
 | Variable | Required? | Default | Description |

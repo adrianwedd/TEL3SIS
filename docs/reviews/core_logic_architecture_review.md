@@ -38,12 +38,12 @@ TEL3SIS is primarily a FastAPI-based monolithic application with Celery for asyn
 
 ## Weaknesses / Opportunities
 - Inbound call handling remains synchronous; heavy async workloads could block the FastAPI worker.
-- Configuration is dispersed—only some variables are validated by `Config`.
+- Configuration is now centralized using `server.config.Settings` which validates required variables.
 - Database models lack indexes for frequently queried fields (e.g., `Call.created_at`, `Call.from_number`).
 - External API integrations have inconsistent error-handling patterns.
 
 ## Recommendations
-1. Consolidate configuration into a single module (or extend `Config`) to load all environment variables at startup.
+1. Configuration has been consolidated via `server.config.Settings`, ensuring required variables are validated at startup.
 2. Improve resiliency of tool integrations by catching network errors and returning standard error messages.
 3. Add indexes to SQLAlchemy models for search-heavy columns and migrate existing database if needed.
 4. Investigate migrating Twilio call handling to a fully async approach (e.g., Quart or FastAPI) or offload heavy steps to Celery workers.
@@ -59,7 +59,7 @@ TEL3SIS is primarily a FastAPI-based monolithic application with Celery for asyn
   area: Infrastructure
   dependencies: []
   priority: 3
-  status: pending
+  status: done
   assigned_to: null
   command: null
   actionable_steps:
