@@ -6,7 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 from server.database import Base
-from server.config import Config
+from server.settings import Settings
 
 config = context.config
 fileConfig(config.config_file_name)
@@ -15,7 +15,7 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    return Config().database_url
+    return Settings().database_url
 
 
 def run_migrations_offline() -> None:

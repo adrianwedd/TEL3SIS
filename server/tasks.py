@@ -3,7 +3,7 @@ from __future__ import annotations
 from logging_config import logger
 from pathlib import Path
 
-from server.config import Config
+from server.settings import Settings
 
 from datetime import datetime, timedelta, UTC
 import tarfile
@@ -97,7 +97,7 @@ def process_recording(
 ) -> str:
     """Download a recording and generate a summary."""
     with monitor_task("process_recording"):
-        cfg = Config()
+        cfg = Settings()
         audio_path = download_recording(
             recording_url,
             auth=(cfg.twilio_account_sid, cfg.twilio_auth_token),
@@ -169,7 +169,7 @@ def cleanup_old_calls(days: int = 30) -> int:
 def backup_data(upload_to_s3: bool | None = None) -> str:
     """Create a compressed backup of the SQLite DB and vector store."""
     with monitor_task("backup_data"):
-        cfg = Config()
+        cfg = Settings()
         db_url = cfg.database_url
         if not db_url.startswith("sqlite:///"):
             raise ValueError("Only SQLite DATABASE_URL supported")
@@ -206,7 +206,7 @@ def backup_data(upload_to_s3: bool | None = None) -> str:
 def restore_data(archive_path: str) -> bool:
     """Restore the SQLite DB and vector store from ``archive_path``."""
     with monitor_task("restore_data"):
-        cfg = Config()
+        cfg = Settings()
         db_url = cfg.database_url
         if not db_url.startswith("sqlite:///"):
             raise ValueError("Only SQLite DATABASE_URL supported")
@@ -246,7 +246,7 @@ def restore_data(archive_path: str) -> bool:
 def refresh_tokens_task(threshold_seconds: int = 300) -> int:
     """Refresh OAuth tokens nearing expiration."""
     with monitor_task("refresh_tokens_task"):
-        cfg = Config()
+        cfg = Settings()
         manager = StateManager()
         now = int(datetime.now(UTC).timestamp())
         refreshed = 0

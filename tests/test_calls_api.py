@@ -47,7 +47,7 @@ os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
 os.environ.setdefault("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
 from server.app import create_app  # noqa: E402
-from server.config import Config  # noqa: E402
+from server.settings import Settings  # noqa: E402
 
 
 def test_list_calls(monkeypatch, tmp_path):
@@ -62,7 +62,7 @@ def test_list_calls(monkeypatch, tmp_path):
     db.save_call_summary("abc", "111", "222", "/path", "summary", "crit")
     key = db.create_api_key("tester")
 
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
     monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
     monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
@@ -129,7 +129,7 @@ def test_list_calls_filters_and_pagination(monkeypatch, tmp_path):
     db.save_call_summary("c", "333", "555", "/p", "s", None)
     key = db.create_api_key("tester")
 
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
 
     start = (early + timedelta(days=1)).isoformat()

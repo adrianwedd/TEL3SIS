@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Optional
 
-from server.config import Config
+from server.settings import Settings
 from server.cache import redis_cache
 
 from github import Github
@@ -34,7 +34,7 @@ class CodeReviewer:
     llm: Optional[LocalLLM] = None
 
     def __post_init__(self) -> None:
-        cfg = Config()
+        cfg = Settings()
         self._github = Github(self.token or cfg.github_token)
         self._repo = self._github.get_repo(self.repo_name or cfg.github_repository)
         if self.llm is None:

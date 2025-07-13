@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Iterable, List, Sequence, Optional
 
-from server.config import Config
+from server.settings import Settings
 from util import call_with_retries
 from loguru import logger
 
@@ -17,7 +17,7 @@ class OpenAIEmbeddingFunction(EmbeddingFunction):
     def __init__(
         self, model_name: str | None = None, api_key: str | None = None
     ) -> None:
-        cfg = Config()
+        cfg = Settings()
         self.model_name = model_name or cfg.openai_embedding_model
         self.api_key = api_key or cfg.openai_api_key
         try:
@@ -48,7 +48,7 @@ class STEmbeddingFunction(EmbeddingFunction):
     """Embedding function backed by SentenceTransformers."""
 
     def __init__(self, model_name: Optional[str] = None) -> None:
-        cfg = Config()
+        cfg = Settings()
         name = model_name or cfg.embedding_model_name
         try:
             self.model = SentenceTransformer(name)
@@ -73,7 +73,7 @@ class VectorDB:
         embedding_function: Optional[EmbeddingFunction] = None,
         model_name: Optional[str] = None,
     ) -> None:
-        cfg = Config()
+        cfg = Settings()
         persist_directory = persist_directory or cfg.vector_db_path
         self.client = chromadb.PersistentClient(path=persist_directory)
         if not embedding_function:

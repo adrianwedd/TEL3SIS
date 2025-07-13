@@ -29,7 +29,7 @@ def test_rate_limits(monkeypatch, tmp_path):
     monkeypatch.setattr(sm, "redis", types.SimpleNamespace(Redis=fakeredis.FakeRedis))
 
     from server.app import create_app  # noqa: E402
-    from server.config import Config
+    from server.settings import Settings
     import server.app as server_app  # noqa: E402
     from fastapi.testclient import TestClient
 
@@ -42,7 +42,7 @@ def test_rate_limits(monkeypatch, tmp_path):
         server_app, "echo", types.SimpleNamespace(delay=lambda *a, **k: None)
     )
 
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
     monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
     monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")

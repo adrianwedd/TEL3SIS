@@ -45,7 +45,7 @@ install_vocode()
 import server.app as server_app  # noqa: E402
 import server.state_manager as sm  # noqa: E402
 import server.vector_db as vdb  # noqa: E402
-from server.config import Config  # noqa: E402
+from server.settings import Settings  # noqa: E402
 
 
 class DummyModel:
@@ -89,7 +89,7 @@ def setup_app(monkeypatch, tmp_path):
     db = migrate_sqlite(monkeypatch, tmp_path)
     key = db.create_api_key("tester")
 
-    app = server_app.create_app(Config())
+    app = server_app.create_app(Settings())
     client = TestClient(app)
     return client, key
 

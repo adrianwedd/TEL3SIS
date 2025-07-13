@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from server.config import Config
+from server.settings import Settings
 
 from github import Github
 import yaml
@@ -25,7 +25,7 @@ class CoordinatorAgent:
     tasks_path: str = "tasks.yml"
 
     def __post_init__(self) -> None:
-        cfg = Config()
+        cfg = Settings()
         self._github = Github(self.token or cfg.github_token)
         self._repo = self._github.get_repo(self.repo_name or cfg.github_repository)
 

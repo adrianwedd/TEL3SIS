@@ -44,7 +44,7 @@ from .database import (
     get_agent_config,
     update_agent_config,
 )
-from .config import Config, ConfigError
+from .settings import Settings, ConfigError
 from .handoff import dial_twiml
 from .state_manager import StateManager
 from .tasks import echo, reprocess_call, delete_call_record, process_recording
@@ -204,9 +204,9 @@ def _require_user(request: Request) -> str:
     return str(user)
 
 
-def create_app(cfg: Config | None = None) -> FastAPI:
+def create_app(cfg: Settings | None = None) -> FastAPI:
     try:
-        config = cfg or Config()
+        config = cfg or Settings()
     except ConfigError as exc:
         raise RuntimeError(str(exc)) from exc
 

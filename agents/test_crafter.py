@@ -6,7 +6,7 @@ __test__ = False
 
 from dataclasses import dataclass
 from typing import Optional
-from server.config import Config
+from server.settings import Settings
 import xml.etree.ElementTree as ET
 from github import Github
 
@@ -21,7 +21,7 @@ class TestCrafterPro:
     threshold: float = 80.0
 
     def __post_init__(self) -> None:
-        cfg = Config()
+        cfg = Settings()
         self._github = Github(self.token or cfg.github_token)
         self._repo = self._github.get_repo(self.repo_name or cfg.github_repository)
 

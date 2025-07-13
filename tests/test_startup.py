@@ -1,7 +1,7 @@
 import pytest
 
 from server.app import create_app
-from server.config import Config
+from server.settings import Settings
 
 
 def test_server_fails_without_token_key(monkeypatch):
@@ -12,4 +12,4 @@ def test_server_fails_without_token_key(monkeypatch):
     monkeypatch.delenv("TOKEN_ENCRYPTION_KEY", raising=False)
 
     with pytest.raises(RuntimeError):
-        create_app(Config())
+        create_app(Settings())

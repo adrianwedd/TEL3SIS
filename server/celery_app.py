@@ -2,12 +2,12 @@ from __future__ import annotations
 from celery import Celery
 from celery.schedules import crontab
 
-from server.config import Config
+from server.settings import Settings
 
 
-def create_celery_app(cfg: Config | None = None) -> Celery:
+def create_celery_app(cfg: Settings | None = None) -> Celery:
     """Create and configure the Celery application."""
-    cfg = cfg or Config()
+    cfg = cfg or Settings()
     broker = cfg.celery_broker_url
     backend = cfg.celery_result_backend
     celery = Celery("tel3sis", broker=broker, backend=backend)

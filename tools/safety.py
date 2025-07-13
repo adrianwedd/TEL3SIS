@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from server.config import Config
+from server.settings import Settings
 
 from loguru import logger
 from util import call_with_retries
@@ -26,7 +26,7 @@ def safety_check(text: str, *, client: Any | None = None) -> bool:
     """Return ``True`` if the proposed response passes the safety check."""
 
     if client is None:
-        api_key = Config().openai_api_key
+        api_key = Settings().openai_api_key
         if not api_key:
             return _heuristic_check(text)
         try:
@@ -40,7 +40,7 @@ def safety_check(text: str, *, client: Any | None = None) -> bool:
     try:
         resp = call_with_retries(
             client.chat.completions.create,
-            model=Config().openai_safety_model,
+            model=Settings().openai_safety_model,
             messages=[
                 {
                     "role": "system",

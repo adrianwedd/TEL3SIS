@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from github import Github
-from server.config import Config
+from server.settings import Settings
 
 
 @dataclass
@@ -18,7 +18,7 @@ class SafetyOracle:
     banned_patterns: Optional[List[str]] = None
 
     def __post_init__(self) -> None:
-        cfg = Config()
+        cfg = Settings()
         self._github = Github(self.token or cfg.github_token)
         self._repo = self._github.get_repo(self.repo_name or cfg.github_repository)
         if self.banned_patterns is None:

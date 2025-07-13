@@ -10,7 +10,7 @@ from server import database as db
 from server import app as server_app
 from server import recordings as rec
 from server import tasks
-from server.config import Config
+from server.settings import Settings
 from fastapi.testclient import TestClient
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
@@ -112,7 +112,7 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
         types.SimpleNamespace(delay=fake_process),
     )
 
-    app = server_app.create_app(Config())
+    app = server_app.create_app(Settings())
     client = TestClient(app)
 
     call_sid = "CA00000000000000000000000000000000"
@@ -145,7 +145,7 @@ def test_full_call_flow(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None
 
 def test_recording_status_validation(monkeypatch: pytest.MonkeyPatch) -> None:
     from server import app as server_app
-    from server.config import Config
+    from server.settings import Settings
 
     monkeypatch.setenv("SECRET_KEY", "x")
     monkeypatch.setenv("BASE_URL", "http://localhost")
@@ -153,7 +153,7 @@ def test_recording_status_validation(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
-    app = server_app.create_app(Config())
+    app = server_app.create_app(Settings())
     client = TestClient(app)
     key = db.create_api_key("tester")
 

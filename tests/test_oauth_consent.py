@@ -13,7 +13,7 @@ install_vocode()
 import server.app as server_app  # noqa: E402
 import server.state_manager as sm  # noqa: E402
 from server.app import create_app  # noqa: E402
-from server.config import Config  # noqa: E402
+from server.settings import Settings  # noqa: E402
 
 
 def _setup(monkeypatch, tmp_path):
@@ -28,7 +28,7 @@ def _setup(monkeypatch, tmp_path):
     monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "secret")
     monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
     key = db.create_api_key("tester")
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
     return client, key
 

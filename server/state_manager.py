@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import redis
 
 from .vector_db import VectorDB
-from .config import Config, ConfigError
+from .settings import Settings, ConfigError
 
 
 class StateManager:
@@ -22,7 +22,7 @@ class StateManager:
         *,
         summary_db: Optional[VectorDB] = None,
     ) -> None:
-        cfg = Config()
+        cfg = Settings()
         self.url = url or cfg.redis_url
         self.prefix = prefix
         self._redis = redis.Redis.from_url(self.url, decode_responses=True)
