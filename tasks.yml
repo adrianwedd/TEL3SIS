@@ -1910,7 +1910,7 @@ tasks:
     area: UX
     dependencies: [102, 103, 94]
     priority: 3
-    status: pending
+    status: in_review
     assigned_to: null
     command: null
     actionable_steps:

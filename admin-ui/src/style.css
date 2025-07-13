@@ -20,3 +20,29 @@ body {
   color: #fff;
   padding: 10px;
 }
+
+.conversations-container {
+  display: flex;
+}
+
+.conversation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 40%;
+  border-right: 1px solid #ccc;
+}
+
+.conversation-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.conversation-item:hover {
+  background: #f0f0f0;
+}
+
+.conversation-detail {
+  padding: 10px;
+  flex: 1;
+}
