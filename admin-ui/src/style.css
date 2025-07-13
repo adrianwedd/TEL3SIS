@@ -59,3 +59,8 @@ body {
   width: 100%;
   min-height: 80px;
 }
+
+.save-indicator {
+  margin-top: 8px;
+  color: green;
+}

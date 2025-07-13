@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 export default function Settings() {
   const [prompt, setPrompt] = useState('');
   const [voice, setVoice] = useState('');
+  const [saved, setSaved] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,7 +25,12 @@ export default function Settings() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-API-Key': token },
       body: JSON.stringify({ prompt, voice }),
-    }).then(() => navigate('/dashboard'));
+    })
+      .then(() => {
+        setSaved(true);
+        setTimeout(() => navigate('/dashboard'), 800);
+      })
+      .catch(() => setSaved(false));
   };
 
   return (
@@ -40,6 +46,7 @@ export default function Settings() {
           <input value={voice} onChange={(e) => setVoice(e.target.value)} />
         </label>
         <button type="submit">Save</button>
+        {saved && <div className="save-indicator">Saved!</div>}
       </form>
     </div>
   );
