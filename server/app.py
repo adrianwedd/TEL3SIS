@@ -691,8 +691,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
             media_type=response.media_type,
         )
 
-    @app.post("/v1/inbound_sms", summary="Handle inbound SMS", tags=["sms"])
-    async def inbound_sms(request: Request):
+    async def _handle_sms_webhook(request: Request) -> Response:
         try:
             form = await request.form()
             data = InboundSMSData(**form)
@@ -705,6 +704,14 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         response_text = await agent.handle_message(data.Body)
         send_sms(data.From, data.To, response_text)
         return Response(status_code=204)
+
+    @app.post("/v1/inbound_sms", summary="Handle inbound SMS", tags=["sms"])
+    async def inbound_sms(request: Request):
+        return await _handle_sms_webhook(request)
+
+    @app.post("/v1/sms/webhook", summary="Twilio SMS webhook", tags=["sms"])
+    async def sms_webhook(request: Request):
+        return await _handle_sms_webhook(request)
 
     @app.post(
         "/v1/recording_status",
