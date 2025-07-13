@@ -14,7 +14,6 @@ from sqlalchemy import (
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
-from flask_login import UserMixin
 
 from .config import Config
 
@@ -60,7 +59,7 @@ class UserPreference(Base):
     data = Column(JSON, default=dict)
 
 
-class User(Base, UserMixin):
+class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
