@@ -74,7 +74,10 @@ class StateManager:
         """Create a new session key with optional initial data."""
         if data is None:
             data = {}
-        self._redis.hset(self._key(call_sid), mapping=data)
+        key = self._key(call_sid)
+        pipe = self._redis.pipeline()
+        if data:
+            pipe.hset(key, mapping=data)
         from_number = data.get("from")
         if from_number:
             sims = self._summary_db.search(
@@ -83,9 +86,8 @@ class StateManager:
                 n_results=3,
             )
             if sims:
-                self._redis.hset(
-                    self._key(call_sid), "similar_summaries", json.dumps(sims)
-                )
+                pipe.hset(key, "similar_summaries", json.dumps(sims))
+        pipe.execute()
 
     def get_session(self, call_sid: str) -> Dict[str, str]:
         """Return all fields for a session."""
@@ -157,10 +159,10 @@ class StateManager:
 
     def pop_oauth_state(self, state: str) -> Optional[str]:
         """Return user id for state and delete the key."""
-        pipe = self._redis.pipeline()
-        pipe.get(self._oauth_key(state))
-        pipe.delete(self._oauth_key(state))
-        user_id, _ = pipe.execute()
+        with self._redis.pipeline() as pipe:
+            pipe.get(self._oauth_key(state))
+            pipe.delete(self._oauth_key(state))
+            user_id, _ = pipe.execute()
         return cast(Optional[str], user_id)
 
     # --- Conversation History ---------------------------------------
@@ -168,14 +170,25 @@ class StateManager:
     def append_history(self, call_sid: str, speaker: str, text: str) -> None:
         """Append an entry to the conversation history."""
         key = self._key(call_sid)
-        history_json = self._redis.hget(key, "history")
-        history: List[Dict[str, str]]
-        if history_json:
-            history = cast(List[Dict[str, str]], json.loads(history_json))
-        else:
-            history = []
-        history.append({"speaker": speaker, "text": text})
-        self._redis.hset(key, "history", json.dumps(history))
+        while True:
+            pipe = self._redis.pipeline()
+            try:
+                pipe.watch(key)
+                history_json = pipe.hget(key, "history")
+                history: List[Dict[str, str]]
+                if history_json:
+                    history = cast(List[Dict[str, str]], json.loads(history_json))
+                else:
+                    history = []
+                history.append({"speaker": speaker, "text": text})
+                pipe.multi()
+                pipe.hset(key, "history", json.dumps(history))
+                pipe.execute()
+                break
+            except redis.WatchError:
+                continue
+            finally:
+                pipe.reset()
         # A websocket listener can subscribe to transcript lines if desired.
 
     def get_history(self, call_sid: str) -> List[Dict[str, str]]:
