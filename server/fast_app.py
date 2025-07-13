@@ -27,6 +27,7 @@ from .state_manager import StateManager
 from .tasks import echo
 from tools.notifications import send_sms
 from tools.calendar import generate_auth_url, exchange_code
+from .metrics import metrics_middleware
 from agents.core_agent import build_core_agent, SafeAgentFactory
 from agents.sms_agent import SMSAgent
 from .latency_logging import log_call
@@ -70,6 +71,7 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         raise RuntimeError(str(exc)) from exc
 
     app = FastAPI()
+    app.middleware("http")(metrics_middleware)
 
     init_db()
 

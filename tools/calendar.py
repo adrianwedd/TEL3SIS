@@ -11,6 +11,7 @@ from loguru import logger
 from server.config import Config
 from server.state_manager import StateManager
 from tools.notifications import send_sms
+from server.metrics import record_external_api
 
 
 class AuthError(RuntimeError):
@@ -126,8 +127,9 @@ def create_event(
         "end": {"dateTime": end.isoformat(), "timeZone": timezone},
     }
     try:
-        service = build("calendar", "v3", credentials=creds)
-        return service.events().insert(calendarId="primary", body=event).execute()
+        with record_external_api("google_calendar"):
+            service = build("calendar", "v3", credentials=creds)
+            return service.events().insert(calendarId="primary", body=event).execute()
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to create event for %s: %s", user_id, exc)
         return {"error": "Sorry, I'm unable to create the calendar event right now."}
@@ -145,19 +147,20 @@ def list_events(
     """Return upcoming calendar events between two times."""
     creds = _get_credentials(state_manager, user_id, user_phone, twilio_phone)
     try:
-        service = build("calendar", "v3", credentials=creds)
-        resp = (
-            service.events()
-            .list(
-                calendarId="primary",
-                timeMin=time_min.isoformat(),
-                timeMax=time_max.isoformat(),
-                singleEvents=True,
-                orderBy="startTime",
+        with record_external_api("google_calendar"):
+            service = build("calendar", "v3", credentials=creds)
+            resp = (
+                service.events()
+                .list(
+                    calendarId="primary",
+                    timeMin=time_min.isoformat(),
+                    timeMax=time_max.isoformat(),
+                    singleEvents=True,
+                    orderBy="startTime",
+                )
+                .execute()
             )
-            .execute()
-        )
-        return resp.get("items", [])
+            return resp.get("items", [])
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to list events for %s: %s", user_id, exc)
         return []
