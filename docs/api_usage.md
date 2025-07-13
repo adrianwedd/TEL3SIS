@@ -2,6 +2,8 @@
 
 This document describes the HTTP endpoints under `/v1` exposed by the TEL3SIS server. All requests require an `X-API-Key` header unless otherwise noted.
 
+Interactive OpenAPI documentation is available at `/docs` when the server is running.
+
 ## Authentication
 
 Generate an API key using `tel3sis-manage generate-api-key <owner>` and include it in the `X-API-Key` header. Initialize the database with `tel3sis-manage migrate`:
