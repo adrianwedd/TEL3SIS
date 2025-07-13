@@ -74,10 +74,23 @@ def exchange_code(
     if not user_id:
         raise RuntimeError("Unknown OAuth state")
     flow = _build_flow(state)
-    flow.fetch_token(authorization_response=authorization_response)
-    creds = flow.credentials
-    expires_at = int(creds.expiry.timestamp()) if creds.expiry else None
-    state_manager.set_token(user_id, creds.token, creds.refresh_token, expires_at)
+    try:
+        call_with_retries(
+            flow.fetch_token,
+            authorization_response=authorization_response,
+            timeout=10,
+        )
+        creds = flow.credentials
+        expires_at = int(creds.expiry.timestamp()) if creds.expiry else None
+        state_manager.set_token(
+            user_id,
+            creds.token,
+            creds.refresh_token,
+            expires_at,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Failed to exchange OAuth code for %s: %s", user_id, exc)
+        raise
 
 
 def _get_credentials(
@@ -103,9 +116,18 @@ def _get_credentials(
     if data.get("expires_at"):
         creds.expiry = datetime.fromtimestamp(int(data["expires_at"]))
     if creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-        expires_at = int(creds.expiry.timestamp()) if creds.expiry else None
-        state_manager.set_token(user_id, creds.token, creds.refresh_token, expires_at)
+        try:
+            call_with_retries(creds.refresh, Request(), timeout=10)
+            expires_at = int(creds.expiry.timestamp()) if creds.expiry else None
+            state_manager.set_token(
+                user_id,
+                creds.token,
+                creds.refresh_token,
+                expires_at,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to refresh token for %s: %s", user_id, exc)
+            raise
     return creds
 
 
@@ -129,9 +151,16 @@ def create_event(
     }
     try:
         with record_external_api("google_calendar"):
-            service = build("calendar", "v3", credentials=creds)
+            service = call_with_retries(
+                build,
+                "calendar",
+                "v3",
+                credentials=creds,
+                timeout=10,
+            )
             return call_with_retries(
-                service.events().insert(calendarId="primary", body=event).execute
+                service.events().insert(calendarId="primary", body=event).execute,
+                timeout=10,
             )
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to create event for %s: %s", user_id, exc)
@@ -151,7 +180,13 @@ def list_events(
     creds = _get_credentials(state_manager, user_id, user_phone, twilio_phone)
     try:
         with record_external_api("google_calendar"):
-            service = build("calendar", "v3", credentials=creds)
+            service = call_with_retries(
+                build,
+                "calendar",
+                "v3",
+                credentials=creds,
+                timeout=10,
+            )
             resp = call_with_retries(
                 service.events()
                 .list(
@@ -161,7 +196,8 @@ def list_events(
                     singleEvents=True,
                     orderBy="startTime",
                 )
-                .execute
+                .execute,
+                timeout=10,
             )
             return resp.get("items", [])
     except Exception as exc:  # noqa: BLE001
