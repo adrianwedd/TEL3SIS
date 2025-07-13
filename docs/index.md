@@ -126,7 +126,8 @@ TEL3SIS/
 
 7. **Open Grafana**
 
-   Navigate to [http://localhost:3000](http://localhost:3000) (default login `admin`/`admin`) and import `ops/grafana/tel3sis.json` via **Dashboard → Import**.
+   Visit [http://localhost:3000/d/tel3sis-latency](http://localhost:3000/d/tel3sis-latency) (default login `admin`/`admin`).
+   If the dashboard is missing, import `ops/grafana/tel3sis.json` via **Dashboard → Import**.
 
 ## 📑 API Reference
 
@@ -264,7 +265,8 @@ tel3sis-maintenance prune --days 90
 * Alert rules live in `ops/prometheus/*_rules.yml` and define when latency is too high
 * Alerts trigger if STT/LLM/TTS average latency stays above **3 s** for over a minute
 * Alertmanager reads `ops/prometheus/alertmanager.yml` and posts to Slack via `SLACK_WEBHOOK_URL` in `.env`
-* Browse Grafana at [http://localhost:3000](http://localhost:3000) and import `ops/grafana/tel3sis.json` for latency graphs
+* Browse Grafana at [http://localhost:3000/d/tel3sis-latency](http://localhost:3000/d/tel3sis-latency).
+  Import `ops/grafana/tel3sis.json` if the dashboard isn't present to see latency and task metrics.
 
 ---
 

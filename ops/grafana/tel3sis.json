@@ -4,7 +4,9 @@
   "title": "TEL3SIS Latency",
   "schemaVersion": 37,
   "version": 1,
-  "tags": ["tel3sis"],
+  "tags": [
+    "tel3sis"
+  ],
   "time": {
     "from": "now-5m",
     "to": "now"
@@ -17,9 +19,16 @@
       "title": "STT Latency (p95)",
       "datasource": "Prometheus",
       "targets": [
-        {"expr": "histogram_quantile(0.95, rate(stt_latency_seconds_bucket[1m]))"}
+        {
+          "expr": "histogram_quantile(0.95, rate(stt_latency_seconds_bucket[1m]))"
+        }
       ],
-      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8}
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
     },
     {
       "id": 2,
@@ -27,9 +36,16 @@
       "title": "LLM Latency (p95)",
       "datasource": "Prometheus",
       "targets": [
-        {"expr": "histogram_quantile(0.95, rate(llm_latency_seconds_bucket[1m]))"}
+        {
+          "expr": "histogram_quantile(0.95, rate(llm_latency_seconds_bucket[1m]))"
+        }
       ],
-      "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8}
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
     },
     {
       "id": 3,
@@ -37,9 +53,84 @@
       "title": "TTS Latency (p95)",
       "datasource": "Prometheus",
       "targets": [
-        {"expr": "histogram_quantile(0.95, rate(tts_latency_seconds_bucket[1m]))"}
+        {
+          "expr": "histogram_quantile(0.95, rate(tts_latency_seconds_bucket[1m]))"
+        }
       ],
-      "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8}
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "id": 4,
+      "type": "graph",
+      "title": "HTTP Request Latency (p95)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_latency_seconds_bucket[1m]))"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "id": 5,
+      "type": "graph",
+      "title": "External API Latency (p95)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(external_api_latency_seconds_bucket[1m]))"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "id": 6,
+      "type": "graph",
+      "title": "Celery Task Latency (p95)",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(celery_task_latency_seconds_bucket[1m]))"
+        }
+      ],
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "id": 7,
+      "type": "graph",
+      "title": "Task Failures per Minute",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(celery_task_failures_total[1m])"
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 8
+      }
     }
   ]
 }
