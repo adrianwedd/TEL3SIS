@@ -48,6 +48,9 @@ Example response:
 ]
 ```
 
+### `GET /v1/oauth/consent`
+Display a consent page describing the requested Google Calendar permissions. The optional `user_id` query parameter persists through the OAuth flow.
+
 ### `GET /v1/oauth/start`
 Generate a provider authorization URL for tools like Google Calendar. Optional query parameter `user_id` identifies the requesting user. Example:
 

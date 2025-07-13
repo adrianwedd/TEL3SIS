@@ -50,7 +50,7 @@ from .state_manager import StateManager
 from .tasks import echo, reprocess_call, delete_call_record, process_recording
 from agents.sms_agent import SMSAgent
 from tools.notifications import send_sms
-from tools.calendar import exchange_code, generate_auth_url
+from tools.calendar import exchange_code, generate_auth_url, SCOPES
 from agents.core_agent import (
     build_core_agent,
     SafeAgentFactory,
@@ -612,6 +612,18 @@ def create_app(cfg: Config | None = None) -> FastAPI:
     ) -> Response:
         update_agent_config(prompt=payload.prompt, voice=payload.voice)
         return Response(status_code=204)
+
+    @app.get(
+        "/v1/oauth/consent",
+        summary="Explain OAuth permissions",
+        tags=["auth"],
+    )
+    async def oauth_consent(request: Request):
+        data = OAuthStartData(**request.query_params)
+        return templates.TemplateResponse(
+            "oauth_consent.html",
+            {"request": request, "user_id": data.user_id or "", "scopes": SCOPES},
+        )
 
     @app.get("/v1/oauth/start", summary="Begin OAuth flow", tags=["auth"])
     async def oauth_start(request: Request):
