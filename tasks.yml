@@ -1629,3 +1629,411 @@ tasks:
       - "Integrate search bar into the dashboard UI."
     acceptance_criteria:
       - "Admins can quickly locate specific calls using search terms."
+  - id: 88
+    task_id: CORE-01
+    epic: "Core Functionality"
+    title: "Implement Intent Recognition"
+    description: "Refactor the CalendarAgent to use a proper intent recognition model."
+    component: agent
+    area: Core
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Replace keyword matching with an intent classifier."
+      - "Integrate classifier into CalendarAgent."
+    acceptance_criteria:
+      - "Agent detects create_event and other intents reliably."
+  - id: 89
+    task_id: CORE-02
+    epic: "Core Functionality"
+    title: "Develop Multi-Turn Dialogue State Machine"
+    description: "Implement a state machine to manage conversation flow."
+    component: agent
+    area: Core
+    dependencies: [88]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create dialogue states for gathering event details."
+      - "Maintain context across user responses."
+    acceptance_criteria:
+      - "Agent asks clarifying questions and remembers answers."
+  - id: 90
+    task_id: CORE-03
+    epic: "Core Functionality"
+    title: "Refactor Tools for Dynamic Invocation"
+    description: "Modify CalendarTool and add abstraction for dynamic tool selection."
+    component: agent
+    area: Core
+    dependencies: [88]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create tool abstraction layer."
+      - "Invoke tools based on recognized intent."
+    acceptance_criteria:
+      - "Agent chooses the correct tool automatically."
+  - id: 91
+    task_id: CORE-04
+    epic: "Core Functionality"
+    title: "Integrate Twilio SMS for Inbound/Outbound Messaging"
+    description: "Add SMS webhook endpoint and support text commands via Twilio."
+    component: server
+    area: Core
+    dependencies: []
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create FastAPI endpoint for incoming SMS."
+      - "Send responses through Twilio API."
+    acceptance_criteria:
+      - "Users can interact with the agent via SMS."
+  - id: 92
+    task_id: CORE-05
+    epic: "Core Functionality"
+    title: "Design Generic Web Chat API"
+    description: "Create WebSocket endpoints for real-time web chat."
+    component: server
+    area: Core
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Implement /chat/ws WebSocket route."
+      - "Handle connection management and message flow."
+    acceptance_criteria:
+      - "Web clients exchange messages with the agent in real time."
+  - id: 93
+    task_id: CORE-06
+    epic: "Core Functionality"
+    title: "Implement Long-Term Memory Retrieval"
+    description: "Persist conversation summaries to ChromaDB and query at new session start."
+    component: agent
+    area: Core
+    dependencies: []
+    priority: 3
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Extend RedisStateManager to save summaries to ChromaDB."
+      - "Load relevant history when a conversation begins."
+    acceptance_criteria:
+      - "Agent recalls previous interactions across sessions."
+  - id: 94
+    task_id: CORE-07
+    epic: "Core Functionality"
+    title: "Develop Conversation Summarization Logic"
+    description: "Use an LLM to summarize conversations asynchronously."
+    component: agent
+    area: Core
+    dependencies: []
+    priority: 3
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Trigger a Celery task after each call to summarize."
+      - "Store the summary for long-term retrieval."
+    acceptance_criteria:
+      - "Each call ends with a stored summary."
+  - id: 95
+    task_id: PROD-01
+    epic: "Production Readiness"
+    title: "Centralize Configuration with Pydantic"
+    description: "Use a validated Pydantic Settings object for all environment variables."
+    component: config
+    area: ProdOps
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create Settings class loading from environment."
+      - "Replace os.getenv usage throughout the codebase."
+    acceptance_criteria:
+      - "Application fails fast when required settings are missing."
+  - id: 96
+    task_id: PROD-02
+    epic: "Production Readiness"
+    title: "Instrument Application with Prometheus Metrics"
+    description: "Expose metrics for call volume, latency, and errors."
+    component: server
+    area: ProdOps
+    dependencies: []
+    priority: 4
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add Prometheus client to FastAPI."
+      - "Record metrics for key operations and external API calls."
+    acceptance_criteria:
+      - "Metrics endpoint provides application statistics."
+  - id: 97
+    task_id: PROD-03
+    epic: "Production Readiness"
+    title: "Build Grafana Dashboard for Monitoring"
+    description: "Visualize Prometheus metrics in Grafana."
+    component: infra
+    area: ProdOps
+    dependencies: [96]
+    priority: 3
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create Grafana dashboard panels for metrics."
+      - "Document dashboard URL and usage."
+    acceptance_criteria:
+      - "Operators can view system health in Grafana."
+  - id: 98
+    task_id: PROD-04
+    epic: "Production Readiness"
+    title: "Set Up Alertmanager for Critical Alerts"
+    description: "Configure Alertmanager to notify on high error rates or latency."
+    component: infra
+    area: ProdOps
+    dependencies: [97]
+    priority: 3
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Define alert rules for Prometheus metrics."
+      - "Integrate notifications with Slack or PagerDuty."
+    acceptance_criteria:
+      - "Critical issues trigger alerts to the team."
+  - id: 99
+    task_id: PROD-05
+    epic: "Production Readiness"
+    title: "Document and Automate Database Backup/Restore"
+    description: "Provide scripts and runbook for PostgreSQL and Redis backups."
+    component: db
+    area: ProdOps
+    dependencies: []
+    priority: 3
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Write backup and restore scripts in scripts/maintenance."
+      - "Document manual and scheduled execution procedures."
+    acceptance_criteria:
+      - "Databases can be backed up and restored using documented steps."
+  - id: 100
+    task_id: PROD-06
+    epic: "Production Readiness"
+    title: "Harden Error Handling for All External APIs"
+    description: "Implement retries and logging for external API failures."
+    component: tools
+    area: ProdOps
+    dependencies: []
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Wrap external API calls with retry logic and timeouts."
+      - "Log unrecoverable errors clearly for debugging."
+    acceptance_criteria:
+      - "Transient failures are retried automatically."
+  - id: 101
+    task_id: PROD-07
+    epic: "Production Readiness"
+    title: "Implement Transactional State Updates"
+    description: "Use Redis transactions to ensure atomic state changes."
+    component: server
+    area: ProdOps
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Refactor RedisStateManager to use MULTI/EXEC."
+      - "Add tests covering concurrent updates."
+    acceptance_criteria:
+      - "State updates remain consistent under load."
+  - id: 102
+    task_id: UX-01
+    epic: "User Experience"
+    title: "Design and Build Admin UI Frontend"
+    description: "Create frontend application with login and dashboard layout."
+    component: frontend
+    area: UX
+    dependencies: []
+    priority: 4
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Bootstrap React or Vue project for admin interface."
+      - "Implement authentication and basic layout."
+    acceptance_criteria:
+      - "Admins can log in and see an initial dashboard."
+  - id: 103
+    task_id: UX-02
+    epic: "User Experience"
+    title: "Create Backend API for Admin UI"
+    description: "Add authenticated API endpoints supporting the admin frontend."
+    component: server
+    area: UX
+    dependencies: []
+    priority: 4
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create API routes for conversation logs and agent status."
+      - "Require authentication for all admin endpoints."
+    acceptance_criteria:
+      - "Admin API returns data securely to the frontend."
+  - id: 104
+    task_id: UX-03
+    epic: "User Experience"
+    title: "Implement Conversation Log Viewer"
+    description: "Display past conversations with summaries in the admin UI."
+    component: frontend
+    area: UX
+    dependencies: [102, 103, 94]
+    priority: 3
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Fetch conversation list and summaries from backend."
+      - "Show transcript and artifacts when selecting a conversation."
+    acceptance_criteria:
+      - "Admins can review conversation history in the UI."
+  - id: 105
+    task_id: UX-04
+    epic: "User Experience"
+    title: "Build Agent Configuration Interface"
+    description: "Allow administrators to modify agent parameters from the UI."
+    component: frontend
+    area: UX
+    dependencies: [102, 103]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create forms for prompt and voice settings."
+      - "Persist configuration changes via backend API."
+    acceptance_criteria:
+      - "Agent settings can be updated without editing code."
+  - id: 106
+    task_id: UX-05
+    epic: "User Experience"
+    title: "Design Secure OAuth2 Onboarding Flow"
+    description: "Implement user-facing OAuth2 flow for Google Calendar access."
+    component: server
+    area: UX
+    dependencies: []
+    priority: 4
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Display permission consent page explaining scopes."
+      - "Handle token exchange and secure storage."
+    acceptance_criteria:
+      - "Users can connect their Google Calendar via OAuth2."
+  - id: 107
+    task_id: DOCS-01
+    epic: "Documentation"
+    title: "Generate API Documentation with OpenAPI"
+    description: "Integrate FastAPI's OpenAPI generation with detailed examples."
+    component: server
+    area: Docs
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Annotate endpoints for accurate schema generation."
+      - "Publish OpenAPI docs with interactive UI."
+    acceptance_criteria:
+      - "API documentation is accessible and complete."
+  - id: 108
+    task_id: DOCS-02
+    epic: "Documentation"
+    title: "Write Comprehensive User Guide"
+    description: "Create documentation for non-technical users covering setup and usage."
+    component: docs
+    area: Docs
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Explain connecting a phone number and calendar access."
+      - "Detail basic troubleshooting steps."
+    acceptance_criteria:
+      - "Users can follow the guide to operate TEL3SIS."
+  - id: 109
+    task_id: DOCS-03
+    epic: "Documentation"
+    title: "Create Detailed Architecture Diagram"
+    description: "Add a diagram illustrating system components and interactions."
+    component: docs
+    area: Docs
+    dependencies: []
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Produce an architecture image file in docs/images."
+      - "Reference the diagram in the README."
+    acceptance_criteria:
+      - "Documentation includes a clear architecture diagram."
+  - id: 110
+    task_id: DOCS-04
+    epic: "Documentation"
+    title: "Write a Developer Onboarding Guide"
+    description: "Create CONTRIBUTING.md with setup and workflow instructions."
+    component: docs
+    area: Docs
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Describe environment setup and pre-commit usage."
+      - "Outline testing and PR process."
+    acceptance_criteria:
+      - "New developers can start contributing using the guide."
+  - id: 111
+    task_id: DOCS-05
+    epic: "Documentation"
+    title: "Document Configuration Variables"
+    description: "List all environment variables and their purpose in CONFIGURATION.md."
+    component: docs
+    area: Docs
+    dependencies: [95]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create CONFIGURATION.md describing each variable."
+      - "Indicate whether variables are required or optional."
+    acceptance_criteria:
+      - "CONFIGURATION.md enumerates all configuration options."
