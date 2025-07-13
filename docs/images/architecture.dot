@@ -1,0 +1,22 @@
+digraph TEL3SIS {
+    rankdir=LR;
+    fontsize=10;
+    node [shape=box, style=rounded, fontsize=10];
+
+    Caller [shape=oval];
+    Caller -> Twilio;
+    Twilio -> "FastAPI Telephony API";
+    "FastAPI Telephony API" -> "Vocode Streaming Pipeline";
+    "FastAPI Telephony API" -> "Celery Worker Pool" [style=dashed];
+
+    subgraph cluster_pipeline {
+        label="Vocode Streaming Pipeline";
+        style=rounded;
+        "STT (Whisper/Deepgram)" -> "LLM" -> "Safety Oracle" -> "TTS (ElevenLabs)";
+    }
+
+    "Vocode Streaming Pipeline" -> "STT (Whisper/Deepgram)";
+    "Safety Oracle" -> "Tool Executor";
+    "Tool Executor" -> "StateManager";
+    "StateManager" -> "Celery Worker Pool";
+}
