@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, UTC
 from pathlib import Path
+import shutil
 import tarfile
 
 
@@ -237,3 +238,39 @@ def test_backup_data(celery_worker, tmp_path):
         names = tar.getnames()
     assert "test.db" in names
     assert "vector_store" in names
+
+
+def test_restore_data(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path}/test.db")
+    vector_dir = tmp_path / "vectors"
+    monkeypatch.setenv("VECTOR_DB_PATH", str(vector_dir))
+    vector_dir.mkdir()
+    from importlib import reload
+    from tests.db_utils import migrate_sqlite
+
+    import server.tasks as tasks
+
+    migrate_sqlite(monkeypatch, tmp_path)
+    from prometheus_client import REGISTRY
+
+    for collector in [
+        getattr(tasks, "task_invocations", None),
+        getattr(tasks, "task_failures", None),
+        getattr(tasks, "task_latency", None),
+    ]:
+        if collector is not None:
+            try:
+                REGISTRY.unregister(collector)
+            except KeyError:
+                pass
+    tasks = reload(tasks)
+
+    path = tasks.backup_data.run()
+
+    (tmp_path / "test.db").unlink()
+    shutil.rmtree(vector_dir)
+
+    result = tasks.restore_data.run(path)
+    assert result is True
+    assert (tmp_path / "test.db").exists()
+    assert vector_dir.exists()
