@@ -55,6 +55,7 @@ from agents.core_agent import (
 )
 from .chat import manager as chat_manager, uuid4
 from .latency_logging import log_call
+from .metrics import metrics_middleware
 
 
 class InboundCallData(BaseModel):
@@ -199,6 +200,7 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         docs_url="/docs",
         openapi_url="/openapi.json",
     )
+    app.middleware("http")(metrics_middleware)
     templates = Jinja2Templates(directory="server/templates")
     app.state.spec = APISpec(
         title=app.title,

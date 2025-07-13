@@ -1,6 +1,7 @@
-import time
 import os
+import time
 import base64
+import requests
 from pathlib import Path
 import pytest
 from .db_utils import migrate_sqlite
@@ -8,6 +9,7 @@ from .db_utils import migrate_sqlite
 
 from server.latency_logging import log_stt
 from tests.utils.vocode_mocks import install as install_vocode
+from tools.notifications import send_sms
 
 install_vocode()
 
@@ -42,6 +44,19 @@ def test_metrics_endpoint(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> No
 
     dummy()
 
+    class DummyResp:
+        status_code = 200
+
+        def raise_for_status(self) -> None:  # noqa: D401
+            return None
+
+    monkeypatch.setattr(requests, "post", lambda *a, **k: DummyResp())
+    send_sms("+1", "+2", "hi")
+
+    client.get("/v1/health", headers={"X-API-Key": key})
+
     resp = client.get("/v1/metrics", headers={"X-API-Key": key})
     body = resp.text
     assert "stt_latency_seconds" in body
+    assert "http_requests_total" in body
+    assert "external_api_calls_total" in body
