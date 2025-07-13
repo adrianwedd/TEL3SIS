@@ -31,7 +31,12 @@ export default function Dashboard() {
     <div className="dashboard">
       <header>
         <h2>Admin Dashboard</h2>
-        <button onClick={handleLogout}>Logout</button>
+        <div>
+          <button onClick={() => (window.location.href = '/settings')}>
+            Settings
+          </button>
+          <button onClick={handleLogout}>Logout</button>
+        </div>
       </header>
       <main>
         <div className="conversations-container">

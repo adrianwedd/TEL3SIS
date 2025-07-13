@@ -22,6 +22,7 @@ from vocode.streaming.models.agent import ChatGPTAgentConfig
 from vocode.streaming.models.transcriber import WhisperCPPTranscriberConfig
 from vocode.streaming.models.synthesizer import ElevenLabsSynthesizerConfig
 from server.config import Config
+from server.database import get_agent_config
 from tools import registry
 from tools.safety import safety_check
 from server.state_manager import StateManager
@@ -193,8 +194,11 @@ def build_core_agent(
     """Return TEL3SIS ChatGPT agent with STT and TTS providers configured."""
 
     cfg = Config()
+    stored = get_agent_config()
     agent_config = FunctionChatGPTAgentConfig(
-        prompt_preamble="You are TEL3SIS, a helpful voice assistant.",
+        prompt_preamble=stored.get(
+            "prompt", "You are TEL3SIS, a helpful voice assistant."
+        ),
         openai_api_key=cfg.openai_api_key,
         functions=registry.schemas(),
     )
@@ -206,6 +210,9 @@ def build_core_agent(
         api_key=cfg.eleven_labs_api_key
     )
     setattr(synthesizer_config, "language", language)
+    voice = stored.get("voice")
+    if voice:
+        setattr(synthesizer_config, "voice", voice)
 
     return CoreAgentConfig(
         agent=agent_config,
