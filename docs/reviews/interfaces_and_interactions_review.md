@@ -10,9 +10,7 @@ This section revisits how TEL3SIS exposes functionality to users and other syste
 - **`/v1/calls`** – JSON listing of past calls.
 - **`/v1/dashboard`** – protected dashboard of calls.
 - **`/v1/dashboard/<call_id>`** – detailed transcript/audio view.
-- **`/v1/login` / `/v1/login` (POST)** – dashboard login form.
 - **`/v1/login/oauth`** – OAuth based login.
-- **`/v1/logout`** – end dashboard session.
 - **`/v1/metrics`** – Prometheus metrics scraping.
 
 ## CLI Usability

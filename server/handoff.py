@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import os
 from xml.etree.ElementTree import Element, tostring
+
+from .config import Config
 
 
 __all__ = ["dial_twiml"]
@@ -9,7 +10,7 @@ __all__ = ["dial_twiml"]
 
 def dial_twiml(from_number: str | None = None) -> str:
     """Return TwiML for dialing the escalation phone number."""
-    phone = os.environ.get("ESCALATION_PHONE_NUMBER")
+    phone = Config().escalation_phone_number
     if not phone:
         raise RuntimeError("ESCALATION_PHONE_NUMBER not set")
 

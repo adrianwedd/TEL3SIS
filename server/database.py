@@ -212,3 +212,34 @@ def update_user(
             user.role = role
         session.commit()
         return True
+
+
+def get_agent_config() -> dict:
+    """Return global agent configuration."""
+    with get_session() as session:
+        pref = (
+            session.query(UserPreference)
+            .filter_by(phone_number="__agent__")
+            .one_or_none()
+        )
+        return dict(pref.data) if pref else {}
+
+
+def update_agent_config(**settings: str) -> None:
+    """Update global agent configuration in the database."""
+    if not settings:
+        return
+    with get_session() as session:
+        pref = (
+            session.query(UserPreference)
+            .filter_by(phone_number="__agent__")
+            .one_or_none()
+        )
+        if pref is None:
+            pref = UserPreference(phone_number="__agent__", data=settings)
+            session.add(pref)
+        else:
+            data = dict(pref.data or {})
+            data.update(settings)
+            pref.data = data
+        session.commit()

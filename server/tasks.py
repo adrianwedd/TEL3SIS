@@ -3,13 +3,20 @@ from __future__ import annotations
 from logging_config import logger
 from pathlib import Path
 
+from server.config import Config
+
 from datetime import datetime, timedelta, UTC
-import os
 import tarfile
 import time
+import shutil
+import tempfile
 from contextlib import contextmanager
 
-from .recordings import transcribe_recording, DEFAULT_OUTPUT_DIR
+from .recordings import (
+    transcribe_recording,
+    DEFAULT_OUTPUT_DIR,
+    download_recording,
+)
 
 import tools.notifications as notifications
 from .database import (
@@ -81,6 +88,23 @@ def summarize_text(text: str, max_words: int = 30) -> str:
         return " ".join(words[:max_words])
 
 
+@celery_app.task
+def process_recording(
+    recording_url: str,
+    call_sid: str,
+    from_number: str,
+    to_number: str,
+) -> str:
+    """Download a recording and generate a summary."""
+    with monitor_task("process_recording"):
+        cfg = Config()
+        audio_path = download_recording(
+            recording_url,
+            auth=(cfg.twilio_account_sid, cfg.twilio_auth_token),
+        )
+        return transcribe_audio(str(audio_path), call_sid, from_number, to_number)
+
+
 def transcribe_audio(
     audio_path: str,
     call_sid: str,
@@ -107,6 +131,11 @@ def transcribe_audio(
             summary,
             critique,
         )
+        try:
+            manager = StateManager()
+            manager.set_summary(call_sid, summary, from_number=from_number)
+        except Exception:  # noqa: BLE001 - non-critical failure
+            pass
         return str(path)
 
 
@@ -140,13 +169,14 @@ def cleanup_old_calls(days: int = 30) -> int:
 def backup_data(upload_to_s3: bool | None = None) -> str:
     """Create a compressed backup of the SQLite DB and vector store."""
     with monitor_task("backup_data"):
-        db_url = os.getenv("DATABASE_URL", "sqlite:///tel3sis.db")
+        cfg = Config()
+        db_url = cfg.database_url
         if not db_url.startswith("sqlite:///"):
             raise ValueError("Only SQLite DATABASE_URL supported")
         db_path = Path(db_url.split("sqlite:///")[-1])
-        vector_dir = Path(os.getenv("VECTOR_DB_PATH", "vector_store"))
+        vector_dir = Path(cfg.vector_db_path)
 
-        backup_dir = Path(os.getenv("BACKUP_DIR", "backups"))
+        backup_dir = Path(cfg.backup_dir)
         backup_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         tar_path = backup_dir / f"backup_{timestamp}.tar.gz"
@@ -159,7 +189,7 @@ def backup_data(upload_to_s3: bool | None = None) -> str:
 
         logger.info("Backup created at %s", tar_path)
 
-        s3_bucket = os.getenv("BACKUP_S3_BUCKET")
+        s3_bucket = cfg.backup_s3_bucket
         if upload_to_s3 or s3_bucket:
             if not boto3:
                 raise RuntimeError("boto3 not installed for S3 upload")
@@ -173,9 +203,50 @@ def backup_data(upload_to_s3: bool | None = None) -> str:
 
 
 @celery_app.task
+def restore_data(archive_path: str) -> bool:
+    """Restore the SQLite DB and vector store from ``archive_path``."""
+    with monitor_task("restore_data"):
+        cfg = Config()
+        db_url = cfg.database_url
+        if not db_url.startswith("sqlite:///"):
+            raise ValueError("Only SQLite DATABASE_URL supported")
+        db_path = Path(db_url.split("sqlite:///")[-1])
+        vector_dir = Path(cfg.vector_db_path)
+
+        tar_path = Path(archive_path)
+        if str(tar_path).startswith("s3://"):
+            if not boto3:
+                raise RuntimeError("boto3 not installed for S3 download")
+            bucket, key = archive_path[5:].split("/", 1)
+            with tempfile.NamedTemporaryFile() as tmp:
+                boto3.client("s3").download_file(bucket, key, tmp.name)
+                tar_path = Path(tmp.name)
+
+        if not tar_path.exists():
+            raise FileNotFoundError(str(tar_path))
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with tarfile.open(tar_path) as tar:
+                tar.extractall(tmpdir)
+            extracted_db = Path(tmpdir) / db_path.name
+            extracted_vectors = Path(tmpdir) / "vector_store"
+            if extracted_db.exists():
+                db_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(extracted_db), db_path)
+            if extracted_vectors.exists():
+                if vector_dir.exists():
+                    shutil.rmtree(vector_dir)
+                shutil.move(str(extracted_vectors), vector_dir)
+
+        logger.info("Restored backup from %s", archive_path)
+        return True
+
+
+@celery_app.task
 def refresh_tokens_task(threshold_seconds: int = 300) -> int:
     """Refresh OAuth tokens nearing expiration."""
     with monitor_task("refresh_tokens_task"):
+        cfg = Config()
         manager = StateManager()
         now = int(datetime.now(UTC).timestamp())
         refreshed = 0
@@ -190,8 +261,8 @@ def refresh_tokens_task(threshold_seconds: int = 300) -> int:
                 data["access_token"],
                 refresh_token=refresh_token,
                 token_uri="https://oauth2.googleapis.com/token",
-                client_id=os.environ.get("GOOGLE_CLIENT_ID"),
-                client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
+                client_id=cfg.google_client_id,
+                client_secret=cfg.google_client_secret,
             )
             creds.expiry = datetime.fromtimestamp(expires_at, UTC)
             try:
@@ -203,3 +274,49 @@ def refresh_tokens_task(threshold_seconds: int = 300) -> int:
             manager.set_token(user_id, creds.token, refresh_token, new_exp)
             refreshed += 1
         return refreshed
+
+
+@celery_app.task
+def reprocess_call(call_id: int) -> bool:
+    """Re-run summary and critique generation for a call."""
+    with monitor_task("reprocess_call"):
+        with get_session() as session:
+            call = session.get(Call, call_id)
+            if call is None:
+                return False
+            transcript = Path(call.transcript_path)
+            if not transcript.exists():
+                return False
+            text = transcript.read_text()
+            summary = summarize_text(text)
+            critique = generate_self_critique(text)
+            call.summary = summary
+            call.self_critique = critique
+            session.commit()
+        return True
+
+
+@celery_app.task
+def delete_call_record(call_id: int) -> bool:
+    """Delete a call and associated files."""
+    with monitor_task("delete_call_record"):
+        with get_session() as session:
+            call = session.get(Call, call_id)
+            if call is None:
+                return False
+            transcript = Path(call.transcript_path)
+            audio = DEFAULT_OUTPUT_DIR / f"{transcript.stem}.mp3"
+            transcript.unlink(missing_ok=True)
+            audio.unlink(missing_ok=True)
+            session.delete(call)
+            session.commit()
+        return True
+
+
+@celery_app.task
+def clear_cache_task(pattern: str = "cache:*") -> int:
+    """Clear cached entries matching ``pattern``."""
+    from .cache import clear_cache
+
+    with monitor_task("clear_cache_task"):
+        return clear_cache(pattern)

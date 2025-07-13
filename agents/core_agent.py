@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-import os
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, AsyncGenerator
 
@@ -23,27 +21,12 @@ from vocode.streaming.models.message import BaseMessage, EndOfTurn
 from vocode.streaming.models.agent import ChatGPTAgentConfig
 from vocode.streaming.models.transcriber import WhisperCPPTranscriberConfig
 from vocode.streaming.models.synthesizer import ElevenLabsSynthesizerConfig
-
-from tools.weather import get_weather
+from server.config import Config
+from server.database import get_agent_config
+from tools import registry
 from tools.safety import safety_check
 from server.state_manager import StateManager
 from tools.calendar import AuthError
-
-
-WEATHER_FUNCTION = {
-    "name": "get_weather",
-    "description": "Get the current weather for a location.",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "location": {
-                "type": "string",
-                "description": "City or region name",
-            }
-        },
-        "required": ["location"],
-    },
-}
 
 
 @dataclass
@@ -74,7 +57,11 @@ class FunctionCallingAgent(ChatGPTAgent):
         **kwargs: Any,
     ) -> None:
         super().__init__(agent_config, **kwargs)
-        self.function_map = {"get_weather": get_weather}
+        if agent_config.functions is not None:
+            agent_config.functions.extend(registry.schemas())
+        else:
+            agent_config.functions = registry.schemas()
+        self.function_map = {name: tool.run for name, tool in registry.tools.items()}
         if function_map:
             self.function_map.update(function_map)
         self.state_manager = state_manager
@@ -101,10 +88,14 @@ class FunctionCallingAgent(ChatGPTAgent):
         except json.JSONDecodeError as exc:
             logger.error("Invalid arguments for %s: %s", function_call.name, exc)
             return None
-        result = func(**params)
-        if asyncio.iscoroutine(result):
-            result = await result
-        return str(result) if result is not None else None
+        try:
+            result = func(**params)
+            if asyncio.iscoroutine(result):
+                result = await result
+            return str(result) if result is not None else None
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Tool call failed for %s: %s", function_call.name, exc)
+            raise
 
     async def call_function(self, function_call: FunctionCall, agent_input: AgentInput) -> None:  # type: ignore[override]
         try:
@@ -113,6 +104,19 @@ class FunctionCallingAgent(ChatGPTAgent):
             fallback = "I need your permission to do that. I'll text you a link."
             self.produce_interruptible_agent_response_event_nonblocking(
                 AgentResponseMessage(message=BaseMessage(text=fallback)),
+                is_interruptible=True,
+            )
+            self.produce_interruptible_agent_response_event_nonblocking(
+                AgentResponseMessage(message=EndOfTurn())
+            )
+            return
+        except Exception:
+            self.produce_interruptible_agent_response_event_nonblocking(
+                AgentResponseMessage(
+                    message=BaseMessage(
+                        text="I am having trouble reaching that service right now. Please try again later."
+                    )
+                ),
                 is_interruptible=True,
             )
             self.produce_interruptible_agent_response_event_nonblocking(
@@ -142,15 +146,26 @@ class SafeFunctionCallingAgent(FunctionCallingAgent):
     ) -> AsyncGenerator[GeneratedResponse, None]:
         parts: List[str] = []
         responses: List[GeneratedResponse] = []
-        async for resp in super().generate_response(
-            human_input,
-            conversation_id,
-            is_interrupt=is_interrupt,
-            bot_was_in_medias_res=bot_was_in_medias_res,
-        ):
-            if hasattr(resp.message, "text"):
-                parts.append(getattr(resp.message, "text"))
-            responses.append(resp)
+        try:
+            async for resp in super().generate_response(
+                human_input,
+                conversation_id,
+                is_interrupt=is_interrupt,
+                bot_was_in_medias_res=bot_was_in_medias_res,
+            ):
+                if hasattr(resp.message, "text"):
+                    parts.append(getattr(resp.message, "text"))
+                responses.append(resp)
+        except Exception as exc:
+            logger.error("LLM error: %s", exc)
+            yield GeneratedResponse(
+                message=BaseMessage(
+                    text="I am experiencing technical difficulties. Let us continue another time."
+                ),
+                is_interruptible=True,
+            )
+            yield GeneratedResponse(message=EndOfTurn(), is_interruptible=True)
+            return
 
         full_text = "".join(parts)
         if not safety_check(full_text):
@@ -178,19 +193,26 @@ def build_core_agent(
 ) -> CoreAgentConfig:
     """Return TEL3SIS ChatGPT agent with STT and TTS providers configured."""
 
+    cfg = Config()
+    stored = get_agent_config()
     agent_config = FunctionChatGPTAgentConfig(
-        prompt_preamble="You are TEL3SIS, a helpful voice assistant.",
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
-        functions=[WEATHER_FUNCTION],
+        prompt_preamble=stored.get(
+            "prompt", "You are TEL3SIS, a helpful voice assistant."
+        ),
+        openai_api_key=cfg.openai_api_key,
+        functions=registry.schemas(),
     )
 
     transcriber_config = WhisperCPPTranscriberConfig.from_telephone_input_device()
     setattr(transcriber_config, "language", language)
 
     synthesizer_config = ElevenLabsSynthesizerConfig.from_telephone_output_device(
-        api_key=os.getenv("ELEVEN_LABS_API_KEY")
+        api_key=cfg.eleven_labs_api_key
     )
     setattr(synthesizer_config, "language", language)
+    voice = stored.get("voice")
+    if voice:
+        setattr(synthesizer_config, "voice", voice)
 
     return CoreAgentConfig(
         agent=agent_config,

@@ -1,11 +1,20 @@
 route:
-  receiver: slack
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 1h
+  receiver: slack
+  routes:
+    - matchers:
+        - severity="critical"
+      receiver: pagerduty
 receivers:
   - name: slack
     slack_configs:
       - api_url: ${SLACK_WEBHOOK_URL}
         channel: '#tel3sis-alerts'
+        send_resolved: true
+  - name: pagerduty
+    pagerduty_configs:
+      - routing_key: ${PAGERDUTY_ROUTING_KEY}
+        severity: error
         send_resolved: true

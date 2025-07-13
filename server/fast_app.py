@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, ValidationError, HttpUrl
@@ -29,7 +27,9 @@ from .state_manager import StateManager
 from .tasks import echo
 from tools.notifications import send_sms
 from tools.calendar import generate_auth_url, exchange_code
+from .metrics import metrics_middleware
 from agents.core_agent import build_core_agent, SafeAgentFactory
+from agents.sms_agent import SMSAgent
 from .latency_logging import log_call
 from .validation import validation_error_response
 
@@ -46,6 +46,15 @@ class RecordingStatusData(BaseModel):
     RecordingUrl: HttpUrl
 
 
+class InboundSMSData(BaseModel):
+    """Data payload for Twilio SMS webhooks."""
+
+    MessageSid: str
+    From: str
+    To: str
+    Body: str
+
+
 class OAuthStartData(BaseModel):
     user_id: str | None = None
 
@@ -55,13 +64,19 @@ class OAuthCallbackData(BaseModel):
     user: str | None = None
 
 
-def create_app() -> FastAPI:
+def create_app(cfg: Config | None = None) -> FastAPI:
     try:
-        config = Config()
+        config = cfg or Config()
     except ConfigError as exc:
         raise RuntimeError(str(exc)) from exc
 
-    app = FastAPI()
+    app = FastAPI(
+        title="TEL3SIS API",
+        version="1.0",
+        docs_url="/docs",
+        openapi_url="/openapi.json",
+    )
+    app.middleware("http")(metrics_middleware)
 
     init_db()
 
@@ -91,7 +106,7 @@ def create_app() -> FastAPI:
                 return Response("Unauthorized", status_code=401)
         return await call_next(request)
 
-    @app.get("/v1/oauth/start")
+    @app.get("/v1/oauth/start", summary="Begin OAuth flow", tags=["auth"])
     async def oauth_start(request: Request):
         try:
             data = OAuthStartData(**request.query_params)
@@ -100,7 +115,7 @@ def create_app() -> FastAPI:
         url = generate_auth_url(state_manager, data.user_id or "")
         return RedirectResponse(url)
 
-    @app.get("/v1/oauth/callback")
+    @app.get("/v1/oauth/callback", summary="Handle OAuth callback", tags=["auth"])
     async def oauth_callback(request: Request):
         try:
             data = OAuthCallbackData(**request.query_params)
@@ -109,7 +124,7 @@ def create_app() -> FastAPI:
         exchange_code(state_manager, data.state, str(request.url))
         return "Authentication successful"
 
-    @app.post("/v1/inbound_call")
+    @app.post("/v1/inbound_call", summary="Handle inbound call", tags=["calls"])
     @log_call
     async def inbound_call(request: Request):
         try:
@@ -146,7 +161,7 @@ def create_app() -> FastAPI:
         async def escalate():
             summary = state_manager.get_summary(call_sid) or ""
             send_sms(
-                to_phone=os.environ.get("ESCALATION_PHONE_NUMBER", ""),
+                to_phone=config.escalation_phone_number,
                 from_phone=data.From,
                 body=summary,
             )
@@ -171,7 +186,24 @@ def create_app() -> FastAPI:
             media_type=response.media_type,
         )
 
-    @app.post("/v1/recording_status")
+    @app.post("/v1/inbound_sms", summary="Handle inbound SMS", tags=["sms"])
+    async def inbound_sms(request: Request):
+        try:
+            form = await request.form()
+            data = InboundSMSData(**form)
+        except ValidationError as exc:
+            return validation_error_response(exc)
+
+        sms_id = data.MessageSid
+        state_manager.create_session(sms_id, {"from": data.From, "to": data.To})
+        agent = SMSAgent(state_manager, sms_id)
+        response_text = await agent.handle_message(data.Body)
+        send_sms(data.From, data.To, response_text)
+        return Response(status_code=204)
+
+    @app.post(
+        "/v1/recording_status", summary="Twilio recording webhook", tags=["calls"]
+    )
     async def recording_status(request: Request):
         try:
             form = await request.form()
@@ -187,7 +219,7 @@ def create_app() -> FastAPI:
         )
         return Response(status_code=204)
 
-    @app.get("/v1/metrics")
+    @app.get("/v1/metrics", summary="Prometheus metrics", tags=["system"])
     async def metrics():
         return Response(
             content=generate_latest(),

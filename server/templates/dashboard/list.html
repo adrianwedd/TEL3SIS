@@ -3,19 +3,49 @@
 {% block content %}
 <h1>Call History</h1>
 <p><a href="{{ url_for('dashboard.analytics') }}">View Analytics</a></p>
-<form method="get">
-  <input type="text" name="q" placeholder="Search" value="{{ q }}" />
+<form id="searchForm" method="get">
+  <input type="text" id="searchInput" name="q" placeholder="Search" value="{{ q }}" />
   <button type="submit">Search</button>
 </form>
-<ul>
+<ul id="results">
 {% for call in calls %}
   <li>
     <a href="{{ url_for('dashboard.call_detail', call_id=call.id) }}">
       {{ call.created_at.strftime('%Y-%m-%d %H:%M') }} - {{ call.from_number }} → {{ call.to_number }}
     </a>
+    <form method="post" action="{{ url_for('dashboard.delete_call', call_id=call.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" />
+      <button type="submit" onclick="return confirm('Delete this call?');">Delete</button>
+    </form>
+    <form method="post" action="{{ url_for('dashboard.reprocess_call', call_id=call.id) }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" />
+      <button type="submit">Reprocess</button>
+    </form>
   </li>
 {% else %}
   <li>No calls found.</li>
 {% endfor %}
 </ul>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('searchForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = document.getElementById('searchInput').value;
+    const resp = await fetch('/v1/search?q=' + encodeURIComponent(q));
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const ul = document.getElementById('results');
+    ul.innerHTML = '';
+    for (const item of data.items) {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '/v1/dashboard/' + item.id;
+      a.textContent = new Date(item.created_at).toLocaleString() + ' - ' + item.from_number + ' → ' + item.to_number;
+      li.appendChild(a);
+      ul.appendChild(li);
+    }
+  });
+</script>
 {% endblock %}

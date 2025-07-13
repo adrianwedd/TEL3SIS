@@ -2,6 +2,8 @@
 
 This document describes the HTTP endpoints under `/v1` exposed by the TEL3SIS server. All requests require an `X-API-Key` header unless otherwise noted.
 
+Interactive OpenAPI documentation is available at `/docs` when the server is running.
+
 ## Authentication
 
 Generate an API key using `tel3sis-manage generate-api-key <owner>` and include it in the `X-API-Key` header. Initialize the database with `tel3sis-manage migrate`:
@@ -11,23 +13,6 @@ X-API-Key: YOUR_API_KEY
 ```
 
 ## Endpoints
-
-### `GET /v1/login`
-Display the login form for the web dashboard.
-
-### `POST /v1/login`
-Submit form credentials to log in. Example request using `curl`:
-
-```bash
-curl -X POST https://example.com/v1/login \
-  -F 'username=admin' \
-  -F 'password=secret'
-```
-
-Returns a redirect to the dashboard on success or the login form with an error message.
-
-### `GET /v1/logout`
-Invalidate the current session and redirect to the login form.
 
 ### `GET /v1/login/oauth`
 Begin an OAuth login flow. Redirects the user to the provider.
@@ -64,6 +49,9 @@ Example response:
   }
 ]
 ```
+
+### `GET /v1/oauth/consent`
+Display a consent page describing the requested Google Calendar permissions. The optional `user_id` query parameter persists through the OAuth flow.
 
 ### `GET /v1/oauth/start`
 Generate a provider authorization URL for tools like Google Calendar. Optional query parameter `user_id` identifies the requesting user. Example:

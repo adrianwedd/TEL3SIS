@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-import os
 from typing import Iterable, List, Sequence, Optional
+
+from server.config import Config
+from util import call_with_retries
+from loguru import logger
 
 import chromadb
 from chromadb.api.types import EmbeddingFunction, Embeddings
@@ -14,26 +17,30 @@ class OpenAIEmbeddingFunction(EmbeddingFunction):
     def __init__(
         self, model_name: str | None = None, api_key: str | None = None
     ) -> None:
-        self.model_name = model_name or os.getenv(
-            "OPENAI_EMBEDDING_MODEL", "text-embedding-3-small"
-        )
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY", "")
+        cfg = Config()
+        self.model_name = model_name or cfg.openai_embedding_model
+        self.api_key = api_key or cfg.openai_api_key
         try:
             from openai import OpenAI
 
             self.client = OpenAI(api_key=self.api_key) if self.api_key else None
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to init OpenAI client: %s", exc)
             self.client = None
 
     def __call__(self, texts: Sequence[str]) -> Embeddings:
         if not self.client:
             return [[0.0] * 2 for _ in texts]
         try:
-            resp = self.client.embeddings.create(
-                input=list(texts), model=self.model_name
+            resp = call_with_retries(
+                self.client.embeddings.create,
+                input=list(texts),
+                model=self.model_name,
+                timeout=10,
             )
             return [d.embedding for d in resp.data]
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Embedding request failed: %s", exc)
             return [[0.0] * 2 for _ in texts]
 
 
@@ -41,7 +48,8 @@ class STEmbeddingFunction(EmbeddingFunction):
     """Embedding function backed by SentenceTransformers."""
 
     def __init__(self, model_name: Optional[str] = None) -> None:
-        name = model_name or os.getenv("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2")
+        cfg = Config()
+        name = model_name or cfg.embedding_model_name
         try:
             self.model = SentenceTransformer(name)
         except Exception:  # noqa: BLE001
@@ -65,12 +73,11 @@ class VectorDB:
         embedding_function: Optional[EmbeddingFunction] = None,
         model_name: Optional[str] = None,
     ) -> None:
-        persist_directory = persist_directory or os.getenv(
-            "VECTOR_DB_PATH", "vector_store"
-        )
+        cfg = Config()
+        persist_directory = persist_directory or cfg.vector_db_path
         self.client = chromadb.PersistentClient(path=persist_directory)
         if not embedding_function:
-            provider = os.getenv("EMBEDDING_PROVIDER", "sentence_transformers")
+            provider = cfg.embedding_provider
             if provider.lower() == "openai":
                 embedding_function = OpenAIEmbeddingFunction(model_name=model_name)
             else:
@@ -82,14 +89,32 @@ class VectorDB:
         )
 
     def add_texts(
-        self, texts: Iterable[str], ids: Optional[Iterable[str]] = None
+        self,
+        texts: Iterable[str],
+        ids: Optional[Iterable[str]] = None,
+        *,
+        metadatas: Optional[Iterable[dict[str, str]]] = None,
     ) -> None:
         docs = list(texts)
         if not docs:
             return
         id_list = list(ids) if ids is not None else [str(hash(doc)) for doc in docs]
-        self.collection.add(documents=docs, ids=id_list)
+        kwargs: dict[str, object] = {}
+        if metadatas is not None:
+            kwargs["metadatas"] = list(metadatas)
+        self.collection.add(documents=docs, ids=id_list, **kwargs)
 
-    def search(self, query: str, n_results: int = 3) -> List[str]:
-        result = self.collection.query(query_texts=[query], n_results=n_results)
+    def search(
+        self,
+        query: str,
+        n_results: int = 3,
+        *,
+        where: Optional[dict[str, str]] = None,
+    ) -> List[str]:
+        kwargs: dict[str, object] = {}
+        if where is not None:
+            kwargs["where"] = where
+        result = self.collection.query(
+            query_texts=[query], n_results=n_results, **kwargs
+        )
         return result.get("documents", [[]])[0]

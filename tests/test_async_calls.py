@@ -22,6 +22,7 @@ def test_async_inbound_call(monkeypatch, tmp_path):
 
     from server import app as server_app
     from server.app import create_app
+    from server.config import Config
 
     class DummyStateManager:
         def create_session(self, *a, **k):
@@ -44,7 +45,7 @@ def test_async_inbound_call(monkeypatch, tmp_path):
         server_app, "echo", types.SimpleNamespace(delay=lambda *_, **__: None)
     )
 
-    app = create_app()
+    app = create_app(Config())
     client = TestClient(app)
     resp = client.post(
         "/v1/inbound_call",
@@ -62,10 +63,37 @@ def test_async_recording_status(monkeypatch):
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     from server import app as server_app
     from server.app import create_app
+    from server.config import Config
 
     monkeypatch.setattr(server_app, "verify_api_key", lambda *_: True)
 
-    app = create_app()
+    class DummyStateManager:
+        def create_session(self, *_: object, **__: object) -> None:
+            pass
+
+        def get_session(self, *_: object) -> dict[str, str]:
+            return {}
+
+        def is_escalation_required(self, *_: object) -> bool:
+            return False
+
+        def get_summary(self, *_: object) -> str:
+            return ""
+
+    monkeypatch.setattr(server_app, "StateManager", lambda: DummyStateManager())
+
+    called: dict[str, tuple] = {}
+
+    def fake_process(url: str, sid: str, f: str, t: str) -> None:
+        called["args"] = (url, sid, f, t)
+
+    monkeypatch.setattr(
+        server_app,
+        "process_recording",
+        types.SimpleNamespace(delay=fake_process),
+    )
+
+    app = create_app(Config())
     client = TestClient(app)
     resp = client.post(
         "/v1/recording_status",
@@ -77,3 +105,4 @@ def test_async_recording_status(monkeypatch):
         headers={"X-API-Key": "dummy"},
     )
     assert resp.status_code == 204
+    assert called["args"] == ("http://example.com", "CA1", "", "")

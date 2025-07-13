@@ -6,6 +6,7 @@ from typing import Tuple
 import whisper
 
 import requests
+from util import call_with_retries
 
 
 DEFAULT_OUTPUT_DIR = Path("recordings/audio")
@@ -44,7 +45,7 @@ def download_recording(
     output_dir.mkdir(parents=True, exist_ok=True)
     file_name = url.rstrip("/").split("/")[-1] + ".mp3"
     file_path = output_dir / file_name
-    response = requests.get(f"{url}.mp3", auth=auth, timeout=10)
+    response = call_with_retries(requests.get, f"{url}.mp3", auth=auth, timeout=10)
     response.raise_for_status()
     file_path.write_bytes(response.content)
     return file_path

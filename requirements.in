@@ -1,10 +1,6 @@
 # Runtime dependencies for TEL3SIS
 loguru
 cryptography
-Flask
-Flask-Login
-Flask-Limiter
-Flask-SocketIO
 oauthlib
 openai
 PyGithub
@@ -22,6 +18,7 @@ google-auth
 google-auth-oauthlib
 prometheus_client
 pydantic
+pydantic-settings
 langdetect
 sentence-transformers
 fastapi
@@ -31,3 +28,4 @@ click
 quart
 uvicorn
 apispec
+scikit-learn

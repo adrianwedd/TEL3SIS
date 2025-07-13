@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import shutil
 from pathlib import Path
 
@@ -10,13 +9,14 @@ import click
 
 from server import database as db
 from server.vector_db import VectorDB
+from server.config import Config
 
 
 @click.command(help="Recreate vector embeddings from existing call summaries")
 def cli() -> None:
     """Load summaries from the database and rebuild the vector store."""
 
-    vector_path = Path(os.getenv("VECTOR_DB_PATH", "vector_store"))
+    vector_path = Path(Config().vector_db_path)
     if vector_path.exists():
         shutil.rmtree(vector_path)
 

@@ -8,3 +8,5 @@ mkdocs
 pre-commit
 ruff
 pip-tools
+pip-audit
+scikit-learn

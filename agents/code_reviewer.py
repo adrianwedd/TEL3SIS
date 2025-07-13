@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Optional
+
+from server.config import Config
+from server.cache import redis_cache
 
 from github import Github
 
@@ -16,6 +18,7 @@ class LocalLLM:
     def __init__(self, model_name: str = "distilgpt2") -> None:
         self.model_name = model_name
 
+    @redis_cache(ttl=3600)
     def generate(self, prompt: str) -> str:
         """Return a stub solution for the given prompt."""
         return "pass\n"
@@ -31,10 +34,9 @@ class CodeReviewer:
     llm: Optional[LocalLLM] = None
 
     def __post_init__(self) -> None:
-        self._github = Github(self.token or os.getenv("GITHUB_TOKEN"))
-        self._repo = self._github.get_repo(
-            self.repo_name or os.getenv("GITHUB_REPOSITORY", "")
-        )
+        cfg = Config()
+        self._github = Github(self.token or cfg.github_token)
+        self._repo = self._github.get_repo(self.repo_name or cfg.github_repository)
         if self.llm is None:
             self.llm = LocalLLM()
 

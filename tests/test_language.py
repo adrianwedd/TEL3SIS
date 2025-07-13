@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import base64
-import sys
 import types
 from importlib import reload
 from pathlib import Path
@@ -9,100 +8,13 @@ from pathlib import Path
 import pytest
 from .db_utils import migrate_sqlite
 
-# Dummy vocode modules for server import
+from tests.utils.vocode_mocks import install as install_vocode
 
-dummy = types.ModuleType("vocode")
-dummy.streaming = types.ModuleType("vocode.streaming")
-dummy.streaming.agent = types.ModuleType("vocode.streaming.agent")
-dummy.streaming.agent.chat_gpt_agent = types.ModuleType(
-    "vocode.streaming.agent.chat_gpt_agent"
-)
-dummy.streaming.agent.base_agent = types.ModuleType("vocode.streaming.agent.base_agent")
-dummy.streaming.agent.default_factory = types.ModuleType(
-    "vocode.streaming.agent.default_factory"
-)
-dummy.streaming.telephony = types.ModuleType("vocode.streaming.telephony")
-dummy.streaming.telephony.server = types.ModuleType("vocode.streaming.telephony.server")
-dummy.streaming.telephony.server.base = types.ModuleType(
-    "vocode.streaming.telephony.server.base"
-)
-dummy.streaming.telephony.config_manager = types.ModuleType(
-    "vocode.streaming.telephony.config_manager"
-)
-dummy.streaming.telephony.config_manager.in_memory_config_manager = types.ModuleType(
-    "vocode.streaming.telephony.config_manager.in_memory_config_manager"
-)
-dummy.streaming.models = types.ModuleType("vocode.streaming.models")
-dummy.streaming.models.agent = types.ModuleType("vocode.streaming.models.agent")
-dummy.streaming.models.actions = types.ModuleType("vocode.streaming.models.actions")
-dummy.streaming.models.message = types.ModuleType("vocode.streaming.models.message")
-dummy.streaming.models.transcriber = types.ModuleType(
-    "vocode.streaming.models.transcriber"
-)
-dummy.streaming.models.synthesizer = types.ModuleType(
-    "vocode.streaming.models.synthesizer"
-)
-dummy.streaming.models.telephony = types.ModuleType("vocode.streaming.models.telephony")
-
-
-class Dummy:
-    def __init__(self, *args: object, **kwargs: object) -> None:
-        pass
-
-
-dummy.streaming.agent.chat_gpt_agent.ChatGPTAgent = Dummy
-dummy.streaming.agent.base_agent.AgentInput = Dummy
-dummy.streaming.agent.base_agent.AgentResponseMessage = Dummy
-dummy.streaming.agent.base_agent.GeneratedResponse = Dummy
-dummy.streaming.agent.base_agent.BaseAgent = Dummy
-dummy.streaming.agent.default_factory.DefaultAgentFactory = Dummy
-dummy.streaming.models.agent.AgentConfig = Dummy
-dummy.streaming.models.agent.ChatGPTAgentConfig = Dummy
-dummy.streaming.models.actions.FunctionCall = Dummy
-dummy.streaming.models.message.BaseMessage = Dummy
-dummy.streaming.models.message.EndOfTurn = Dummy
-dummy.streaming.models.transcriber.WhisperCPPTranscriberConfig = Dummy
-dummy.streaming.models.synthesizer.ElevenLabsSynthesizerConfig = Dummy
-
-
-dummy.streaming.telephony.server.base.TelephonyServer = Dummy
-dummy.streaming.telephony.server.base.TwilioInboundCallConfig = Dummy
-dummy.streaming.telephony.config_manager.in_memory_config_manager.InMemoryConfigManager = (
-    Dummy
-)
-dummy.streaming.models.telephony.TwilioConfig = Dummy
-
-sys.modules["vocode"] = dummy
-sys.modules["vocode.streaming"] = dummy.streaming
-sys.modules["vocode.streaming.agent"] = dummy.streaming.agent
-sys.modules[
-    "vocode.streaming.agent.chat_gpt_agent"
-] = dummy.streaming.agent.chat_gpt_agent
-sys.modules["vocode.streaming.agent.base_agent"] = dummy.streaming.agent.base_agent
-sys.modules[
-    "vocode.streaming.agent.default_factory"
-] = dummy.streaming.agent.default_factory
-sys.modules["vocode.streaming.telephony"] = dummy.streaming.telephony
-sys.modules["vocode.streaming.telephony.server"] = dummy.streaming.telephony.server
-sys.modules[
-    "vocode.streaming.telephony.server.base"
-] = dummy.streaming.telephony.server.base
-sys.modules[
-    "vocode.streaming.telephony.config_manager"
-] = dummy.streaming.telephony.config_manager
-sys.modules[
-    "vocode.streaming.telephony.config_manager.in_memory_config_manager"
-] = dummy.streaming.telephony.config_manager.in_memory_config_manager
-sys.modules["vocode.streaming.models"] = dummy.streaming.models
-sys.modules["vocode.streaming.models.agent"] = dummy.streaming.models.agent
-sys.modules["vocode.streaming.models.actions"] = dummy.streaming.models.actions
-sys.modules["vocode.streaming.models.message"] = dummy.streaming.models.message
-sys.modules["vocode.streaming.models.transcriber"] = dummy.streaming.models.transcriber
-sys.modules["vocode.streaming.models.synthesizer"] = dummy.streaming.models.synthesizer
-sys.modules["vocode.streaming.models.telephony"] = dummy.streaming.models.telephony
+install_vocode()
 
 
 from server import app as server_app  # noqa: E402
+from server.config import Config  # noqa: E402
 from server import tasks  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from tools import language  # noqa: E402
@@ -152,7 +64,7 @@ def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
 
     monkeypatch.setattr(server_app, "build_core_agent", fake_build_core_agent)
 
-    app = server_app.create_app()
+    app = server_app.create_app(Config())
     client = TestClient(app)
 
     from_num = "+15005550006"

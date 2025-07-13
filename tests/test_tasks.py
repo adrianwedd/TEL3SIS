@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, UTC
 from pathlib import Path
+import shutil
 import tarfile
 
 
@@ -21,8 +22,37 @@ def test_send_transcript_email(celery_worker, monkeypatch, tmp_path):
     assert sent == {"path": str(transcript), "to": "user@test"}
 
 
-def test_transcribe_audio(celery_worker, monkeypatch, tmp_path):
-    tasks, _ = celery_worker
+def test_transcribe_audio(monkeypatch, tmp_path):
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path}/test.db")
+    vector_dir = tmp_path / "vectors"
+    monkeypatch.setenv("VECTOR_DB_PATH", str(vector_dir))
+    vector_dir.mkdir()
+    from importlib import reload
+    from tests.db_utils import migrate_sqlite
+
+    import server.celery_app as celery_app
+    import server.tasks as tasks
+
+    migrate_sqlite(monkeypatch, tmp_path)
+    reload(celery_app)
+    celery_app.celery_app.conf.task_default_queue = "default"
+    from prometheus_client import REGISTRY
+
+    for collector in [
+        getattr(tasks, "task_invocations", None),
+        getattr(tasks, "task_failures", None),
+        getattr(tasks, "task_latency", None),
+    ]:
+        if collector is not None:
+            try:
+                REGISTRY.unregister(collector)
+            except KeyError:
+                pass
+    tasks = reload(tasks)
     transcript = tmp_path / "trans.txt"
     transcript.write_text("hola mundo")
 
@@ -48,22 +78,90 @@ def test_transcribe_audio(celery_worker, monkeypatch, tmp_path):
     )
 
     results = []
-    orig_delay = tasks.send_transcript_email.delay
 
-    def capture_delay(*args, **kwargs):
-        r = orig_delay(*args, **kwargs)
-        results.append(r)
-        return r
+    class DummyResult:
+        def get(self, timeout: float | None = None) -> None:  # noqa: D401
+            return None
+
+    def capture_delay(path: str, to: str | None = None):
+        tasks.send_transcript_email.run(path, to_email=to)
+        results.append((path, to))
+        return DummyResult()
 
     monkeypatch.setattr(tasks.send_transcript_email, "delay", capture_delay)
 
+    summaries: list[tuple[str, str, str]] = []
+
+    class DummyManager:
+        def set_summary(
+            self, cid: str, text: str, from_number: str | None = None
+        ) -> None:  # noqa: D401
+            summaries.append((cid, text, from_number))
+
+    monkeypatch.setattr(tasks, "StateManager", DummyManager)
+
     path = tasks.transcribe_audio("audio.wav", "CA1", "+100", "+200")
-    results[0].get(timeout=5)
 
     assert path == str(transcript)
     assert prefs[("+100", "language")] == "es"
     assert sent["path"] == str(transcript)
     assert saved[0][0] == "CA1"
+    assert summaries[0] == ("CA1", "summary", "+100")
+
+
+def test_process_recording(monkeypatch, tmp_path):
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path}/test.db")
+    vector_dir = tmp_path / "vectors"
+    monkeypatch.setenv("VECTOR_DB_PATH", str(vector_dir))
+    vector_dir.mkdir()
+    from importlib import reload
+    from tests.db_utils import migrate_sqlite
+
+    import server.celery_app as celery_app
+    import server.tasks as tasks
+
+    migrate_sqlite(monkeypatch, tmp_path)
+    reload(celery_app)
+    celery_app.celery_app.conf.task_default_queue = "default"
+    from prometheus_client import REGISTRY
+
+    for collector in [
+        getattr(tasks, "task_invocations", None),
+        getattr(tasks, "task_failures", None),
+        getattr(tasks, "task_latency", None),
+    ]:
+        if collector is not None:
+            try:
+                REGISTRY.unregister(collector)
+            except KeyError:
+                pass
+    tasks = reload(tasks)
+
+    audio_file = tmp_path / "audio" / "a.mp3"
+    audio_file.parent.mkdir()
+
+    monkeypatch.setattr(
+        tasks,
+        "download_recording",
+        lambda url, *, output_dir=tmp_path / "audio", auth=None: audio_file,
+    )
+
+    called: dict[str, tuple] = {}
+
+    def fake_transcribe(path: str, cid: str, f: str, t: str) -> str:
+        called["args"] = (path, cid, f, t)
+        return "ok"
+
+    monkeypatch.setattr(tasks, "transcribe_audio", fake_transcribe)
+
+    result = tasks.process_recording("http://x", "CA1", "+1", "+2")
+
+    assert result == "ok"
+    assert called["args"] == (str(audio_file), "CA1", "+1", "+2")
 
 
 def test_cleanup_old_calls(celery_worker, monkeypatch, tmp_path):
@@ -140,3 +238,39 @@ def test_backup_data(celery_worker, tmp_path):
         names = tar.getnames()
     assert "test.db" in names
     assert "vector_store" in names
+
+
+def test_restore_data(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path}/test.db")
+    vector_dir = tmp_path / "vectors"
+    monkeypatch.setenv("VECTOR_DB_PATH", str(vector_dir))
+    vector_dir.mkdir()
+    from importlib import reload
+    from tests.db_utils import migrate_sqlite
+
+    import server.tasks as tasks
+
+    migrate_sqlite(monkeypatch, tmp_path)
+    from prometheus_client import REGISTRY
+
+    for collector in [
+        getattr(tasks, "task_invocations", None),
+        getattr(tasks, "task_failures", None),
+        getattr(tasks, "task_latency", None),
+    ]:
+        if collector is not None:
+            try:
+                REGISTRY.unregister(collector)
+            except KeyError:
+                pass
+    tasks = reload(tasks)
+
+    path = tasks.backup_data.run()
+
+    (tmp_path / "test.db").unlink()
+    shutil.rmtree(vector_dir)
+
+    result = tasks.restore_data.run(path)
+    assert result is True
+    assert (tmp_path / "test.db").exists()
+    assert vector_dir.exists()
