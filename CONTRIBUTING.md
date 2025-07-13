@@ -27,6 +27,13 @@ pre-commit install
 pre-commit run --all-files
 ```
 
+The `build-docs` hook requires **MkDocs** version 1.5.3 or newer. If it isn't
+already installed, add it to your environment:
+
+```bash
+pip install "mkdocs>=1.5.3"
+```
+
 The hooks format with **Black**, lint with **Ruff**, scan with **git-secrets**, and build the docs.
 
 ## Running Tests
