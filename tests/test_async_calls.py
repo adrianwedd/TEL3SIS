@@ -4,6 +4,7 @@ import types
 
 # Reuse dummy vocode modules from test_api_key_auth
 import tests.test_api_key_auth  # noqa: F401
+import pytest
 from fastapi.testclient import TestClient
 
 from .db_utils import migrate_sqlite
@@ -106,3 +107,43 @@ def test_async_recording_status(monkeypatch):
     )
     assert resp.status_code == 204
     assert called["args"] == ("http://example.com", "CA1", "", "")
+
+
+def test_task_invocation_counter(monkeypatch):
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+
+    import server.tasks as tasks
+
+    before = tasks.task_invocations.labels("echo")._value.get()
+    tasks.echo.run("hi")
+    after = tasks.task_invocations.labels("echo")._value.get()
+
+    assert after == before + 1
+
+
+def test_task_failure_counter(monkeypatch):
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("BASE_URL", "http://localhost")
+    monkeypatch.setenv("TWILIO_ACCOUNT_SID", "sid")
+    monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
+
+    import server.tasks as tasks
+
+    def fail() -> None:
+        with tasks.monitor_task("dummy"):
+            raise RuntimeError("boom")
+
+    inv_before = tasks.task_invocations.labels("dummy")._value.get()
+    fail_before = tasks.task_failures.labels("dummy")._value.get()
+
+    with pytest.raises(RuntimeError):
+        fail()
+
+    inv_after = tasks.task_invocations.labels("dummy")._value.get()
+    fail_after = tasks.task_failures.labels("dummy")._value.get()
+
+    assert inv_after == inv_before + 1
+    assert fail_after == fail_before + 1
