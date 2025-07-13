@@ -1,49 +1,69 @@
 # Contributing to TEL3SIS
 
-Thank you for helping improve **TEL3SIS**! Please follow the guidelines below to keep contributions consistent.
+Thank you for helping improve **TEL3SIS**! This guide covers how to set up the development environment, run the automated checks, and open pull requests.
 
-## Code Style
+## Environment Setup
 
-- Format Python code with [Black](https://black.readthedocs.io/).
-- Lint using [Ruff](https://github.com/astral-sh/ruff).
-- Write clear docstrings for modules and functions.
-- Commit messages use the Conventional Commits `type(scope): summary` style.
-
-## Setup
-
-1. **Clone the repository**
-2. **Install development tools**
+1. **Clone the repository** and create a Python 3.11 virtual environment:
    ```bash
+   git clone https://github.com/yourname/TEL3SIS.git
+   cd TEL3SIS
+   python3.11 -m venv venv
+   source venv/bin/activate
    pip install -r requirements-dev.txt
+   ```
+2. **Install `git-secrets`** to prevent committing credentials:
+   ```bash
    sudo apt-get install -y git-secrets
    git secrets --install -f
    ```
-3. **Install pre-commit hooks**
-   ```bash
-   pre-commit install
-   pre-commit run --all-files
-   ```
-   Hooks include `black`, `ruff`, and `git-secrets` which scans for tokens.
-   To manually check the repository run:
-   ```bash
-   git secrets --scan -r
-   ```
 
-### Installing `pre-commit`
+## Pre-commit Hooks
 
-If you prefer to install `pre-commit` outside the bundled development
-requirements, grab it directly from PyPI and set up the git hooks:
+Install the hooks and run them before every push:
 
 ```bash
-pip install pre-commit
 pre-commit install
+pre-commit run --all-files
 ```
 
+The hooks format with **Black**, lint with **Ruff**, scan with **git-secrets**, and build the docs.
 
-### Updating dependencies
+## Running Tests
 
-Runtime packages live in `requirements.in` and development tools in
-`requirements-dev.in`. After modifying these files, run:
+Execute the test suite locally to catch regressions:
+
+```bash
+pytest -q
+```
+
+## Branch and PR Naming
+
+Follow the workflow defined in `AGENTS.md`:
+
+- Branches use `<phase>/<task_id>-slug`.
+  Example:
+  ```bash
+  git checkout -b core-mvp/CORE-01-setup
+  ```
+- Commits follow the Conventional Commits style: `type(scope): summary`.
+- Pull requests must reference the task ID and use the template:
+  ```
+  ### Task
+  - ID: <task id>
+  ### Description
+  Describe what the PR does.
+  ### Checklist
+  - [ ] Tests added
+  - [ ] Docs updated
+  - [ ] CI green
+  ```
+
+Ensure `pre-commit` and `pytest` pass before opening a PR.
+
+## Updating Dependencies
+
+Runtime packages live in `requirements.in` and development tools in `requirements-dev.in`. After modifying these files, regenerate the lock files:
 
 ```bash
 pip-compile requirements.in
@@ -51,49 +71,11 @@ pip-compile requirements-dev.in
 ```
 Commit the updated `.txt` files with your change.
 
-## Branch Naming
-
-Create feature branches using `<phase>/<task_id>-short-desc`. Examples:
-
-```bash
-git checkout -b dev/INIT-00-scaffold
-```
-
-## Pre-commit Workflow
-
-Run hooks locally before pushing:
-
-```bash
-pre-commit run --files <changed files>
-```
-
-Hooks will format with Black, lint with Ruff, and scan with git-secrets.
-
-## Pull Request Process
-
-1. Ensure `pre-commit` and `pytest` pass.
-2. Push your branch and open a PR referencing the task ID from `tasks.yml`.
-3. Follow the PR template:
-
-```
-### Task
-- ID: <task id>
-### Description
-Describe what the PR does.
-### Checklist
-- [ ] Tests added
-- [ ] Docs updated
-- [ ] CI green
-```
-4. CI must succeed and at least one reviewer must approve.
-
 ## Docker Image Security Scanning
 
-All pull requests trigger a Trivy scan in `security.yml`. The workflow builds the `tel3sis` image and fails if any **HIGH** severity CVEs are detected.
-You can run the scan locally:
+All pull requests run a Trivy scan via `security.yml`. You can verify locally:
 
 ```bash
 docker build -t tel3sis .
 trivy image --severity HIGH --no-progress tel3sis
 ```
-
