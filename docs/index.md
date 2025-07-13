@@ -104,7 +104,7 @@ Detailed examples for every `/v1` endpoint can be found in [docs/api_usage.md](d
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-python server/app.py
+uvicorn server.app:create_app --factory --reload
 ```
 > Use this only for lightweight debugging; Docker remains the canonical environment.
 
