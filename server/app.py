@@ -433,9 +433,7 @@ def create_app(cfg: Config | None = None) -> FastAPI:
     ):
         try:
             params = ListCallsQuery(**request.query_params)
-        except (
-            ValidationError
-        ) as exc:  # pragma: no cover - validated in blueprint tests
+        except ValidationError as exc:  # pragma: no cover - validated in API tests
             return _json_validation_error(exc)
 
         with get_session() as session:
