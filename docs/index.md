@@ -284,7 +284,7 @@ If these variables are unset, the system logs a warning and skips the notificati
 2. Check open issues in **`tasks.yml`**
 3. Branch ➜ code ➜ `pytest` ➜ PR
 4. PR must pass CI + receive one approval
-5. Install the hooks described in [CONTRIBUTING.md](CONTRIBUTING.md)
+5. Install the hooks described in [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 We follow the **Conventional Commits** spec.
 
