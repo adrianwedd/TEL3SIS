@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Connect Google Calendar{% endblock %}
+{% block content %}
+<h1>Authorize Calendar Access</h1>
+<p>This application needs permission to manage your Google Calendar.</p>
+<ul>
+  {% for scope in scopes %}
+  <li>{{ scope }}</li>
+  {% endfor %}
+</ul>
+<form method="get" action="{{ url_for('oauth_start') }}">
+  {% if user_id %}<input type="hidden" name="user_id" value="{{ user_id }}" />{% endif %}
+  <button type="submit">Continue to Google</button>
+</form>
+{% endblock %}
