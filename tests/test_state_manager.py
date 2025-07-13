@@ -109,3 +109,17 @@ def test_concurrent_history_updates(monkeypatch: Any, tmp_path: Path) -> None:
     assert len(history) == 5
     texts = {h["text"] for h in history}
     assert texts == {f"msg{i}" for i in range(5)}
+
+
+def test_concurrent_session_updates(monkeypatch: Any, tmp_path: Path) -> None:
+    manager = _make_manager(monkeypatch, tmp_path)
+    manager.create_session("call", {})
+
+    def update(i: int) -> None:
+        manager.update_session("call", foo=str(i), bar=str(i))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as exc:
+        exc.map(update, range(5))
+
+    sess = manager.get_session("call")
+    assert sess["foo"] == sess["bar"]
