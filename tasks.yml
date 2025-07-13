@@ -1689,7 +1689,7 @@ tasks:
     area: Core
     dependencies: []
     priority: 4
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
