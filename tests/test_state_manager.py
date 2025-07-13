@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 from typing import Any
+import concurrent.futures
 import pytest
 
 import fakeredis
@@ -92,3 +93,19 @@ def test_invalid_encryption_key_length(monkeypatch: Any, tmp_path: Path) -> None
     monkeypatch.setenv("VECTOR_DB_PATH", str(tmp_path / "vectors"))
     with pytest.raises(ConfigError):
         StateManager(url="redis://localhost:6379/0")
+
+
+def test_concurrent_history_updates(monkeypatch: Any, tmp_path: Path) -> None:
+    manager = _make_manager(monkeypatch, tmp_path)
+    manager.create_session("call", {})
+
+    def add(i: int) -> None:
+        manager.append_history("call", "user", f"msg{i}")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as exc:
+        exc.map(add, range(5))
+
+    history = manager.get_history("call")
+    assert len(history) == 5
+    texts = {h["text"] for h in history}
+    assert texts == {f"msg{i}" for i in range(5)}
