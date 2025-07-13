@@ -4,6 +4,7 @@ import requests
 from loguru import logger
 from server.cache import redis_cache
 from .base import Tool
+from util import call_with_retries
 
 __all__ = ["get_weather", "WeatherTool"]
 
@@ -13,7 +14,7 @@ def get_weather(location: str) -> str:
     """Return a simple weather report for the given location."""
     url = f"https://wttr.in/{location}?format=j1"
     try:
-        resp = requests.get(url, timeout=5)
+        resp = call_with_retries(requests.get, url, timeout=5)
         resp.raise_for_status()
         data = resp.json()
         condition = data["current_condition"][0]

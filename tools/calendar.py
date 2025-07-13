@@ -12,6 +12,7 @@ from server.config import Config
 from server.state_manager import StateManager
 from tools.notifications import send_sms
 from server.metrics import record_external_api
+from util import call_with_retries
 
 
 class AuthError(RuntimeError):
@@ -129,7 +130,9 @@ def create_event(
     try:
         with record_external_api("google_calendar"):
             service = build("calendar", "v3", credentials=creds)
-            return service.events().insert(calendarId="primary", body=event).execute()
+            return call_with_retries(
+                service.events().insert(calendarId="primary", body=event).execute
+            )
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to create event for %s: %s", user_id, exc)
         return {"error": "Sorry, I'm unable to create the calendar event right now."}
@@ -149,7 +152,7 @@ def list_events(
     try:
         with record_external_api("google_calendar"):
             service = build("calendar", "v3", credentials=creds)
-            resp = (
+            resp = call_with_retries(
                 service.events()
                 .list(
                     calendarId="primary",
@@ -158,7 +161,7 @@ def list_events(
                     singleEvents=True,
                     orderBy="startTime",
                 )
-                .execute()
+                .execute
             )
             return resp.get("items", [])
     except Exception as exc:  # noqa: BLE001
