@@ -2037,3 +2037,136 @@ tasks:
       - "Indicate whether variables are required or optional."
     acceptance_criteria:
       - "CONFIGURATION.md enumerates all configuration options."
+  - id: 112
+    task_id: OPS-07
+    epic: "Phase 2: Stability"
+    title: "Enforce production dependency separation"
+    description: "Remove development packages from runtime requirements and update Dockerfile to install only production dependencies."
+    component: tooling
+    area: DevOps
+    dependencies: [69]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Ensure requirements.in excludes dev-only packages like pytest and fakeredis."
+      - "Keep dev dependencies in requirements-dev.in."
+      - "Regenerate lock files with pip-compile."
+      - "Update Dockerfile to install requirements.txt only."
+    acceptance_criteria:
+      - "requirements.txt contains only production packages."
+      - "Docker image installs runtime requirements without dev extras."
+
+  - id: 113
+    task_id: CI-07
+    epic: "Phase 2: Stability"
+    title: "Automate dependency lock updates"
+    description: "Add a pre-commit or CI step that runs pip-compile and fails if requirements are outdated."
+    component: ci
+    area: CI/CD
+    dependencies: [112]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add pre-commit hook to run pip-compile when requirements.in files change."
+      - "Update CI workflow to check that compiled requirements match."
+    acceptance_criteria:
+      - "Pull requests fail when requirements.txt is out of sync."
+
+  - id: 114
+    task_id: CORE-27
+    epic: "Phase 2: Stability"
+    title: "Refine agent error handling"
+    description: "Replace broad exception handlers in SafeFunctionCallingAgent and calendar tools with specific errors and user-friendly fallbacks."
+    component: agent
+    area: Reliability
+    dependencies: [64]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Catch specific exceptions like RequestException and GoogleAPICallError."
+      - "Return clear fallback messages when generation or calendar access fails."
+      - "Add unit tests covering failure scenarios."
+    acceptance_criteria:
+      - "User receives helpful message on tool or LLM failure."
+      - "Tests cover new error paths."
+
+  - id: 115
+    task_id: CONF-03
+    epic: "Phase 3: Stability"
+    title: "Remove direct os.environ usage"
+    description: "Audit codebase to ensure all configuration goes through the Settings object."
+    component: server
+    area: Infrastructure
+    dependencies: [63, 75]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Search modules for os.environ or os.getenv calls."
+      - "Refactor to use server.settings.Settings where needed."
+      - "Update tests accordingly."
+    acceptance_criteria:
+      - "No module reads environment variables directly."
+
+  - id: 116
+    task_id: ARCH-04
+    epic: "Phase 4: Performance"
+    title: "Migrate to async database driver"
+    description: "Replace blocking SQLAlchemy usage with an async-compatible ORM using asyncpg."
+    component: server
+    area: Data
+    dependencies: []
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Introduce async database engine using asyncpg."
+      - "Refactor database models and queries to use an async ORM."
+      - "Update API handlers to await DB operations."
+    acceptance_criteria:
+      - "Application handles DB operations without blocking the event loop."
+
+  - id: 117
+    task_id: QA-06
+    epic: "Phase 2: Stability"
+    title: "Add tests for CLI and tool error cases"
+    description: "Expand pytest suite to cover CLI commands and error conditions in tool integrations."
+    component: testing
+    area: Quality
+    dependencies: [68]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Write tests that invoke CLI with invalid arguments."
+      - "Simulate failures in calendar and notification tools."
+    acceptance_criteria:
+      - "CLI and tool error paths are executed in tests and pass."
+
+  - id: 118
+    task_id: LOG-01
+    epic: "Phase 2: Stability"
+    title: "Standardize logging across modules"
+    description: "Replace print statements with the configured logger and add structured logs in core components."
+    component: server
+    area: Monitoring
+    dependencies: []
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Audit for print statements and convert to logger usage."
+      - "Add context-rich logs to server, agents, and tools."
+    acceptance_criteria:
+      - "All modules use the logging_config logger."
+      - "Logs include relevant context for debugging."
