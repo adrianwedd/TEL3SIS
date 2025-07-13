@@ -1630,7 +1630,7 @@ tasks:
     acceptance_criteria:
       - "Admins can quickly locate specific calls using search terms."
   - id: 88
-    task_id: CORE-01
+    task_id: CORE-20
     epic: "Core Functionality"
     title: "Implement Intent Recognition"
     description: "Refactor the CalendarAgent to use a proper intent recognition model."
@@ -1647,7 +1647,7 @@ tasks:
     acceptance_criteria:
       - "Agent detects create_event and other intents reliably."
   - id: 89
-    task_id: CORE-02
+    task_id: CORE-21
     epic: "Core Functionality"
     title: "Develop Multi-Turn Dialogue State Machine"
     description: "Implement a state machine to manage conversation flow."
@@ -1664,7 +1664,7 @@ tasks:
     acceptance_criteria:
       - "Agent asks clarifying questions and remembers answers."
   - id: 90
-    task_id: CORE-03
+    task_id: CORE-22
     epic: "Core Functionality"
     title: "Refactor Tools for Dynamic Invocation"
     description: "Modify CalendarTool and add abstraction for dynamic tool selection."
@@ -1681,7 +1681,7 @@ tasks:
     acceptance_criteria:
       - "Agent chooses the correct tool automatically."
   - id: 91
-    task_id: CORE-04
+    task_id: CORE-23
     epic: "Core Functionality"
     title: "Integrate Twilio SMS for Inbound/Outbound Messaging"
     description: "Add SMS webhook endpoint and support text commands via Twilio."
@@ -1698,7 +1698,7 @@ tasks:
     acceptance_criteria:
       - "Users can interact with the agent via SMS."
   - id: 92
-    task_id: CORE-05
+    task_id: CORE-24
     epic: "Core Functionality"
     title: "Design Generic Web Chat API"
     description: "Create WebSocket endpoints for real-time web chat."
@@ -1715,7 +1715,7 @@ tasks:
     acceptance_criteria:
       - "Web clients exchange messages with the agent in real time."
   - id: 93
-    task_id: CORE-06
+    task_id: CORE-25
     epic: "Core Functionality"
     title: "Implement Long-Term Memory Retrieval"
     description: "Persist conversation summaries to ChromaDB and query at new session start."
@@ -1732,7 +1732,7 @@ tasks:
     acceptance_criteria:
       - "Agent recalls previous interactions across sessions."
   - id: 94
-    task_id: CORE-07
+    task_id: CORE-26
     epic: "Core Functionality"
     title: "Develop Conversation Summarization Logic"
     description: "Use an LLM to summarize conversations asynchronously."
@@ -1936,7 +1936,7 @@ tasks:
     acceptance_criteria:
       - "Agent settings can be updated without editing code."
   - id: 106
-    task_id: UX-05
+    task_id: UX-06
     epic: "User Experience"
     title: "Design Secure OAuth2 Onboarding Flow"
     description: "Implement user-facing OAuth2 flow for Google Calendar access."
