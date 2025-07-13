@@ -75,19 +75,19 @@ class StateManager:
         if data is None:
             data = {}
         key = self._key(call_sid)
-        pipe = self._redis.pipeline()
-        if data:
-            pipe.hset(key, mapping=data)
-        from_number = data.get("from")
-        if from_number:
-            sims = self._summary_db.search(
-                "",
-                where={"from_number": from_number},
-                n_results=3,
-            )
-            if sims:
-                pipe.hset(key, "similar_summaries", json.dumps(sims))
-        pipe.execute()
+        with self._redis.pipeline() as pipe:
+            if data:
+                pipe.hset(key, mapping=data)
+            from_number = data.get("from")
+            if from_number:
+                sims = self._summary_db.search(
+                    "",
+                    where={"from_number": from_number},
+                    n_results=3,
+                )
+                if sims:
+                    pipe.hset(key, "similar_summaries", json.dumps(sims))
+            pipe.execute()
 
     def get_session(self, call_sid: str) -> Dict[str, str]:
         """Return all fields for a session."""
@@ -95,8 +95,11 @@ class StateManager:
 
     def update_session(self, call_sid: str, **fields: Any) -> None:
         """Update fields in a session."""
-        if fields:
-            self._redis.hset(self._key(call_sid), mapping=fields)
+        if not fields:
+            return
+        with self._redis.pipeline() as pipe:
+            pipe.hset(self._key(call_sid), mapping=fields)
+            pipe.execute()
 
     def delete_session(self, call_sid: str) -> None:
         """Remove a session completely."""
