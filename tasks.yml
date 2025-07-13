@@ -2029,7 +2029,7 @@ tasks:
     area: Docs
     dependencies: [95]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
