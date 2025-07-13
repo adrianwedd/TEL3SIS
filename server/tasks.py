@@ -8,6 +8,8 @@ from server.config import Config
 from datetime import datetime, timedelta, UTC
 import tarfile
 import time
+import shutil
+import tempfile
 from contextlib import contextmanager
 
 from .recordings import (
@@ -198,6 +200,46 @@ def backup_data(upload_to_s3: bool | None = None) -> str:
             return f"s3://{bucket}/{key}"
 
         return str(tar_path)
+
+
+@celery_app.task
+def restore_data(archive_path: str) -> bool:
+    """Restore the SQLite DB and vector store from ``archive_path``."""
+    with monitor_task("restore_data"):
+        cfg = Config()
+        db_url = cfg.database_url
+        if not db_url.startswith("sqlite:///"):
+            raise ValueError("Only SQLite DATABASE_URL supported")
+        db_path = Path(db_url.split("sqlite:///")[-1])
+        vector_dir = Path(cfg.vector_db_path)
+
+        tar_path = Path(archive_path)
+        if str(tar_path).startswith("s3://"):
+            if not boto3:
+                raise RuntimeError("boto3 not installed for S3 download")
+            bucket, key = archive_path[5:].split("/", 1)
+            with tempfile.NamedTemporaryFile() as tmp:
+                boto3.client("s3").download_file(bucket, key, tmp.name)
+                tar_path = Path(tmp.name)
+
+        if not tar_path.exists():
+            raise FileNotFoundError(str(tar_path))
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with tarfile.open(tar_path) as tar:
+                tar.extractall(tmpdir)
+            extracted_db = Path(tmpdir) / db_path.name
+            extracted_vectors = Path(tmpdir) / "vector_store"
+            if extracted_db.exists():
+                db_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(extracted_db), db_path)
+            if extracted_vectors.exists():
+                if vector_dir.exists():
+                    shutil.rmtree(vector_dir)
+                shutil.move(str(extracted_vectors), vector_dir)
+
+        logger.info("Restored backup from %s", archive_path)
+        return True
 
 
 @celery_app.task
