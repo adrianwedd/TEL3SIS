@@ -58,6 +58,20 @@ async def test_invalid_key(monkeypatch, tmp_path):
 async def test_valid_key(monkeypatch, tmp_path):
     client, key, db_module = await setup_app(monkeypatch, tmp_path)
     db_module.save_call_summary("abc", "111", "222", "/p", "s", None)
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
+    monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
+    from urllib.parse import urlparse, parse_qs
+
+    state = parse_qs(
+        urlparse(
+            (await client.get("/v1/login/oauth", headers={"X-API-Key": key})).headers[
+                "Location"
+            ]
+        ).query
+    )["state"][0]
+    await client.get(
+        f"/v1/oauth/callback?state={state}&user=admin", headers={"X-API-Key": key}
+    )
     resp = await client.get("/v1/calls", headers={"X-API-Key": key})
     await client.aclose()
     assert resp.status_code == 200

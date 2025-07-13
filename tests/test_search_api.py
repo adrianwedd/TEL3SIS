@@ -34,6 +34,20 @@ def test_search_api(monkeypatch, tmp_path):
 
     app = create_app(Config())
     client = TestClient(app)
+    monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
+    monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
+    from urllib.parse import urlparse, parse_qs
+
+    state = parse_qs(
+        urlparse(
+            client.get("/v1/login/oauth", headers={"X-API-Key": key}).headers[
+                "Location"
+            ]
+        ).query
+    )["state"][0]
+    client.get(
+        f"/v1/oauth/callback?state={state}&user=admin", headers={"X-API-Key": key}
+    )
 
     resp = client.get("/v1/search?q=hello", headers={"X-API-Key": key})
     assert resp.status_code == 200

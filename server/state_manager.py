@@ -165,6 +165,11 @@ class StateManager:
             user_id, _ = pipe.execute()
         return cast(Optional[str], user_id)
 
+    def list_sessions(self) -> list[str]:
+        """Return all active session IDs."""
+        pattern = f"{self.prefix}:*"
+        return [key.split(":", 1)[1] for key in self._redis.scan_iter(match=pattern)]
+
     # --- Conversation History ---------------------------------------
 
     def append_history(self, call_sid: str, speaker: str, text: str) -> None:
