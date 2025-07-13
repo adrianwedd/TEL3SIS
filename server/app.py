@@ -41,6 +41,8 @@ from .database import (
     init_db,
     set_user_preference,
     verify_api_key,
+    get_agent_config,
+    update_agent_config,
 )
 from .config import Config, ConfigError
 from .handoff import dial_twiml
@@ -57,6 +59,11 @@ from agents.core_agent import (
 from .chat import manager as chat_manager, uuid4
 from .latency_logging import log_call
 from .metrics import metrics_middleware
+
+
+class AgentConfigPayload(BaseModel):
+    prompt: str = ""
+    voice: str = ""
 
 
 class InboundCallData(BaseModel):
@@ -586,6 +593,25 @@ def create_app(cfg: Config | None = None) -> FastAPI:
             "active_sessions": len(sessions),
             "active_websockets": len(chat_manager.active),
         }
+
+    @app.get("/v1/admin/config", summary="Get agent config", tags=["admin"])
+    async def get_config(user: str = Depends(_require_user)) -> AgentConfigPayload:
+        data = get_agent_config()
+        return AgentConfigPayload(
+            prompt=data.get("prompt", ""), voice=data.get("voice", "")
+        )
+
+    @app.put(
+        "/v1/admin/config",
+        summary="Update agent config",
+        tags=["admin"],
+        status_code=204,
+    )
+    async def update_config(
+        payload: AgentConfigPayload, user: str = Depends(_require_user)
+    ) -> Response:
+        update_agent_config(prompt=payload.prompt, voice=payload.voice)
+        return Response(status_code=204)
 
     @app.get("/v1/oauth/start", summary="Begin OAuth flow", tags=["auth"])
     async def oauth_start(request: Request):
