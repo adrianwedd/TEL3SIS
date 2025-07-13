@@ -49,3 +49,6 @@ coverage.xml
 .vscode/
 *.log
 site/
+# Node
+node_modules/
+admin-ui/dist/
