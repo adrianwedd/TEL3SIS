@@ -10,6 +10,7 @@ import requests
 
 from server.config import Config
 from server.metrics import record_external_api
+from util import call_with_retries
 
 __all__ = ["send_email", "send_sms", "sanitize_transcript"]
 
@@ -47,7 +48,7 @@ def send_email(transcript_path: str, to_email: str | None = None) -> None:
     )
     try:
         with record_external_api("sendgrid"):
-            SendGridAPIClient(api_key).send(message)
+            call_with_retries(SendGridAPIClient(api_key).send, message, timeout=10)
         logger.info("Sent transcript email to %s", to_email)
     except Exception as exc:  # noqa: BLE001
         logger.error("Failed to send transcript email to %s: %s", to_email, exc)
@@ -65,8 +66,12 @@ def send_sms(to_phone: str, from_phone: str, body: str) -> None:
     data = {"To": to_phone, "From": from_phone, "Body": body}
     try:
         with record_external_api("twilio"):
-            resp = requests.post(
-                url, data=data, auth=(account_sid, auth_token), timeout=5
+            resp = call_with_retries(
+                requests.post,
+                url,
+                data=data,
+                auth=(account_sid, auth_token),
+                timeout=5,
             )
             resp.raise_for_status()
         logger.info("Sent SMS to %s", to_phone)

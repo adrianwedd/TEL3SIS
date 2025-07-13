@@ -4,6 +4,7 @@ from typing import Any
 from server.config import Config
 from server.cache import redis_cache
 from loguru import logger
+from util import call_with_retries
 
 __all__ = ["generate_self_critique"]
 
@@ -25,7 +26,8 @@ def generate_self_critique(transcript: str, *, client: Any | None = None) -> str
             return ""
 
     try:
-        resp = client.chat.completions.create(
+        resp = call_with_retries(
+            client.chat.completions.create,
             model=Config().openai_model,
             messages=[
                 {
@@ -40,6 +42,7 @@ def generate_self_critique(transcript: str, *, client: Any | None = None) -> str
             ],
             max_tokens=100,
             temperature=0,
+            timeout=10,
         )
         return resp["choices"][0]["message"]["content"].strip()
     except Exception as exc:  # noqa: BLE001
