@@ -10,6 +10,7 @@ from fastapi import (
     HTTPException,
     Request,
     Response,
+    Depends,
     WebSocket,
     WebSocketDisconnect,
 )
@@ -188,6 +189,14 @@ def _check_admin(username: str) -> bool:
         return bool(user and user.role == "admin")
 
 
+def _require_user(request: Request) -> str:
+    """Return the logged in username or raise 401."""
+    user = request.session.get("user")
+    if not user:
+        raise HTTPException(status_code=401)
+    return str(user)
+
+
 def create_app(cfg: Config | None = None) -> FastAPI:
     try:
         config = cfg or Config()
@@ -291,9 +300,11 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         tags=["dashboard"],
         name="dashboard.show_dashboard",
     )
-    async def dashboard(request: Request, q: str | None = None):
-        if "user" not in request.session:
-            return RedirectResponse("/v1/login/oauth")
+    async def dashboard(
+        request: Request,
+        q: str | None = None,
+        user: str = Depends(_require_user),
+    ):
         query_param = (q or "").strip()
         with get_session() as session:
             db_query = session.query(Call)
@@ -333,9 +344,11 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         tags=["dashboard"],
         name="dashboard.call_detail",
     )
-    async def dashboard_detail(request: Request, call_id: int):
-        if "user" not in request.session:
-            return RedirectResponse("/v1/login/oauth")
+    async def dashboard_detail(
+        request: Request,
+        call_id: int,
+        user: str = Depends(_require_user),
+    ):
         with get_session() as session:
             call = session.get(Call, call_id)
         if not call:
@@ -358,9 +371,10 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         tags=["dashboard"],
         name="dashboard.analytics",
     )
-    async def dashboard_analytics(request: Request):
-        if "user" not in request.session:
-            return RedirectResponse("/v1/login/oauth")
+    async def dashboard_analytics(
+        request: Request,
+        user: str = Depends(_require_user),
+    ):
         metrics = _aggregate_metrics()
         return templates.TemplateResponse(
             "dashboard/analytics.html",
@@ -373,9 +387,11 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         tags=["dashboard"],
         name="dashboard.delete_call",
     )
-    async def dashboard_delete_call(request: Request, call_id: int):
-        if "user" not in request.session:
-            return RedirectResponse("/v1/login/oauth")
+    async def dashboard_delete_call(
+        request: Request,
+        call_id: int,
+        user: str = Depends(_require_user),
+    ):
         if not _check_admin(request.session["user"]):
             raise HTTPException(status_code=403)
         delete_call_record.delay(call_id)
@@ -388,9 +404,11 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         tags=["dashboard"],
         name="dashboard.reprocess_call",
     )
-    async def dashboard_reprocess_call(request: Request, call_id: int):
-        if "user" not in request.session:
-            return RedirectResponse("/v1/login/oauth")
+    async def dashboard_reprocess_call(
+        request: Request,
+        call_id: int,
+        user: str = Depends(_require_user),
+    ):
         if not _check_admin(request.session["user"]):
             raise HTTPException(status_code=403)
         reprocess_call.delay(call_id)
@@ -402,7 +420,10 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         summary="List past calls",
         tags=["calls"],
     )
-    async def list_calls(request: Request):
+    async def list_calls(
+        request: Request,
+        user: str = Depends(_require_user),
+    ):
         try:
             params = ListCallsQuery(**request.query_params)
         except (
@@ -459,7 +480,10 @@ def create_app(cfg: Config | None = None) -> FastAPI:
         summary="Keyword search over call history",
         tags=["calls"],
     )
-    async def search_calls(request: Request):
+    async def search_calls(
+        request: Request,
+        user: str = Depends(_require_user),
+    ):
         try:
             params = SearchQuery(**request.query_params)
         except ValidationError as exc:
@@ -522,6 +546,46 @@ def create_app(cfg: Config | None = None) -> FastAPI:
             for c in subset
         ]
         return {"total": total, "items": data}
+
+    @app.get(
+        "/v1/admin/conversations/{call_id}",
+        summary="Retrieve conversation logs",
+        tags=["admin"],
+    )
+    async def get_conversation_log(
+        call_id: int,
+        user: str = Depends(_require_user),
+    ) -> dict:
+        with get_session() as session:
+            call = session.get(Call, call_id)
+        if not call:
+            raise HTTPException(status_code=404)
+        transcript = Path(call.transcript_path).read_text()
+        return {
+            "call_sid": call.call_sid,
+            "from_number": call.from_number,
+            "to_number": call.to_number,
+            "summary": call.summary,
+            "self_critique": call.self_critique,
+            "transcript": transcript,
+            "created_at": call.created_at.isoformat(),
+        }
+
+    @app.get(
+        "/v1/admin/agent_status",
+        summary="Current agent status",
+        tags=["admin"],
+    )
+    async def agent_status(user: str = Depends(_require_user)) -> dict:
+        sessions = []
+        try:
+            sessions = state_manager.list_sessions()
+        except Exception:
+            pass
+        return {
+            "active_sessions": len(sessions),
+            "active_websockets": len(chat_manager.active),
+        }
 
     @app.get("/v1/oauth/start", summary="Begin OAuth flow", tags=["auth"])
     async def oauth_start(request: Request):
