@@ -1740,7 +1740,7 @@ tasks:
     area: Core
     dependencies: []
     priority: 3
-    status: pending
+    status: in_review
     assigned_to: null
     command: null
     actionable_steps:
@@ -1808,7 +1808,7 @@ tasks:
     area: ProdOps
     dependencies: [97]
     priority: 3
-    status: pending
+    status: in_review
     assigned_to: null
     command: null
     actionable_steps:
