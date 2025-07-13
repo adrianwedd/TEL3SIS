@@ -1638,7 +1638,7 @@ tasks:
     area: Core
     dependencies: []
     priority: 3
-    status: in_review
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1655,7 +1655,7 @@ tasks:
     area: Core
     dependencies: [88]
     priority: 3
-    status: in_review
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1672,7 +1672,7 @@ tasks:
     area: Core
     dependencies: [88]
     priority: 3
-    status: in_review
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1689,7 +1689,7 @@ tasks:
     area: Core
     dependencies: []
     priority: 4
-    status: done
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1706,7 +1706,7 @@ tasks:
     area: Core
     dependencies: []
     priority: 3
-    status: done
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1740,7 +1740,7 @@ tasks:
     area: Core
     dependencies: []
     priority: 3
-    status: in_review
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1757,7 +1757,7 @@ tasks:
     area: ProdOps
     dependencies: []
     priority: 3
-    status: done
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1774,7 +1774,7 @@ tasks:
     area: ProdOps
     dependencies: []
     priority: 4
-    status: in_review
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1791,7 +1791,7 @@ tasks:
     area: ProdOps
     dependencies: [96]
     priority: 3
-    status: in_review
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1808,7 +1808,7 @@ tasks:
     area: ProdOps
     dependencies: [97]
     priority: 3
-    status: in_review
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1842,7 +1842,7 @@ tasks:
     area: ProdOps
     dependencies: []
     priority: 4
-    status: done
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1859,7 +1859,7 @@ tasks:
     area: ProdOps
     dependencies: []
     priority: 3
-    status: in_review
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1893,7 +1893,7 @@ tasks:
     area: UX
     dependencies: []
     priority: 4
-    status: in_review
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1910,7 +1910,7 @@ tasks:
     area: UX
     dependencies: [102, 103, 94]
     priority: 3
-    status: in_review
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -1927,7 +1927,7 @@ tasks:
     area: UX
     dependencies: [102, 103]
     priority: 3
-    status: done
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1961,7 +1961,7 @@ tasks:
     area: Docs
     dependencies: []
     priority: 3
-    status: done
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1978,7 +1978,7 @@ tasks:
     area: Docs
     dependencies: []
     priority: 3
-    status: done
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -1995,7 +1995,7 @@ tasks:
     area: Docs
     dependencies: []
     priority: 2
-    status: done
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
@@ -2029,7 +2029,7 @@ tasks:
     area: Docs
     dependencies: [95]
     priority: 2
-    status: done
+    status: pending
     assigned_to: null
     command: null
     actionable_steps:
