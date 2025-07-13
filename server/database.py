@@ -15,7 +15,7 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 
-from .config import Config
+from .settings import Settings
 
 engine = None
 SessionLocal = None
@@ -25,7 +25,7 @@ def _ensure_engine() -> None:
     """Initialize the SQLAlchemy engine and session maker."""
     global engine, SessionLocal
     if engine is None:
-        cfg = Config()
+        cfg = Settings()
         engine = create_engine(cfg.database_url, future=True)
         SessionLocal = sessionmaker(bind=engine, future=True)
 

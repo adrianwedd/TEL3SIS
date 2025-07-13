@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from pathlib import Path
 
 from server.state_manager import StateManager
-from server.config import ConfigError
+from server.settings import ConfigError
 
 
 def _make_manager(monkeypatch: Any, tmp_path: Path) -> StateManager:

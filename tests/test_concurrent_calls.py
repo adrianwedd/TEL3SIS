@@ -10,7 +10,7 @@ import httpx
 import tests.test_api_key_auth  # noqa: F401
 from .db_utils import migrate_sqlite
 from server import app as server_app
-from server.config import Config
+from server.settings import Settings
 
 
 def test_concurrent_inbound_calls(monkeypatch, tmp_path):
@@ -57,7 +57,7 @@ def test_concurrent_inbound_calls(monkeypatch, tmp_path):
         server_app, "echo", types.SimpleNamespace(delay=lambda *_, **__: None)
     )
 
-    app = server_app.create_app(Config())
+    app = server_app.create_app(Settings())
 
     async def run_test() -> float:
         transport = httpx.ASGITransport(app=app)

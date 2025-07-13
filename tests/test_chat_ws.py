@@ -37,7 +37,7 @@ def test_chat_ws(monkeypatch, tmp_path):
 
     from server import app as server_app
     from server.app import create_app
-    from server.config import Config
+    from server.settings import Settings
 
     monkeypatch.setattr(server_app, "StateManager", lambda: DummyStateManager())
     monkeypatch.setattr(
@@ -47,7 +47,7 @@ def test_chat_ws(monkeypatch, tmp_path):
         server_app, "SafeFunctionCallingAgent", lambda *_, **__: DummyAgent()
     )
 
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
 
     with client.websocket_connect("/chat/ws") as ws:

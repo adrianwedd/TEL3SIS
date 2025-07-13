@@ -8,7 +8,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from loguru import logger
 
-from server.config import Config
+from server.settings import Settings
 from server.state_manager import StateManager
 from tools.notifications import send_sms
 from server.metrics import record_external_api
@@ -35,12 +35,12 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 def _build_flow(state: str) -> Any:
     from google_auth_oauthlib.flow import Flow
 
-    cfg = Config()
+    cfg = Settings()
     client_id = cfg.google_client_id
     client_secret = cfg.google_client_secret
     if not client_id or not client_secret:
         raise RuntimeError("Google OAuth client not configured")
-    redirect_uri = Config().base_url + "/oauth/callback"
+    redirect_uri = Settings().base_url + "/oauth/callback"
     return Flow.from_client_config(
         {
             "web": {
@@ -92,7 +92,7 @@ def _get_credentials(
             url = generate_auth_url(state_manager, user_id)
             send_sms(user_phone, twilio_phone, f"Please authenticate here: {url}")
         raise AuthError("No credentials")
-    cfg = Config()
+    cfg = Settings()
     creds = Credentials(
         data["access_token"],
         refresh_token=data.get("refresh_token"),

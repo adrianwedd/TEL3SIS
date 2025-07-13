@@ -9,14 +9,14 @@ import click
 
 from server import database as db
 from server.vector_db import VectorDB
-from server.config import Config
+from server.settings import Settings
 
 
 @click.command(help="Recreate vector embeddings from existing call summaries")
 def cli() -> None:
     """Load summaries from the database and rebuild the vector store."""
 
-    vector_path = Path(Config().vector_db_path)
+    vector_path = Path(Settings().vector_db_path)
     if vector_path.exists():
         shutil.rmtree(vector_path)
 

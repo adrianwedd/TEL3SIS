@@ -8,7 +8,7 @@ from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import requests
 
-from server.config import Config
+from server.settings import Settings
 from server.metrics import record_external_api
 from util import call_with_retries
 
@@ -29,7 +29,7 @@ def sanitize_transcript(text: str) -> str:
 
 def send_email(transcript_path: str, to_email: str | None = None) -> None:
     """Send the transcript file via SendGrid email."""
-    cfg = Config()
+    cfg = Settings()
     api_key = cfg.sendgrid_api_key
     from_email = cfg.sendgrid_from_email
     to_email = to_email or cfg.notify_email
@@ -56,7 +56,7 @@ def send_email(transcript_path: str, to_email: str | None = None) -> None:
 
 def send_sms(to_phone: str, from_phone: str, body: str) -> None:
     """Send an SMS via Twilio."""
-    cfg = Config()
+    cfg = Settings()
     account_sid = cfg.twilio_account_sid
     auth_token = cfg.twilio_auth_token
     if not account_sid or not auth_token:

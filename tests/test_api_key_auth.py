@@ -29,10 +29,10 @@ async def setup_app(monkeypatch, tmp_path):
     db_module = migrate_sqlite(monkeypatch, tmp_path)
     key = db_module.create_api_key("tester")
     from server.app import create_app  # noqa: E402
-    from server.config import Config
+    from server.settings import Settings
     import httpx
 
-    app = create_app(Config())
+    app = create_app(Settings())
     transport = httpx.ASGITransport(app=app)
     client = httpx.AsyncClient(transport=transport, base_url="http://test")
     return client, key, db_module

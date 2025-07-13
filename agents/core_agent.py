@@ -21,7 +21,7 @@ from vocode.streaming.models.message import BaseMessage, EndOfTurn
 from vocode.streaming.models.agent import ChatGPTAgentConfig
 from vocode.streaming.models.transcriber import WhisperCPPTranscriberConfig
 from vocode.streaming.models.synthesizer import ElevenLabsSynthesizerConfig
-from server.config import Config
+from server.settings import Settings
 from server.database import get_agent_config
 from tools import registry
 from tools.safety import safety_check
@@ -193,7 +193,7 @@ def build_core_agent(
 ) -> CoreAgentConfig:
     """Return TEL3SIS ChatGPT agent with STT and TTS providers configured."""
 
-    cfg = Config()
+    cfg = Settings()
     stored = get_agent_config()
     agent_config = FunctionChatGPTAgentConfig(
         prompt_preamble=stored.get(

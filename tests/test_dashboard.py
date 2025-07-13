@@ -12,7 +12,7 @@ install_vocode()
 
 
 from server.app import create_app  # noqa: E402
-from server.config import Config  # noqa: E402
+from server.settings import Settings  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 os.environ.setdefault("SECRET_KEY", "x")
@@ -39,7 +39,7 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     db.save_call_summary("abc", "111", "222", str(transcript_path), "summary", "crit")
     key = db.create_api_key("tester")
 
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
 
     resp = client.get("/v1/dashboard", headers={"X-API-Key": key})
@@ -75,7 +75,7 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
 
 def test_oauth_callback_validation(monkeypatch, tmp_path) -> None:
     from server.app import create_app
-    from server.config import Config
+    from server.settings import Settings
 
     monkeypatch.setenv("SECRET_KEY", "x")
     monkeypatch.setenv("BASE_URL", "http://localhost")
@@ -84,7 +84,7 @@ def test_oauth_callback_validation(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
 
     db_module = migrate_sqlite(monkeypatch, tmp_path)
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
     key = db_module.create_api_key("tester")
 
@@ -120,7 +120,7 @@ def test_dashboard_prefix_search_with_formatted_number(monkeypatch, tmp_path):
     )
     key = db.create_api_key("tester")
 
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
 
     resp = client.get("/v1/dashboard", headers={"X-API-Key": key})
@@ -180,7 +180,7 @@ def test_admin_actions(monkeypatch, tmp_path):
     key = db.create_api_key("tester")
     monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
     monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
     from urllib.parse import urlparse, parse_qs
 

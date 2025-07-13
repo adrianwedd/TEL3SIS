@@ -5,14 +5,14 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from server.config import Config
+from server.settings import Settings
 
 from loguru import logger
 
 
 def configure_logging() -> None:
     """Configure Loguru based on environment variables."""
-    cfg = Config()
+    cfg = Settings()
     level = cfg.log_level
     rotation = cfg.log_rotation
     log_file = cfg.log_file

@@ -5,7 +5,7 @@ from tests.utils.vocode_mocks import install as install_vocode
 install_vocode()
 
 from server.app import create_app  # noqa: E402
-from server.config import Config  # noqa: E402
+from server.settings import Settings  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 
@@ -32,7 +32,7 @@ def test_search_api(monkeypatch, tmp_path):
     db.save_call_summary("b", "333", "444", str(t2), "farewell", None)
     key = db.create_api_key("tester")
 
-    app = create_app(Config())
+    app = create_app(Settings())
     client = TestClient(app)
     monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
     monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")

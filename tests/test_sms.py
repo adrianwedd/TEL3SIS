@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from tests.utils.vocode_mocks import install as install_vocode
 from tests.db_utils import migrate_sqlite
 from server import app as server_app
-from server.config import Config
+from server.settings import Settings
 
 install_vocode()
 
@@ -49,7 +49,7 @@ def test_inbound_sms(monkeypatch: pytest.MonkeyPatch, tmp_path):
     monkeypatch.setattr(server_app, "send_sms", fake_send_sms)
     monkeypatch.setattr(server_app, "SMSAgent", DummyAgent)
 
-    app = server_app.create_app(Config())
+    app = server_app.create_app(Settings())
     client = TestClient(app)
 
     resp = client.post(
@@ -64,7 +64,7 @@ def test_inbound_sms(monkeypatch: pytest.MonkeyPatch, tmp_path):
 def test_inbound_sms_validation(monkeypatch: pytest.MonkeyPatch, tmp_path):
     key = _setup(monkeypatch, tmp_path)
 
-    app = server_app.create_app(Config())
+    app = server_app.create_app(Settings())
     client = TestClient(app)
 
     resp = client.post(
