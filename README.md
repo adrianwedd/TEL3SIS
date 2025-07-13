@@ -108,7 +108,7 @@ Production deployment recommendations are covered in [docs/production.md](docs/p
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-python server/app.py
+uvicorn server.app:create_app --factory --reload
 ```
 > Use this only for lightweight debugging; Docker remains the canonical environment.
 
