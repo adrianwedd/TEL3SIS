@@ -282,8 +282,10 @@ tel3sis-maintenance prune --days 90
 
 * **Prometheus** scraps `/metrics` exposed by the FastAPI app
 * Alert rules live in `ops/prometheus/*_rules.yml` and define when latency is too high
+  or HTTP errors spike
 * Alerts trigger if STT/LLM/TTS average latency stays above **3 s** for over a minute
-* Alertmanager reads `ops/prometheus/alertmanager.yml` and posts to Slack via `SLACK_WEBHOOK_URL` in `.env`
+* Alertmanager reads `ops/prometheus/alertmanager.yml` and posts to Slack via `SLACK_WEBHOOK_URL`
+  or PagerDuty via `PAGERDUTY_ROUTING_KEY` in `.env`
 * Browse Grafana at [http://localhost:3000/d/tel3sis-latency](http://localhost:3000/d/tel3sis-latency).
   Import `ops/grafana/tel3sis.json` if the dashboard is missing to view latency and task metrics.
 
