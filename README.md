@@ -38,6 +38,7 @@ TEL3SIS/
 │   └── state_manager.py  # Redis wrapper
 ├── tools/                # Calendar, Weather, SMS, etc.
 ├── scripts/              # Dev helpers and startup tasks
+├── admin-ui/             # React dashboard (optional)
 ├── tasks.yml             # Swarm task manifest
 ├── docker-compose.yml
 ├── Dockerfile
@@ -93,6 +94,18 @@ TEL3SIS/
 
    Visit [http://localhost:3000/d/tel3sis-latency](http://localhost:3000/d/tel3sis-latency) (default login `admin`/`admin`).
    If the dashboard does not exist yet, import `ops/grafana/tel3sis.json` via **Dashboard → Import**.
+
+8. **Launch the React admin UI** (optional)
+
+   ```bash
+   cd admin-ui
+   npm install
+   npm run dev
+   ```
+
+### React Admin UI
+
+Open [http://localhost:5173](http://localhost:5173) to access the dashboard. The app communicates with the FastAPI backend running on port 3000.
 
 ## 📑 API Reference
 
