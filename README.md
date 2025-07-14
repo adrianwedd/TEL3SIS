@@ -124,6 +124,22 @@ pre-commit install
 pytest -q
 ```
 
+### Test dependencies
+
+The development requirements include several libraries used by the test suite:
+
+- `pytest` and `pytest-asyncio` – test framework
+- `celery` – background task queue for integration tests
+- `fakeredis` – in-memory Redis used by unit tests
+- `numpy` and `scikit-learn` – required by ChromaDB
+- `ruff` and `pre-commit` – linting and git hooks
+
+Run the helper script to create a virtual environment and install everything:
+
+```bash
+./scripts/setup_test_env.sh
+```
+
 
 ---
 
