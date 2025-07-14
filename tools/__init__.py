@@ -1,3 +1,4 @@
+"""Registry of built-in tools and selection helpers."""
 from __future__ import annotations
 
 from agents.calendar_agent import CalendarAgent

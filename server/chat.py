@@ -1,3 +1,4 @@
+"""WebSocket connection manager for chat sessions."""
 from __future__ import annotations
 
 from typing import Dict

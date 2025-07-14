@@ -1,3 +1,5 @@
+"""Generate short self-critiques for call transcripts."""
+
 from typing import Any
 
 

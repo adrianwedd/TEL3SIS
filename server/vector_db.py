@@ -1,3 +1,4 @@
+"""Wrapper around ChromaDB for semantic search storage."""
 from __future__ import annotations
 
 from typing import Iterable, List, Sequence, Optional

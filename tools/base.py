@@ -1,3 +1,4 @@
+"""Abstract base classes and registry for callable tools."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

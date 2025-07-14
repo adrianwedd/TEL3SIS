@@ -1,3 +1,4 @@
+"""Celery task implementations for background processing."""
 from __future__ import annotations
 
 from logging_config import logger

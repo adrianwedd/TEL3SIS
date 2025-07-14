@@ -1,3 +1,4 @@
+"""Tool for fetching simple weather reports."""
 from __future__ import annotations
 
 import requests

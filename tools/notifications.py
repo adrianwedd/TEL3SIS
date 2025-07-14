@@ -1,3 +1,4 @@
+"""Utility functions for sending email and SMS notifications."""
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,3 +1,4 @@
+"""Simple heuristics and OpenAI-based safety checks."""
 from __future__ import annotations
 
 import re
