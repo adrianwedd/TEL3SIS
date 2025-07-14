@@ -6,6 +6,9 @@ from google.auth.transport.requests import Request
 from .base import Tool
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from google.auth.exceptions import GoogleAuthError, RefreshError
+from requests.exceptions import RequestException
 from loguru import logger
 
 from server.settings import Settings
@@ -88,9 +91,9 @@ def exchange_code(
             creds.refresh_token,
             expires_at,
         )
-    except Exception as exc:  # noqa: BLE001
+    except (GoogleAuthError, RequestException, HttpError) as exc:
         logger.error("Failed to exchange OAuth code for %s: %s", user_id, exc)
-        raise
+        raise RuntimeError("OAuth exchange failed") from exc
 
 
 def _get_credentials(
@@ -125,7 +128,13 @@ def _get_credentials(
                 creds.refresh_token,
                 expires_at,
             )
-        except Exception as exc:  # noqa: BLE001
+        except RefreshError as exc:
+            logger.error("Failed to refresh token for %s: %s", user_id, exc)
+            if user_phone and twilio_phone:
+                url = generate_auth_url(state_manager, user_id)
+                send_sms(user_phone, twilio_phone, f"Please authenticate here: {url}")
+            raise AuthError("Credentials expired") from exc
+        except (RequestException, GoogleAuthError, HttpError) as exc:
             logger.error("Failed to refresh token for %s: %s", user_id, exc)
             raise
     return creds
@@ -162,7 +171,7 @@ def create_event(
                 service.events().insert(calendarId="primary", body=event).execute,
                 timeout=10,
             )
-    except Exception as exc:  # noqa: BLE001
+    except (HttpError, RequestException, GoogleAuthError) as exc:
         logger.error("Failed to create event for %s: %s", user_id, exc)
         return {"error": "Sorry, I'm unable to create the calendar event right now."}
 
@@ -200,7 +209,7 @@ def list_events(
                 timeout=10,
             )
             return resp.get("items", [])
-    except Exception as exc:  # noqa: BLE001
+    except (HttpError, RequestException, GoogleAuthError) as exc:
         logger.error("Failed to list events for %s: %s", user_id, exc)
         return []
 

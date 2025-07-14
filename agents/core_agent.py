@@ -27,6 +27,9 @@ from tools import registry
 from tools.safety import safety_check
 from server.state_manager import StateManager
 from tools.calendar import AuthError
+from requests.exceptions import RequestException
+from googleapiclient.errors import HttpError
+from google.auth.exceptions import GoogleAuthError
 
 
 @dataclass
@@ -93,7 +96,13 @@ class FunctionCallingAgent(ChatGPTAgent):
             if asyncio.iscoroutine(result):
                 result = await result
             return str(result) if result is not None else None
-        except Exception as exc:  # noqa: BLE001
+        except (
+            RuntimeError,
+            ValueError,
+            HttpError,
+            RequestException,
+            AttributeError,
+        ) as exc:
             logger.error("Tool call failed for %s: %s", function_call.name, exc)
             raise
 
@@ -110,7 +119,14 @@ class FunctionCallingAgent(ChatGPTAgent):
                 AgentResponseMessage(message=EndOfTurn())
             )
             return
-        except Exception:
+        except (
+            RuntimeError,
+            ValueError,
+            HttpError,
+            RequestException,
+            GoogleAuthError,
+            AttributeError,
+        ):
             self.produce_interruptible_agent_response_event_nonblocking(
                 AgentResponseMessage(
                     message=BaseMessage(
@@ -156,7 +172,13 @@ class SafeFunctionCallingAgent(FunctionCallingAgent):
                 if hasattr(resp.message, "text"):
                     parts.append(getattr(resp.message, "text"))
                 responses.append(resp)
-        except Exception as exc:
+        except (
+            RuntimeError,
+            HttpError,
+            RequestException,
+            GoogleAuthError,
+            AttributeError,
+        ) as exc:
             logger.error("LLM error: %s", exc)
             yield GeneratedResponse(
                 message=BaseMessage(

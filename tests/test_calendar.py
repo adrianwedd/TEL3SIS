@@ -21,6 +21,7 @@ from tools.calendar import (
     _get_credentials,
     exchange_code,
 )
+from google.auth.exceptions import RefreshError
 from server.state_manager import StateManager
 
 
@@ -178,6 +179,52 @@ def test_get_credentials_refreshes(monkeypatch: Any) -> None:
     data = manager.get_token("user")
     assert data["access_token"] == "new"
     assert DummyCreds.calls == 2
+
+
+def test_get_credentials_refresh_failure(monkeypatch: Any) -> None:
+    manager = _make_manager(monkeypatch)
+    expires = int((datetime.now(UTC) - timedelta(minutes=1)).timestamp())
+    manager.set_token("user", "old", "rt", expires_at=expires)
+
+    class DummyCreds:
+        def __init__(
+            self,
+            token,
+            refresh_token=None,
+            token_uri=None,
+            client_id=None,
+            client_secret=None,
+        ):
+            self.token = token
+            self.refresh_token = refresh_token
+            self.expiry = datetime.now(UTC)
+            self.expired = True
+
+        def refresh(self, request, **kwargs: Any):
+            raise RefreshError("denied")
+
+    sent: dict[str, Any] = {}
+
+    def fake_send_sms(to: str, from_: str, body: str) -> None:
+        sent["to"] = to
+        sent["from"] = from_
+        sent["body"] = body
+
+    monkeypatch.setattr("tools.calendar.Credentials", DummyCreds)
+    monkeypatch.setattr("tools.calendar.Request", lambda: None)
+    monkeypatch.setattr("tools.calendar.generate_auth_url", lambda *_: "link")
+    monkeypatch.setattr("tools.calendar.send_sms", fake_send_sms)
+
+    with pytest.raises(AuthError):
+        _get_credentials(
+            manager,
+            "user",
+            user_phone="123",
+            twilio_phone="456",
+        )
+
+    assert sent["to"] == "123"
+    assert "link" in sent["body"]
 
 
 def test_create_event_network_failure(monkeypatch: Any) -> None:
