@@ -9,7 +9,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google.auth.exceptions import GoogleAuthError, RefreshError
 from requests.exceptions import RequestException
-from loguru import logger
+from logging_config import logger
 
 from server.settings import Settings
 from server.state_manager import StateManager
@@ -92,7 +92,7 @@ def exchange_code(
             expires_at,
         )
     except (GoogleAuthError, RequestException, HttpError) as exc:
-        logger.error("Failed to exchange OAuth code for %s: %s", user_id, exc)
+        logger.bind(user_id=user_id, error=str(exc)).error("oauth_exchange_failed")
         raise RuntimeError("OAuth exchange failed") from exc
 
 
@@ -129,13 +129,13 @@ def _get_credentials(
                 expires_at,
             )
         except RefreshError as exc:
-            logger.error("Failed to refresh token for %s: %s", user_id, exc)
+            logger.bind(user_id=user_id, error=str(exc)).error("token_refresh_failed")
             if user_phone and twilio_phone:
                 url = generate_auth_url(state_manager, user_id)
                 send_sms(user_phone, twilio_phone, f"Please authenticate here: {url}")
             raise AuthError("Credentials expired") from exc
         except (RequestException, GoogleAuthError, HttpError) as exc:
-            logger.error("Failed to refresh token for %s: %s", user_id, exc)
+            logger.bind(user_id=user_id, error=str(exc)).error("token_refresh_failed")
             raise
     return creds
 
@@ -172,7 +172,7 @@ def create_event(
                 timeout=10,
             )
     except (HttpError, RequestException, GoogleAuthError) as exc:
-        logger.error("Failed to create event for %s: %s", user_id, exc)
+        logger.bind(user_id=user_id, error=str(exc)).error("create_event_failed")
         return {"error": "Sorry, I'm unable to create the calendar event right now."}
 
 
@@ -210,7 +210,7 @@ def list_events(
             )
             return resp.get("items", [])
     except (HttpError, RequestException, GoogleAuthError) as exc:
-        logger.error("Failed to list events for %s: %s", user_id, exc)
+        logger.bind(user_id=user_id, error=str(exc)).error("list_events_failed")
         return []
 
 

@@ -1995,7 +1995,7 @@ tasks:
     area: Docs
     dependencies: []
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -2012,7 +2012,7 @@ tasks:
     area: Docs
     dependencies: []
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -2029,7 +2029,7 @@ tasks:
     area: Docs
     dependencies: [95]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -2046,7 +2046,7 @@ tasks:
     area: DevOps
     dependencies: [69]
     priority: 3
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -2124,7 +2124,7 @@ tasks:
     area: Data
     dependencies: []
     priority: 4
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
@@ -2161,7 +2161,7 @@ tasks:
     area: Monitoring
     dependencies: []
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:

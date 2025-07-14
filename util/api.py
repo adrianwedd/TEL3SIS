@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from loguru import logger
+from logging_config import logger
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 __all__ = ["call_with_retries"]
@@ -27,5 +27,5 @@ def call_with_retries(
         return retryable(*args, **kwargs)
     except Exception as exc:  # noqa: BLE001
         name = getattr(func, "__name__", str(func))
-        logger.exception("Unrecoverable error in %s: %s", name, exc)
+        logger.bind(func=name, error=str(exc)).exception("unrecoverable_error")
         raise

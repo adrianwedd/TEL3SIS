@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import time
 from typing import Any, Callable
 
-from loguru import logger
+from logging_config import logger
 from prometheus_client import Histogram
 
 # Histograms for latency metrics indexed by step name
@@ -24,9 +23,8 @@ def _get_histogram(step_name: str) -> Histogram:
 
 
 def _log_event(event: str, call_sid: str | None, **extra: Any) -> None:
-    """Emit a structured log line in JSON."""
-    payload = {"event": event, "call_sid": call_sid, **extra}
-    logger.info(json.dumps(payload))
+    """Emit a structured log line."""
+    logger.bind(event=event, call_sid=call_sid, **extra).info("latency")
 
 
 def log_vocode_step(

@@ -3,7 +3,7 @@ from typing import Any
 
 from server.settings import Settings
 from server.cache import redis_cache
-from loguru import logger
+from logging_config import logger
 from util import call_with_retries
 
 __all__ = ["generate_self_critique"]
@@ -22,7 +22,7 @@ def generate_self_critique(transcript: str, *, client: Any | None = None) -> str
 
             client = OpenAI(api_key=api_key)
         except Exception as exc:  # noqa: BLE001
-            logger.error("Failed to init OpenAI client: %s", exc)
+            logger.bind(error=str(exc)).error("openai_init_failed")
             return ""
 
     try:
@@ -46,5 +46,5 @@ def generate_self_critique(transcript: str, *, client: Any | None = None) -> str
         )
         return resp["choices"][0]["message"]["content"].strip()
     except Exception as exc:  # noqa: BLE001
-        logger.error("Self-reflection failed: %s", exc)
+        logger.bind(error=str(exc)).error("self_reflection_failed")
         return ""
