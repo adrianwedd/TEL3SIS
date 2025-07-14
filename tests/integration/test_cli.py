@@ -91,3 +91,17 @@ def test_cli_manage_update_user(monkeypatch):
 
     assert result.exit_code == 0
     assert calls == {"username": "bob", "password": "pw", "role": "user"}
+
+
+def test_cli_create_user_missing_password():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["manage", "create-user", "alice"])
+    assert result.exit_code != 0
+    assert "PASSWORD" in result.output
+
+
+def test_cli_unknown_command():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["unknown-command"])
+    assert result.exit_code != 0
+    assert "No such command" in result.output
