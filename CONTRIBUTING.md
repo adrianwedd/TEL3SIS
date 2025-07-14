@@ -12,7 +12,7 @@ Thank you for helping improve **TEL3SIS**! This guide covers how to set up the d
    source venv/bin/activate
    pip install -r requirements-dev.txt
    ```
-2. **Install `git-secrets`** to prevent committing credentials:
+2. **Install `git-secrets`** to prevent committing credentials **before running pre-commit**:
    ```bash
    sudo apt-get install -y git-secrets
    git secrets --install -f
@@ -26,6 +26,10 @@ Install the hooks and run them before every push:
 pre-commit install
 pre-commit run --all-files
 ```
+
+Pre-commit relies on `git-secrets` being present. If the command isn't found,
+run `scripts/install_git_secrets.sh` or follow the installation steps above
+before retrying.
 
 The `build-docs` hook requires **MkDocs** version 1.5.3 or newer. If it isn't
 already installed, add it to your environment:
