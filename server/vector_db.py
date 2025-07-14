@@ -4,7 +4,7 @@ from typing import Iterable, List, Sequence, Optional
 
 from server.settings import Settings
 from util import call_with_retries
-from loguru import logger
+from logging_config import logger
 
 import chromadb
 from chromadb.api.types import EmbeddingFunction, Embeddings
@@ -25,7 +25,7 @@ class OpenAIEmbeddingFunction(EmbeddingFunction):
 
             self.client = OpenAI(api_key=self.api_key) if self.api_key else None
         except Exception as exc:  # noqa: BLE001
-            logger.error("Failed to init OpenAI client: %s", exc)
+            logger.bind(error=str(exc)).error("openai_init_failed")
             self.client = None
 
     def __call__(self, texts: Sequence[str]) -> Embeddings:
@@ -40,7 +40,7 @@ class OpenAIEmbeddingFunction(EmbeddingFunction):
             )
             return [d.embedding for d in resp.data]
         except Exception as exc:  # noqa: BLE001
-            logger.error("Embedding request failed: %s", exc)
+            logger.bind(error=str(exc)).error("embedding_request_failed")
             return [[0.0] * 2 for _ in texts]
 
 

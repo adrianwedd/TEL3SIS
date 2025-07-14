@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 
-from loguru import logger
+from logging_config import logger
 import whisper
 
 
@@ -14,10 +14,10 @@ def load_model(model_name: str = "base") -> whisper.Whisper:
     global MODEL
     if MODEL is None:
         start = time.perf_counter()
-        logger.info("Loading Whisper model '%s'...", model_name)
+        logger.bind(model=model_name).info("load_whisper_start")
         MODEL = whisper.load_model(model_name)
         elapsed = time.perf_counter() - start
-        logger.info("Whisper model loaded in %.2f seconds", elapsed)
+        logger.bind(model=model_name, duration=elapsed).info("load_whisper_complete")
     return MODEL
 
 

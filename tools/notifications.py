@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
-from loguru import logger
+from logging_config import logger
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import requests
@@ -35,7 +35,7 @@ def send_email(transcript_path: str, to_email: str | None = None) -> None:
     to_email = to_email or cfg.notify_email
 
     if not api_key or not from_email or not to_email:
-        logger.warning("SendGrid not configured; skipping email notification")
+        logger.bind(email=to_email).warning("sendgrid_not_configured")
         return
 
     text = Path(transcript_path).read_text()
@@ -49,9 +49,9 @@ def send_email(transcript_path: str, to_email: str | None = None) -> None:
     try:
         with record_external_api("sendgrid"):
             call_with_retries(SendGridAPIClient(api_key).send, message, timeout=10)
-        logger.info("Sent transcript email to %s", to_email)
+        logger.bind(email=to_email).info("email_sent")
     except Exception as exc:  # noqa: BLE001
-        logger.error("Failed to send transcript email to %s: %s", to_email, exc)
+        logger.bind(email=to_email, error=str(exc)).error("email_failed")
 
 
 def send_sms(to_phone: str, from_phone: str, body: str) -> None:
@@ -60,7 +60,7 @@ def send_sms(to_phone: str, from_phone: str, body: str) -> None:
     account_sid = cfg.twilio_account_sid
     auth_token = cfg.twilio_auth_token
     if not account_sid or not auth_token:
-        logger.warning("Twilio not configured; skipping SMS notification")
+        logger.bind(to=to_phone).warning("twilio_not_configured")
         return
     url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
     data = {"To": to_phone, "From": from_phone, "Body": body}
@@ -74,6 +74,6 @@ def send_sms(to_phone: str, from_phone: str, body: str) -> None:
                 timeout=5,
             )
             resp.raise_for_status()
-        logger.info("Sent SMS to %s", to_phone)
+        logger.bind(to=to_phone).info("sms_sent")
     except Exception as exc:  # noqa: BLE001
-        logger.error("Failed to send SMS to %s: %s", to_phone, exc)
+        logger.bind(to=to_phone, error=str(exc)).error("sms_failed")

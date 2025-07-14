@@ -767,12 +767,11 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         except ValidationError as exc:
             return _json_validation_error(exc)
 
-        logger.info(
-            "Recording callback: call_sid=%s recording_sid=%s url=%s",
-            data.CallSid,
-            data.RecordingSid,
-            data.RecordingUrl,
-        )
+        logger.bind(
+            call_sid=data.CallSid,
+            recording_sid=data.RecordingSid,
+            url=str(data.RecordingUrl),
+        ).info("recording_callback")
         session = state_manager.get_session(data.CallSid)
         process_recording.delay(
             data.RecordingUrl,

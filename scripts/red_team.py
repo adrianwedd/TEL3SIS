@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import yaml
-from loguru import logger
+from logging_config import logger
 
 from agents.core_agent import SafeFunctionCallingAgent, build_core_agent
 from vocode.streaming.agent.chat_gpt_agent import ChatGPTAgent
@@ -69,13 +69,14 @@ def main() -> None:
     prompts = load_prompts()
     results = asyncio.run(run_red_team(prompts))
     summary = summarize_results(results)
+    logger.bind(**summary).info("red_team_summary")
 
     output = {"results": results, "summary": summary}
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
             yaml.safe_dump(output, f)
     else:
-        print(yaml.safe_dump(output))
+        logger.info(yaml.safe_dump(output))
 
 
 if __name__ == "__main__":

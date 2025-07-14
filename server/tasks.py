@@ -76,7 +76,7 @@ def monitor_task(name: str):
 def echo(message: str) -> str:
     """Simple debug task that echoes the incoming message."""
     with monitor_task("echo"):
-        logger.info("Echoing: %s", message)
+        logger.bind(message=message).info("echo")
         return message
 
 
@@ -114,11 +114,11 @@ def transcribe_audio(
     """Transcribe an audio file and persist a summary."""
     with monitor_task("transcribe_audio"):
         path = transcribe_recording(Path(audio_path))
-        logger.info("Transcribed %s", audio_path)
+        logger.bind(audio_path=audio_path).info("transcribed_audio")
         send_transcript_email.delay(str(path))
         text = Path(path).read_text()
         sanitized = notifications.sanitize_transcript(text)
-        logger.debug("Transcript sanitized snippet: %s", sanitized[:100])
+        logger.bind(snippet=sanitized[:100]).debug("transcript_sanitized")
         language = detect_language(text)
         set_user_preference(from_number, "language", language)
         summary = summarize_text(text)
@@ -187,7 +187,7 @@ def backup_data(upload_to_s3: bool | None = None) -> str:
             if vector_dir.exists():
                 tar.add(vector_dir, arcname="vector_store")
 
-        logger.info("Backup created at %s", tar_path)
+        logger.bind(path=tar_path).info("backup_created")
 
         s3_bucket = cfg.backup_s3_bucket
         if upload_to_s3 or s3_bucket:
@@ -196,7 +196,7 @@ def backup_data(upload_to_s3: bool | None = None) -> str:
             bucket = s3_bucket
             key = tar_path.name
             boto3.client("s3").upload_file(str(tar_path), bucket, key)
-            logger.info("Uploaded backup to s3://%s/%s", bucket, key)
+            logger.bind(bucket=bucket, key=key).info("backup_uploaded")
             return f"s3://{bucket}/{key}"
 
         return str(tar_path)
@@ -238,7 +238,7 @@ def restore_data(archive_path: str) -> bool:
                     shutil.rmtree(vector_dir)
                 shutil.move(str(extracted_vectors), vector_dir)
 
-        logger.info("Restored backup from %s", archive_path)
+        logger.bind(archive=archive_path).info("backup_restored")
         return True
 
 
@@ -268,7 +268,7 @@ def refresh_tokens_task(threshold_seconds: int = 300) -> int:
             try:
                 creds.refresh(Request())
             except Exception as exc:  # pragma: no cover - network errors
-                logger.warning("Failed to refresh token for %s: %s", user_id, exc)
+                logger.bind(user_id=user_id, error=str(exc)).warning("refresh_failed")
                 continue
             new_exp = int(creds.expiry.timestamp()) if creds.expiry else None
             manager.set_token(user_id, creds.token, refresh_token, new_exp)

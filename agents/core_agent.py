@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, AsyncGenerator
 
-from loguru import logger
+from logging_config import logger
 import json
 import asyncio
 
@@ -77,7 +77,7 @@ class FunctionCallingAgent(ChatGPTAgent):
         """Execute the mapped Python function and return its string result."""
         func = self.function_map.get(function_call.name)
         if func is None:
-            logger.error("Unknown function: %s", function_call.name)
+            logger.bind(function=function_call.name).error("unknown_function")
             return None
         try:
             params = json.loads(function_call.arguments or "{}")
@@ -89,7 +89,9 @@ class FunctionCallingAgent(ChatGPTAgent):
                     params.setdefault("user_phone", user_phone)
                     params.setdefault("twilio_phone", twilio_phone)
         except json.JSONDecodeError as exc:
-            logger.error("Invalid arguments for %s: %s", function_call.name, exc)
+            logger.bind(function=function_call.name, error=str(exc)).error(
+                "invalid_arguments"
+            )
             return None
         try:
             result = func(**params)
@@ -103,7 +105,9 @@ class FunctionCallingAgent(ChatGPTAgent):
             RequestException,
             AttributeError,
         ) as exc:
-            logger.error("Tool call failed for %s: %s", function_call.name, exc)
+            logger.bind(function=function_call.name, error=str(exc)).error(
+                "tool_call_failed"
+            )
             raise
 
     async def call_function(self, function_call: FunctionCall, agent_input: AgentInput) -> None:  # type: ignore[override]
@@ -179,7 +183,7 @@ class SafeFunctionCallingAgent(FunctionCallingAgent):
             GoogleAuthError,
             AttributeError,
         ) as exc:
-            logger.error("LLM error: %s", exc)
+            logger.bind(error=str(exc)).error("llm_error")
             yield GeneratedResponse(
                 message=BaseMessage(
                     text="I am experiencing technical difficulties. Let us continue another time."

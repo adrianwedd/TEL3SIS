@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import requests
-from loguru import logger
+from logging_config import logger
 from server.cache import redis_cache
 from .base import Tool
 from util import call_with_retries
@@ -25,7 +25,7 @@ def get_weather(location: str) -> str:
             f"{temp_c}\N{DEGREE SIGN}C."
         )
     except Exception as exc:  # noqa: BLE001
-        logger.error("Failed to fetch weather for %s: %s", location, exc)
+        logger.bind(location=location, error=str(exc)).error("weather_failed")
         return "Sorry, I'm unable to retrieve the weather right now."
 
 

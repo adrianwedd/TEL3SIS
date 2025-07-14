@@ -5,7 +5,7 @@ from typing import Any
 
 from server.settings import Settings
 
-from loguru import logger
+from logging_config import logger
 from util import call_with_retries
 
 __all__ = ["safety_check"]
@@ -34,7 +34,7 @@ def safety_check(text: str, *, client: Any | None = None) -> bool:
 
             client = OpenAI(api_key=api_key)
         except Exception as exc:  # noqa: BLE001
-            logger.error("Failed to init OpenAI client: %s", exc)
+            logger.bind(error=str(exc)).error("openai_init_failed")
             return _heuristic_check(text)
 
     try:
@@ -58,5 +58,5 @@ def safety_check(text: str, *, client: Any | None = None) -> bool:
         verdict = resp["choices"][0]["message"]["content"].strip().upper()
         return verdict == "SAFE"
     except Exception as exc:  # noqa: BLE001
-        logger.error("Safety check failed: %s", exc)
+        logger.bind(error=str(exc)).error("safety_check_failed")
         return _heuristic_check(text)

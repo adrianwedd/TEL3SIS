@@ -30,8 +30,10 @@ jobs:
           python - <<'PY'
           from agents.coordinator import CoordinatorAgent
           import os
+          from logging_config import configure_logging, logger
 
+          configure_logging()
           agent = CoordinatorAgent(token=os.environ['GITHUB_TOKEN'])
           tasks = agent.load_tasks()
-          print(f"Loaded {len(tasks)} tasks")
+          logger.bind(count=len(tasks)).info("loaded_tasks")
           PY
