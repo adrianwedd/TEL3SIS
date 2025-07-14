@@ -38,6 +38,11 @@ jobs:
             ${{ runner.os }}-pip-
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
+      - name: Check requirements lockfiles
+        run: |
+          pip-compile --quiet requirements.in
+          pip-compile --quiet requirements-dev.in
+          git diff --exit-code requirements.txt requirements-dev.txt
       - name: Install git-secrets and jq
         run: |
           sudo apt-get update
