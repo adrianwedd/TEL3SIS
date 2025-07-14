@@ -2,7 +2,8 @@
 
 This document describes the HTTP endpoints under `/v1` exposed by the TEL3SIS server. All requests require an `X-API-Key` header unless otherwise noted.
 
-Interactive OpenAPI documentation is available at `/docs` when the server is running.
+Interactive API documentation is available at `/docs` when the server is running and
+on the [API Reference](api_reference.md) page of this site.
 
 ## Authentication
 
