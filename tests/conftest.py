@@ -50,6 +50,7 @@ os.environ.setdefault("TWILIO_AUTH_TOKEN", "token")
 os.environ.setdefault("SENDGRID_API_KEY", "sg")
 os.environ.setdefault("SENDGRID_FROM_EMAIL", "from@test")
 os.environ.setdefault("NOTIFY_EMAIL", "notify@test")
+os.environ.setdefault("USE_FAKE_SERVICES", "true")
 
 
 @pytest.fixture

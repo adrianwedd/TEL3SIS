@@ -35,6 +35,11 @@ def send_email(transcript_path: str, to_email: str | None = None) -> None:
     from_email = cfg.sendgrid_from_email
     to_email = to_email or cfg.notify_email
 
+    if cfg.use_fake_services:
+        with record_external_api("sendgrid"):
+            logger.bind(email=to_email).info("email_mock_sent")
+        return
+
     if not api_key or not from_email or not to_email:
         logger.bind(email=to_email).warning("sendgrid_not_configured")
         return
@@ -60,6 +65,10 @@ def send_sms(to_phone: str, from_phone: str, body: str) -> None:
     cfg = Settings()
     account_sid = cfg.twilio_account_sid
     auth_token = cfg.twilio_auth_token
+    if cfg.use_fake_services:
+        with record_external_api("twilio"), twilio_sms_latency.time():
+            logger.bind(to=to_phone).info("sms_mock_sent")
+        return
     if not account_sid or not auth_token:
         logger.bind(to=to_phone).warning("twilio_not_configured")
         return
