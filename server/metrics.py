@@ -10,6 +10,7 @@ __all__ = [
     "http_request_latency",
     "external_api_calls",
     "external_api_latency",
+    "twilio_sms_latency",
     "record_external_api",
     "metrics_middleware",
 ]
@@ -37,6 +38,13 @@ external_api_latency = Histogram(
     "external_api_latency_seconds",
     "External API call latency in seconds",
     ["api"],
+    buckets=(0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
+)
+
+# Specific histogram for Twilio SMS send latency
+twilio_sms_latency = Histogram(
+    "twilio_sms_latency_seconds",
+    "Latency in seconds for sending SMS via Twilio",
     buckets=(0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
 )
 

@@ -9,7 +9,7 @@ from sendgrid.helpers.mail import Mail
 import requests
 
 from server.settings import Settings
-from server.metrics import record_external_api
+from server.metrics import record_external_api, twilio_sms_latency
 from util import call_with_retries
 
 __all__ = ["send_email", "send_sms", "sanitize_transcript"]
@@ -65,7 +65,7 @@ def send_sms(to_phone: str, from_phone: str, body: str) -> None:
     url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
     data = {"To": to_phone, "From": from_phone, "Body": body}
     try:
-        with record_external_api("twilio"):
+        with record_external_api("twilio"), twilio_sms_latency.time():
             resp = call_with_retries(
                 requests.post,
                 url,
