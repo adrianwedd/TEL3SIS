@@ -6,6 +6,8 @@
 #
 aiofiles==24.1.0
     # via quart
+aiosqlite==0.21.0
+    # via -r /workspace/TEL3SIS/requirements.in
 alembic==1.13.1
     # via -r /workspace/TEL3SIS/requirements.in
 amqp==5.3.1
@@ -22,6 +24,8 @@ apispec==6.3.0
     # via -r /workspace/TEL3SIS/requirements.in
 asgiref==3.9.1
     # via opentelemetry-instrumentation-asgi
+asyncpg==0.30.0
+    # via -r /workspace/TEL3SIS/requirements.in
 backoff==2.2.1
     # via posthog
 bcrypt==4.3.0
@@ -445,10 +449,11 @@ pydantic==2.7.1
     #   chromadb
     #   fastapi
     #   openai
-pydantic-settings==2.10.1
-    # via -r /workspace/TEL3SIS/requirements.in
+    #   pydantic-settings
 pydantic-core==2.18.2
     # via pydantic
+pydantic-settings==2.10.1
+    # via -r /workspace/TEL3SIS/requirements.in
 pygithub==2.3.0
     # via -r /workspace/TEL3SIS/requirements.in
 pygments==2.19.2
@@ -481,7 +486,9 @@ python-dateutil==2.9.0.post0
     #   kubernetes
     #   posthog
 python-dotenv==1.1.1
-    # via uvicorn
+    # via
+    #   pydantic-settings
+    #   uvicorn
 python-http-client==3.3.7
     # via sendgrid
 python-multipart==0.0.18
@@ -612,6 +619,7 @@ typer==0.16.0
     #   fastapi-cli
 typing-extensions==4.14.1
     # via
+    #   aiosqlite
     #   alembic
     #   anyio
     #   chromadb
@@ -630,6 +638,9 @@ typing-extensions==4.14.1
     #   sqlalchemy
     #   torch
     #   typer
+    #   typing-inspection
+typing-inspection==0.4.1
+    # via pydantic-settings
 tzdata==2025.2
     # via
     #   celery
