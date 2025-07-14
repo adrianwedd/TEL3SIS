@@ -51,6 +51,13 @@ Run the `pytest` suite:
 pytest -q
 ```
 
+### USE_FAKE_SERVICES
+
+Set `USE_FAKE_SERVICES=true` to replace Redis and external APIs with
+`fakeredis` and mock implementations. This allows the test suite to run
+entirely offline. The variable is configured automatically in
+`tests/conftest.py`.
+
 Unit tests live under `tests/`. End-to-end call emulation is available via `tel3sis dev-call`, and latency warmup via `tel3sis warmup`.
 
 ## Pull Request Workflow
