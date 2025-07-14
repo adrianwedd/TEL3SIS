@@ -11,6 +11,11 @@ repos:
       - id: ruff
   - repo: local
     hooks:
+      - id: install-git-secrets
+        name: install-git-secrets
+        entry: scripts/install_git_secrets.sh
+        language: script
+        pass_filenames: false
       - id: git-secrets
         name: git-secrets
         entry: git secrets --scan -r
