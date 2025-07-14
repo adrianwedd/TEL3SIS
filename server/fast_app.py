@@ -25,7 +25,12 @@ def create_app(cfg: Optional[Settings] = None) -> FastAPI:
 
     @app.websocket("/chat/ws")
     async def chat_ws(websocket: WebSocket, session_id: str | None = None) -> None:
-        """Bidirectional WebSocket chat with the core agent."""
+        """Bidirectional WebSocket chat with the core agent.
+
+        Example:
+            Connect via ``websocket /chat/ws`` and send text messages to receive
+            streaming responses.
+        """
         sid = session_id or str(uuid4())
         await chat_manager.connect(sid, websocket)
         state_manager.create_session(sid, {})

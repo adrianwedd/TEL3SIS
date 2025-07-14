@@ -283,6 +283,11 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/login/oauth", summary="Start OAuth login", tags=["auth"])
     async def oauth_login(request: Request):
+        """Begin the OAuth login flow.
+
+        Example:
+            ``GET /v1/login/oauth`` redirects the browser to the provider.
+        """
         state = secrets.token_urlsafe(16)
         request.session["oauth_state"] = state
         url = config.oauth_auth_url
@@ -291,6 +296,12 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/oauth/callback", summary="Handle OAuth callback", tags=["auth"])
     async def oauth_callback(request: Request):
+        """Process the OAuth provider redirect and finalize login.
+
+        Example:
+            ``GET /v1/oauth/callback?state=xyz&user=u`` stores the session and
+            redirects to ``/v1/dashboard``.
+        """
         try:
             data = OAuthCallbackData(**request.query_params)
         except ValidationError as exc:
@@ -312,6 +323,11 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         q: str | None = None,
         user: str = Depends(_require_user),
     ):
+        """Show a list of processed calls.
+
+        Example:
+            ``GET /v1/dashboard?q=+1555`` filters by phone number.
+        """
         query_param = (q or "").strip()
         with get_session() as session:
             db_query = session.query(Call)
@@ -356,6 +372,11 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         call_id: int,
         user: str = Depends(_require_user),
     ):
+        """Render detail page for a single call.
+
+        Example:
+            ``GET /v1/dashboard/42`` returns HTML with transcript and audio.
+        """
         with get_session() as session:
             call = session.get(Call, call_id)
         if not call:
@@ -382,6 +403,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         request: Request,
         user: str = Depends(_require_user),
     ):
+        """Show aggregated call metrics."""
         metrics = _aggregate_metrics()
         return templates.TemplateResponse(
             "dashboard/analytics.html",
@@ -399,6 +421,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         call_id: int,
         user: str = Depends(_require_user),
     ):
+        """Delete a call record asynchronously."""
         if not _check_admin(request.session["user"]):
             raise HTTPException(status_code=403)
         delete_call_record.delay(call_id)
@@ -416,6 +439,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         call_id: int,
         user: str = Depends(_require_user),
     ):
+        """Queue a call for reprocessing."""
         if not _check_admin(request.session["user"]):
             raise HTTPException(status_code=403)
         reprocess_call.delay(call_id)
@@ -431,6 +455,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         request: Request,
         user: str = Depends(_require_user),
     ):
+        """Return paginated call history as JSON."""
         try:
             params = ListCallsQuery(**request.query_params)
         except ValidationError as exc:  # pragma: no cover - validated in API tests
@@ -489,6 +514,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         request: Request,
         user: str = Depends(_require_user),
     ):
+        """Search transcripts and summaries by keyword."""
         try:
             params = SearchQuery(**request.query_params)
         except ValidationError as exc:
@@ -561,6 +587,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         call_id: int,
         user: str = Depends(_require_user),
     ) -> dict:
+        """Return transcript and metadata for a call."""
         with get_session() as session:
             call = session.get(Call, call_id)
         if not call:
@@ -582,6 +609,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         tags=["admin"],
     )
     async def agent_status(user: str = Depends(_require_user)) -> dict:
+        """Return counts of active sessions and websockets."""
         sessions = []
         try:
             sessions = state_manager.list_sessions()
@@ -594,6 +622,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/admin/config", summary="Get agent config", tags=["admin"])
     async def get_config(user: str = Depends(_require_user)) -> AgentConfigPayload:
+        """Return the editable prompt and voice settings."""
         data = get_agent_config()
         return AgentConfigPayload(
             prompt=data.get("prompt", ""), voice=data.get("voice", "")
@@ -608,6 +637,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     async def update_config(
         payload: AgentConfigPayload, user: str = Depends(_require_user)
     ) -> Response:
+        """Persist new agent configuration."""
         update_agent_config(prompt=payload.prompt, voice=payload.voice)
         return Response(status_code=204)
 
@@ -617,6 +647,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         tags=["auth"],
     )
     async def oauth_consent(request: Request):
+        """Render a consent page outlining required OAuth scopes."""
         data = OAuthStartData(**request.query_params)
         return templates.TemplateResponse(
             "oauth_consent.html",
@@ -625,6 +656,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/oauth/start", summary="Begin OAuth flow", tags=["auth"])
     async def oauth_start(request: Request):
+        """Generate the provider authorization URL."""
         try:
             data = OAuthStartData(**request.query_params)
         except ValidationError as exc:
@@ -635,6 +667,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     @app.post("/v1/inbound_call", summary="Handle inbound call", tags=["calls"])
     @log_call
     async def inbound_call(request: Request):
+        """Entry point for Twilio voice webhooks."""
         try:
             form = await request.form()
             data = InboundCallData(**form)
@@ -692,6 +725,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         )
 
     async def _handle_sms_webhook(request: Request) -> Response:
+        """Process Twilio SMS webhook payload and respond."""
         try:
             form = await request.form()
             data = InboundSMSData(**form)
@@ -707,10 +741,12 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
 
     @app.post("/v1/inbound_sms", summary="Handle inbound SMS", tags=["sms"])
     async def inbound_sms(request: Request):
+        """Handle a user SMS message and respond via agent."""
         return await _handle_sms_webhook(request)
 
     @app.post("/v1/sms/webhook", summary="Twilio SMS webhook", tags=["sms"])
     async def sms_webhook(request: Request):
+        """Alias for Twilio's SMS webhook configuration."""
         return await _handle_sms_webhook(request)
 
     @app.post(
@@ -719,6 +755,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         tags=["calls"],
     )
     async def recording_status(request: Request):
+        """Receive a notification that call audio is ready."""
         try:
             form = await request.form()
             data = RecordingStatusData(**form)
@@ -742,7 +779,12 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
 
     @app.websocket("/chat/ws")
     async def chat_ws(websocket: WebSocket, session_id: str | None = None):
-        """Bidirectional WebSocket chat with the core agent."""
+        """Bidirectional WebSocket chat with the core agent.
+
+        Example:
+            ``websocket /chat/ws`` establishes a session and streams responses
+            as the user sends messages.
+        """
 
         sid = session_id or str(uuid4())
         await chat_manager.connect(sid, websocket)
@@ -771,6 +813,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         tags=["system"],
     )
     async def health() -> dict[str, str]:
+        """Return connectivity status for subsystems."""
         status: dict[str, str] = {}
 
         try:
@@ -798,6 +841,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
 
     @app.get("/v1/metrics", summary="Prometheus metrics", tags=["system"])
     async def metrics():
+        """Expose Prometheus metrics for scraping."""
         return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
     return app
