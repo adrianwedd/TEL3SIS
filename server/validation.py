@@ -1,3 +1,4 @@
+"""Helpers for consistent FastAPI validation responses."""
 from __future__ import annotations
 
 from fastapi.responses import JSONResponse

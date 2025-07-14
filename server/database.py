@@ -1,3 +1,4 @@
+"""Database models and helpers using SQLAlchemy."""
 from __future__ import annotations
 
 from datetime import datetime, UTC

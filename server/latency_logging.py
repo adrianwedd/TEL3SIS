@@ -1,3 +1,4 @@
+"""Decorators and helpers for latency logging and metrics."""
 from __future__ import annotations
 
 import asyncio

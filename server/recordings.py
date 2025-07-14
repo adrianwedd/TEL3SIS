@@ -1,3 +1,4 @@
+"""Helpers for downloading and transcribing call recordings."""
 from __future__ import annotations
 
 from pathlib import Path

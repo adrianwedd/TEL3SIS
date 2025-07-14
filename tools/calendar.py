@@ -1,3 +1,4 @@
+"""Google Calendar integration tools for event management."""
 from __future__ import annotations
 from datetime import datetime
 from typing import Any, List

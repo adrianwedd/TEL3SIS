@@ -1,3 +1,5 @@
+"""Prometheus metrics utilities and FastAPI middleware."""
+
 import time
 from contextlib import contextmanager
 from typing import Awaitable, Callable

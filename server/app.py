@@ -1,3 +1,4 @@
+"""FastAPI application serving telephony and web endpoints."""
 from __future__ import annotations
 import re
 import secrets
