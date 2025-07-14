@@ -4,6 +4,7 @@ import secrets
 from pathlib import Path
 from collections import defaultdict
 from typing import Any
+import asyncio
 
 from fastapi import (
     FastAPI,
@@ -18,6 +19,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from apispec import APISpec
 from pydantic import BaseModel, Field, HttpUrl, ValidationError
+from sqlalchemy import select, func
 from datetime import datetime
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from logging_config import logger
@@ -36,13 +38,13 @@ from vocode.streaming.models.telephony import TwilioConfig
 from .database import (
     Call,
     User,
-    get_session,
-    get_user_preference,
-    init_db,
-    set_user_preference,
-    verify_api_key,
-    get_agent_config,
-    update_agent_config,
+    get_session_async,
+    get_user_preference_async,
+    init_db_async,
+    set_user_preference_async,
+    verify_api_key_async,
+    get_agent_config_async,
+    update_agent_config_async,
 )
 from .settings import Settings, ConfigError
 from .handoff import dial_twiml
@@ -162,10 +164,11 @@ def _json_validation_error(exc: ValidationError) -> JSONResponse:
     )
 
 
-def _aggregate_metrics() -> dict[str, Any]:
+async def _aggregate_metrics() -> dict[str, Any]:
     """Return aggregate call metrics from the database."""
-    with get_session() as session:
-        calls = session.query(Call).all()
+    async with get_session_async() as session:
+        result = await session.execute(select(Call))
+        calls = result.scalars().all()
 
     total = len(calls)
     durations: list[float] = []
@@ -189,10 +192,11 @@ def _aggregate_metrics() -> dict[str, Any]:
     }
 
 
-def _check_admin(username: str) -> bool:
+async def _check_admin(username: str) -> bool:
     """Return True if ``username`` has admin role."""
-    with get_session() as session:
-        user = session.query(User).filter_by(username=username).one_or_none()
+    async with get_session_async() as session:
+        result = await session.execute(select(User).filter_by(username=username))
+        user = result.scalar_one_or_none()
         return bool(user and user.role == "admin")
 
 
@@ -237,7 +241,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.openapi = custom_openapi
     app.add_middleware(SessionMiddleware, secret_key=config.secret_key)
 
-    init_db()
+    asyncio.run(init_db_async())
 
     call_limit, call_interval = _parse_rate(config.call_rate_limit)
     api_limit, api_interval = _parse_rate(config.api_rate_limit)
@@ -266,7 +270,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     async def verify_key(request: Request, call_next):
         if request.url.path.startswith("/v1/"):
             key = request.headers.get("X-API-Key")
-            if not key or not verify_api_key(key):
+            if not key or not await verify_api_key_async(key):
                 return Response("Unauthorized", status_code=401)
         return await call_next(request)
 
@@ -329,15 +333,15 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
             ``GET /v1/dashboard?q=+1555`` filters by phone number.
         """
         query_param = (q or "").strip()
-        with get_session() as session:
-            db_query = session.query(Call)
+        async with get_session_async() as session:
+            db_query = select(Call)
             if query_param:
                 from sqlalchemy import or_
 
                 sanitized = re.sub(r"[\s\-()]", "", query_param)
                 phone_like = f"{sanitized}%" if sanitized.strip("+").isdigit() else None
                 if phone_like:
-                    db_query = db_query.filter(
+                    db_query = db_query.where(
                         or_(
                             Call.from_number.like(phone_like),
                             Call.to_number.like(phone_like),
@@ -347,7 +351,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
                     )
                 else:
                     like = f"%{query_param}%"
-                    db_query = db_query.filter(
+                    db_query = db_query.where(
                         or_(
                             Call.from_number.like(like),
                             Call.to_number.like(like),
@@ -355,7 +359,8 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
                             Call.self_critique.like(like),
                         )
                     )
-            calls = db_query.order_by(Call.created_at.desc()).all()
+            result = await session.execute(db_query.order_by(Call.created_at.desc()))
+            calls = result.scalars().all()
         return templates.TemplateResponse(
             "dashboard/list.html",
             {"request": request, "calls": calls, "q": query_param},
@@ -377,8 +382,8 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         Example:
             ``GET /v1/dashboard/42`` returns HTML with transcript and audio.
         """
-        with get_session() as session:
-            call = session.get(Call, call_id)
+        async with get_session_async() as session:
+            call = await session.get(Call, call_id)
         if not call:
             raise HTTPException(status_code=404)
         transcript = Path(call.transcript_path).read_text()
@@ -404,7 +409,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         user: str = Depends(_require_user),
     ):
         """Show aggregated call metrics."""
-        metrics = _aggregate_metrics()
+        metrics = await _aggregate_metrics()
         return templates.TemplateResponse(
             "dashboard/analytics.html",
             {"request": request, "metrics": metrics},
@@ -422,7 +427,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         user: str = Depends(_require_user),
     ):
         """Delete a call record asynchronously."""
-        if not _check_admin(request.session["user"]):
+        if not await _check_admin(request.session["user"]):
             raise HTTPException(status_code=403)
         delete_call_record.delay(call_id)
         url = app.url_path_for("dashboard.show_dashboard")
@@ -440,7 +445,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         user: str = Depends(_require_user),
     ):
         """Queue a call for reprocessing."""
-        if not _check_admin(request.session["user"]):
+        if not await _check_admin(request.session["user"]):
             raise HTTPException(status_code=403)
         reprocess_call.delay(call_id)
         url = app.url_path_for("dashboard.call_detail", call_id=call_id)
@@ -461,35 +466,34 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         except ValidationError as exc:  # pragma: no cover - validated in API tests
             return _json_validation_error(exc)
 
-        with get_session() as session:
-            q = session.query(Call)
+        async with get_session_async() as session:
+            q = select(Call)
             if params.phone:
                 like = f"%{params.phone}%"
                 from sqlalchemy import or_
 
-                q = q.filter(
-                    or_(Call.from_number.like(like), Call.to_number.like(like))
-                )
+                q = q.where(or_(Call.from_number.like(like), Call.to_number.like(like)))
             if params.start:
-                q = q.filter(Call.created_at >= params.start)
+                q = q.where(Call.created_at >= params.start)
             if params.end:
-                q = q.filter(Call.created_at <= params.end)
+                q = q.where(Call.created_at <= params.end)
             if params.error is True:
-                q = q.filter(Call.self_critique.is_not(None))
+                q = q.where(Call.self_critique.is_not(None))
             elif params.error is False:
-                q = q.filter(Call.self_critique.is_(None))
+                q = q.where(Call.self_critique.is_(None))
 
             if params.sort.startswith("-"):
                 q = q.order_by(Call.created_at.desc())
             else:
                 q = q.order_by(Call.created_at.asc())
-
-            total = q.count()
-            calls = (
-                q.offset((params.page - 1) * params.page_size)
-                .limit(params.page_size)
-                .all()
+            result_total = await session.execute(
+                select(func.count()).select_from(q.subquery())
             )
+            total = result_total.scalar_one()
+            result = await session.execute(
+                q.offset((params.page - 1) * params.page_size).limit(params.page_size)
+            )
+            calls = result.scalars().all()
             data = [
                 CallInfo(
                     id=c.id,
@@ -521,8 +525,8 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
             return _json_validation_error(exc)
 
         query = params.q.strip()
-        with get_session() as session:
-            db_query = session.query(Call)
+        async with get_session_async() as session:
+            db_query = select(Call)
             if query:
                 from sqlalchemy import or_
 
@@ -539,8 +543,9 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
                             Call.to_number.like(phone_like),
                         ]
                     )
-                db_query = db_query.filter(or_(*filters))
-            calls = db_query.order_by(Call.created_at.desc()).all()
+                db_query = db_query.where(or_(*filters))
+            result = await session.execute(db_query.order_by(Call.created_at.desc()))
+            calls = result.scalars().all()
 
         matches: list[Call] = []
         q_lower = query.lower()
@@ -588,8 +593,8 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         user: str = Depends(_require_user),
     ) -> dict:
         """Return transcript and metadata for a call."""
-        with get_session() as session:
-            call = session.get(Call, call_id)
+        async with get_session_async() as session:
+            call = await session.get(Call, call_id)
         if not call:
             raise HTTPException(status_code=404)
         transcript = Path(call.transcript_path).read_text()
@@ -623,7 +628,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     @app.get("/v1/admin/config", summary="Get agent config", tags=["admin"])
     async def get_config(user: str = Depends(_require_user)) -> AgentConfigPayload:
         """Return the editable prompt and voice settings."""
-        data = get_agent_config()
+        data = await get_agent_config_async()
         return AgentConfigPayload(
             prompt=data.get("prompt", ""), voice=data.get("voice", "")
         )
@@ -638,7 +643,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         payload: AgentConfigPayload, user: str = Depends(_require_user)
     ) -> Response:
         """Persist new agent configuration."""
-        update_agent_config(prompt=payload.prompt, voice=payload.voice)
+        await update_agent_config_async(prompt=payload.prompt, voice=payload.voice)
         return Response(status_code=204)
 
     @app.get(
@@ -678,12 +683,12 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         state_manager.create_session(call_sid, {"from": data.From, "to": data.To})
         echo.delay(f"Call {call_sid} started")
 
-        language = get_user_preference(data.From, "language")
+        language = await get_user_preference_async(data.From, "language")
         if not language:
             from tools.language import guess_language_from_number
 
             language = guess_language_from_number(data.From)
-            set_user_preference(data.From, "language", language)
+            await set_user_preference_async(data.From, "language", language)
         if hasattr(state_manager, "update_session"):
             state_manager.update_session(call_sid, language=language)
 
@@ -825,8 +830,8 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         try:
             from sqlalchemy import text
 
-            with get_session() as session:
-                session.execute(text("SELECT 1"))
+            async with get_session_async() as session:
+                await session.execute(text("SELECT 1"))
             status["database"] = "ok"
         except Exception:
             status["database"] = "error"

@@ -1961,7 +1961,7 @@ tasks:
     area: Docs
     dependencies: []
     priority: 3
-    status: pending
+    status: in_review
     assigned_to: null
     command: null
     actionable_steps:
@@ -1978,7 +1978,7 @@ tasks:
     area: Docs
     dependencies: []
     priority: 3
-    status: pending
+    status: in_review
     assigned_to: null
     command: null
     actionable_steps:

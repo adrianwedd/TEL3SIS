@@ -29,3 +29,5 @@ quart
 uvicorn
 apispec
 scikit-learn
+asyncpg
+aiosqlite
