@@ -258,16 +258,15 @@ tel3sis manage cleanup --days 30
 
 ### Maintenance Commands
 
-These utilities provide quick access to call history and cleanup tasks. After
-installing the package with `pip install -e .`, invoke them via the console
-script or directly with Python:
+Use the CLI to create and restore backups once the project is installed with
+`pip install -e .`:
 
 ```bash
-# list recent calls
-tel3sis-maintenance list-calls
+# create a backup and upload to S3
+tel3sis backup --s3
 
-# prune calls older than 90 days
-tel3sis-maintenance prune --days 90
+# restore from an archive
+tel3sis restore backups/latest.tar.gz
 ```
 
 ---
