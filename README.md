@@ -147,6 +147,12 @@ The development requirements include several libraries used by the test suite:
 - `numpy` and `scikit-learn` – required by ChromaDB
 - `ruff` and `pre-commit` – linting and git hooks
 
+### USE_FAKE_SERVICES
+
+Set `USE_FAKE_SERVICES=true` to run tests without needing Redis or any external
+APIs. This uses `fakeredis` and mocked integrations. `tests/conftest.py` sets it
+automatically so the suite works offline.
+
 Run the helper script to create a virtual environment and install everything:
 
 ```bash
@@ -177,6 +183,7 @@ Run the helper script to create a virtual environment and install everything:
 | `SENDGRID_API_KEY` | SendGrid API key for email notifications |
 | `SENDGRID_FROM_EMAIL` | Sender email address for SendGrid |
 | `NOTIFY_EMAIL` | Recipient for call transcripts |
+| `USE_FAKE_SERVICES` | Use `fakeredis` and mocked APIs for tests |
 | _see `.env.example`_ |
 
 ### Generating and Storing the Encryption Key
