@@ -8,7 +8,9 @@ import yaml
 from scripts import dev_test_call, warmup_whisper, red_team, manage as manage_module
 
 
-@click.group(help="TEL3SIS command line interface")
+@click.group(
+    help="TEL3SIS command line interface for development and maintenance tasks"
+)
 def cli() -> None:
     """Unified entry point for development helpers."""
     pass
@@ -53,6 +55,26 @@ def warmup(model: str) -> None:
 def dev_call() -> None:
     """Start a local streaming conversation using microphone and speakers."""
     asyncio.run(dev_test_call.main())
+
+
+@cli.command()
+@click.option("--s3", is_flag=True, help="Upload to S3 if BACKUP_S3_BUCKET is set")
+def backup(s3: bool) -> None:
+    """Trigger an asynchronous backup of the database and vector store."""
+    from server.tasks import backup_data
+
+    backup_data.delay(upload_to_s3=s3)
+    click.echo("Backup task queued")
+
+
+@cli.command()
+@click.argument("archive")
+def restore(archive: str) -> None:
+    """Trigger an asynchronous restore from ARCHIVE."""
+    from server.tasks import restore_data
+
+    restore_data.delay(archive)
+    click.echo(f"Restore task queued for {archive}")
 
 
 # Expose management commands under `tel3sis manage`
