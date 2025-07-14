@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional, List, Iterable, cast
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import redis
+import fakeredis
 
 from .vector_db import VectorDB
 from .settings import Settings, ConfigError
@@ -26,7 +27,10 @@ class StateManager:
         cfg = Settings()
         self.url = url or cfg.redis_url
         self.prefix = prefix
-        self._redis = redis.Redis.from_url(self.url, decode_responses=True)
+        if cfg.use_fake_services:
+            self._redis = fakeredis.FakeRedis(decode_responses=True)
+        else:
+            self._redis = redis.Redis.from_url(self.url, decode_responses=True)
 
         self._summary_db = summary_db or VectorDB(collection_name="summaries")
 

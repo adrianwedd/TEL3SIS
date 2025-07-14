@@ -6,12 +6,17 @@ from functools import wraps
 from typing import Any, Callable
 
 import redis
+import fakeredis
 
 from .settings import Settings
 
 __all__ = ["redis_cache", "clear_cache"]
 
-_redis = redis.Redis.from_url(Settings().redis_url, decode_responses=True)
+cfg = Settings()
+if cfg.use_fake_services:
+    _redis = fakeredis.FakeRedis(decode_responses=True)
+else:
+    _redis = redis.Redis.from_url(cfg.redis_url, decode_responses=True)
 
 
 def _make_key(prefix: str, args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:

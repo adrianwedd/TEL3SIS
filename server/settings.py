@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     log_rotation: str = "10 MB"
     log_file: str = "logs/tel3sis.log"
     slack_webhook_url: str = ""
+    use_fake_services: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

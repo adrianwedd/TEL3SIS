@@ -41,6 +41,7 @@ The table below lists each variable, whether it is required, and its default val
 | `LOG_ROTATION` | No | `10 MB` | Log file rotation size. |
 | `LOG_FILE` | No | `logs/tel3sis.log` | Path to persistent log file. |
 | `CELERY_WORKER_CONCURRENCY` | No | none | Worker processes per Celery instance. |
+| `USE_FAKE_SERVICES` | No | `false` | Use in-memory mocks for Redis and external APIs. |
 
 `CELERY_WORKER_CONCURRENCY` is not read by the application directly but is commonly
 used when starting workers in production. Values left empty in the table
