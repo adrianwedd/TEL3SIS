@@ -24,3 +24,15 @@ def test_safety_check_unsafe() -> None:
 
 def test_safety_check_heuristic() -> None:
     assert not safety_check("I want to kill", client=None)
+
+
+def test_safety_check_openai_failure() -> None:
+    class FailingCompletion:
+        def create(self, **_: str) -> dict:
+            raise RuntimeError("boom")
+
+    class FailingClient:
+        def __init__(self) -> None:
+            self.chat = type("Chat", (), {"completions": FailingCompletion()})()
+
+    assert safety_check("hello", client=FailingClient())
