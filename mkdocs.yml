@@ -12,4 +12,5 @@ nav:
       - Build, Test & Deployment Review: reviews/build_test_deployment_review.md
       - Interfaces & Interactions Review: reviews/interfaces_interactions_review.md
       - Core Logic Architecture Review: reviews/core_logic_architecture_review.md
+      - Drift Analysis & Decision Audit: reviews/drift_analysis_report.md
 

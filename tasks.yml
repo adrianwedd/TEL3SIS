@@ -2170,3 +2170,21 @@ tasks:
     acceptance_criteria:
       - "All modules use the logging_config logger."
       - "Logs include relevant context for debugging."
+
+  - id: 119
+    task_id: DOCS-06
+    epic: "Documentation"
+    title: "Publish Drift Analysis Report"
+    description: "Add drift analysis and decision audit ledger to the documentation."
+    component: docs
+    area: Docs
+    dependencies: []
+    priority: 2
+    status: done
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create docs/reviews/drift_analysis_report.md summarizing system health."
+      - "Add entry to mkdocs.yml navigation."
+    acceptance_criteria:
+      - "Report accessible via documentation site."
