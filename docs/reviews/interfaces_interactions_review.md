@@ -1,42 +1,35 @@
-# Part 2 – Interfaces & Interactions Review
+# Part 2 – Interfaces & Interactions Review (Updated)
 
-This review summarizes how users and external systems interact with TEL3SIS. It covers HTTP API endpoints, command line utilities, and third‑party services.
+This section revisits how TEL3SIS exposes functionality to users and other systems. It focuses on REST APIs, command line usability, and key third‑party integrations.
 
-## API Endpoints
-- **`/v1/oauth/start`** – initiate Google OAuth flow for calendar access.
-- **`/v1/oauth/callback`** – receive OAuth callback and store credentials.
-- **`/v1/inbound_call`** (POST) – entry point for Twilio to start a conversation.
-- **`/v1/recording_status`** (POST) – Twilio callback when a recording is available.
-- **`/v1/calls`** – return JSON list of call records.
-- **`/v1/dashboard`** – authenticated dashboard listing calls.
-- **`/v1/dashboard/<call_id>`** – detailed view with transcript and audio.
-- **`/v1/login/oauth`** – start OAuth login flow.
-- **`/v1/metrics`** – Prometheus metrics endpoint.
+## REST Endpoints
+- **`/v1/oauth/start`** – begin Google OAuth flow.
+- **`/v1/oauth/callback`** – handle OAuth callback and store credentials.
+- **`/v1/inbound_call`** *(POST)* – main webhook used by Twilio to start a conversation.
+- **`/v1/recording_status`** *(POST)* – Twilio callback when a recording is available.
+- **`/v1/calls`** – JSON listing of past calls.
+- **`/v1/dashboard`** – protected dashboard of calls.
+- **`/v1/dashboard/<call_id>`** – detailed transcript/audio view.
+- **`/v1/login/oauth`** – OAuth based login.
+- **`/v1/metrics`** – Prometheus metrics scraping.
 
-## CLI Tools
-- **`scripts/dev_test_call.py`** – local microphone/speaker conversation loop.
-- **`scripts/warmup_whisper.py`** – preload the Whisper model so later calls are faster.
-- **`scripts/red_team.py`** – run adversarial prompts against the agent; `-o` writes a YAML report.
+## CLI Usability
+- **`scripts/dev_test_call.py`** – talk to the agent using local audio devices.
+- **`scripts/warmup_whisper.py`** – preload the Whisper model so first calls are faster.
+- **`scripts/red_team.py`** – run adversarial prompts; writes YAML output with `-o`.
+- **`scripts/manage.py`** – helper for DB migrations and user creation.
+
+The scripts work but are scattered. A unified `tel3sis` CLI wrapping these commands would improve discoverability.
 
 ## External Integrations
-- **Twilio** – phone calls and SMS notifications.
-- **Google Calendar** – OAuth workflow and event creation.
-- **Weather API** – fetch simple weather reports via HTTP.
-- **SendGrid** – send email transcripts and alerts.
-- **Prometheus & Grafana** – metrics scraping and dashboards.
-- **OpenAI/Whisper/ElevenLabs** – LLM, STT and TTS via `vocode-python`.
+- **Twilio** – voice calls and SMS notifications.
+- **Google Calendar** – event creation via OAuth.
+- **Weather API** – simple weather reports.
+- **SendGrid** – email transcripts and alerts.
+- **Prometheus & Grafana** – metrics and dashboards.
+- **OpenAI/Whisper/ElevenLabs** – LLM, STT and TTS used through `vocode-python`.
 
-## Strengths
-- Clear separation of routes using FastAPI routers.
-- Pydantic models validate request data for most endpoints.
-- CLI scripts help with development (local calls, red‑team testing).
-- Integrations degrade gracefully when credentials are missing.
-
-## Weaknesses / Opportunities
-- No single reference for all endpoints; duplication exists for OAuth callbacks.
-- CLI utilities are scattered rather than exposed as one cohesive tool.
-- Error handling for external APIs is inconsistent.
-- Lacking automated integration tests for the CLI or API.
+Strengths include validated request data with Pydantic and graceful degradation when credentials are missing. Weaknesses include inconsistent error handling and lack of integration tests.
 
 ## Proposed Tasks
 ```yaml
@@ -49,7 +42,7 @@ This review summarizes how users and external systems interact with TEL3SIS. It 
   area: DX
   dependencies: []
   priority: 2
-  status: pending
+  status: done
   assigned_to: null
   command: null
   actionable_steps:
