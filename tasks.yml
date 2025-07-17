@@ -1961,7 +1961,7 @@ tasks:
     area: Docs
     dependencies: []
     priority: 3
-    status: in_review
+    status: done
     assigned_to: null
     command: null
     actionable_steps:
