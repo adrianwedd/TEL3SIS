@@ -18,7 +18,7 @@ jobs:
         with:
           app-id: ${{ secrets.CA_APP_ID }}
           private-key: ${{ secrets.CA_APP_KEY }}
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install dependencies
