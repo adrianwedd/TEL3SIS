@@ -1175,7 +1175,6 @@ tasks:
     acceptance_criteria:
       - "Application starts with a single Config object providing all needed env variables."
       - "Tests pass with updated configuration."
-    epic: "Phase 3"
 
   - id: 64
     task_id: ARCH-02
@@ -1196,7 +1195,6 @@ tasks:
     acceptance_criteria:
       - "All tools return a controlled message on connection failure."
       - "New tests validate error handling paths."
-    epic: "Phase 3"
 
   - id: 65
     task_id: ARCH-03
@@ -1217,7 +1215,6 @@ tasks:
     acceptance_criteria:
       - "Database schema includes indexes for common query fields."
       - "Dashboard and list_calls endpoints operate efficiently with large datasets."
-    epic: "Phase 4"
 
   - id: 66
     task_id: DOC-06
