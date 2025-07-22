@@ -73,6 +73,7 @@ class InboundCallData(BaseModel):
     CallSid: str
     From: str
     To: str
+    SpeechResult: str | None = None
 
 
 class RecordingStatusData(BaseModel):
@@ -685,6 +686,11 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         echo.delay(f"Call {call_sid} started")
 
         language = await get_user_preference_async(data.From, "language")
+        if not language and data.SpeechResult:
+            from tools.language import detect_language
+
+            language = detect_language(data.SpeechResult)
+            await set_user_preference_async(data.From, "language", language)
         if not language:
             from tools.language import guess_language_from_number
 
