@@ -6,6 +6,7 @@ from agents.calendar_agent import CalendarAgent
 from .base import registry, Tool
 from .weather import WeatherTool, get_weather
 from .calendar import CreateEventTool, ListEventsTool
+from .sentiment import analyze_sentiment
 
 
 # Register default tools
@@ -35,4 +36,5 @@ __all__ = [
     "WeatherTool",
     "CreateEventTool",
     "ListEventsTool",
+    "analyze_sentiment",
 ]

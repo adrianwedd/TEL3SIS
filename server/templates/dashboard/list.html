@@ -13,6 +13,7 @@
     <a href="{{ url_for('dashboard.call_detail', call_id=call.id) }}">
       {{ call.created_at.strftime('%Y-%m-%d %H:%M') }} - {{ call.from_number }} → {{ call.to_number }}
     </a>
+    <span> - {{ call.summary }} ({{ '%.2f'|format(call.sentiment) if call.sentiment is not none else 'N/A' }})</span>
     <form method="post" action="{{ url_for('dashboard.delete_call', call_id=call.id) }}" style="display:inline">
       <input type="hidden" name="csrf_token" value="{{ session.csrf_token }}" />
       <button type="submit" onclick="return confirm('Delete this call?');">Delete</button>
@@ -44,6 +45,10 @@
       a.href = '/v1/dashboard/' + item.id;
       a.textContent = new Date(item.created_at).toLocaleString() + ' - ' + item.from_number + ' → ' + item.to_number;
       li.appendChild(a);
+      const span = document.createElement('span');
+      const val = item.sentiment !== null && item.sentiment !== undefined ? item.sentiment.toFixed(2) : 'N/A';
+      span.textContent = ' - ' + (item.summary || '') + ' (' + val + ')';
+      li.appendChild(span);
       ul.appendChild(li);
     }
   });

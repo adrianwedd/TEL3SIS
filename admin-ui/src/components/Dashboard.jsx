@@ -51,13 +51,14 @@ export default function Dashboard() {
                   {c.from_number} → {c.to_number}
                 </strong>
                 <br />
-                {c.summary || 'No summary'}
+                {c.summary || 'No summary'} ({c.sentiment !== null && c.sentiment !== undefined ? c.sentiment.toFixed(2) : 'N/A'})
               </li>
             ))}
           </ul>
           {detail && (
             <div className="conversation-detail">
               <h3>Transcript</h3>
+              <p>Sentiment: {detail.sentiment !== null && detail.sentiment !== undefined ? detail.sentiment.toFixed(2) : 'N/A'}</p>
               <pre>{detail.transcript}</pre>
             </div>
           )}

@@ -60,6 +60,7 @@ def test_transcribe_audio(monkeypatch, tmp_path):
     monkeypatch.setattr(tasks, "generate_self_critique", lambda *_: "crit")
     monkeypatch.setattr(tasks, "summarize_text", lambda *_: "summary")
     monkeypatch.setattr(tasks, "detect_language", lambda *_: "es")
+    monkeypatch.setattr(tasks, "analyze_sentiment", lambda *_: 0.0)
 
     prefs: dict[tuple[str, str], str] = {}
     monkeypatch.setattr(
@@ -106,6 +107,7 @@ def test_transcribe_audio(monkeypatch, tmp_path):
     assert prefs[("+100", "language")] == "es"
     assert sent["path"] == str(transcript)
     assert saved[0][0] == "CA1"
+    assert saved[0][-1] == 0.0
     assert summaries[0] == ("CA1", "summary", "+100")
 
 

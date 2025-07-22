@@ -28,8 +28,8 @@ def test_search_api(monkeypatch, tmp_path):
     t2 = tmp_path / "t2.txt"
     t1.write_text("hello world")
     t2.write_text("goodbye")
-    db.save_call_summary("a", "111", "222", str(t1), "greet", None)
-    db.save_call_summary("b", "333", "444", str(t2), "farewell", None)
+    db.save_call_summary("a", "111", "222", str(t1), "greet", None, 0.3)
+    db.save_call_summary("b", "333", "444", str(t2), "farewell", None, -0.2)
     key = db.create_api_key("tester")
 
     app = create_app(Settings())
@@ -54,9 +54,11 @@ def test_search_api(monkeypatch, tmp_path):
     data = resp.json()
     assert data["total"] == 1
     assert data["items"][0]["call_sid"] == "a"
+    assert data["items"][0]["sentiment"] == 0.3
 
     resp = client.get("/v1/search?q=farewell", headers={"X-API-Key": key})
     assert resp.status_code == 200
     data = resp.json()
     assert data["total"] == 1
     assert data["items"][0]["call_sid"] == "b"
+    assert data["items"][0]["sentiment"] == -0.2

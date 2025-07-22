@@ -20,17 +20,19 @@ def test_tables_exist(tmp_path, monkeypatch):
     assert "user_preferences" in tables
     columns = [c["name"] for c in inspector.get_columns("calls")]
     assert "self_critique" in columns
+    assert "sentiment" in columns
 
 
 def test_save_call_summary(tmp_path, monkeypatch):
     db_url = f"sqlite:///{tmp_path}/test.db"
     monkeypatch.setenv("DATABASE_URL", db_url)
     db = migrate_sqlite(monkeypatch, tmp_path)
-    db.save_call_summary("abc", "111", "222", "/path", "summary", "crit")
+    db.save_call_summary("abc", "111", "222", "/path", "summary", "crit", 0.5)
     with db.get_session() as session:
         result = session.query(db.Call).filter_by(call_sid="abc").one()
         assert result.summary == "summary"
         assert result.self_critique == "crit"
+        assert result.sentiment == 0.5
 
 
 def test_create_and_delete_user(tmp_path, monkeypatch):
