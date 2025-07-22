@@ -6,6 +6,7 @@ from agents.calendar_agent import CalendarAgent
 from .base import registry, Tool
 from .weather import WeatherTool, get_weather
 from .calendar import CreateEventTool, ListEventsTool
+from .translation import TranslateTool, translate_text
 from .sentiment import analyze_sentiment
 
 
@@ -13,6 +14,7 @@ from .sentiment import analyze_sentiment
 registry.register(WeatherTool())
 registry.register(CreateEventTool(), intent="create_event")
 registry.register(ListEventsTool(), intent="check_availability")
+registry.register(TranslateTool())
 
 _calendar_agent = CalendarAgent()
 
@@ -36,5 +38,7 @@ __all__ = [
     "WeatherTool",
     "CreateEventTool",
     "ListEventsTool",
+    "TranslateTool",
     "analyze_sentiment",
+    "translate_text",
 ]

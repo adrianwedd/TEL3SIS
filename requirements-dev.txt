@@ -30,6 +30,8 @@ backoff==2.2.1
     # via posthog
 bcrypt==4.3.0
     # via chromadb
+beautifulsoup4==4.13.4
+    # via deep-translator
 billiard==4.2.1
     # via celery
 blinker==1.9.0
@@ -104,6 +106,8 @@ cryptography==44.0.1
     #   pyjwt
 cyclonedx-python-lib==9.1.0
     # via pip-audit
+deep-translator==1.11.4
+    # via -r /workspace/TEL3SIS/requirements.in
 defusedxml==0.7.1
     # via py-serializable
 deprecated==1.2.18
@@ -528,6 +532,7 @@ requests==2.32.4
     #   -r /workspace/TEL3SIS/requirements.in
     #   cachecontrol
     #   chromadb
+    #   deep-translator
     #   google-api-core
     #   huggingface-hub
     #   kubernetes
@@ -585,6 +590,8 @@ sortedcontainers==2.4.0
     # via
     #   cyclonedx-python-lib
     #   fakeredis
+soupsieve==2.7
+    # via beautifulsoup4
 sqlalchemy==2.0.29
     # via
     #   -r /workspace/TEL3SIS/requirements.in
@@ -632,6 +639,7 @@ typing-extensions==4.14.1
     #   aiosqlite
     #   alembic
     #   anyio
+    #   beautifulsoup4
     #   chromadb
     #   fastapi
     #   huggingface-hub

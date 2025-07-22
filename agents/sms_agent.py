@@ -30,8 +30,15 @@ class SMSAgent:
             if from_number:
                 set_user_preference(from_number, "language", code)
             return f"Language set to {code}"
+        m = re.match(r"\s*/translate\s+([a-zA-Z-]+)\s+(.+)", text)
+        if m:
+            lang = m.group(1)
+            phrase = m.group(2)
+            from tools.translation import translate_text
+
+            return translate_text(phrase, lang)
         if text.strip().lower() == "help":
-            return "Commands: language <code>"
+            return "Commands: language <code>, /translate <lang> <text>"
         return None
 
     async def handle_message(self, text: str) -> str:
