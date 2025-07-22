@@ -18,6 +18,18 @@ _NUMBER_LANG_MAP = {
     "+1": "en",  # US/Canada
 }
 
+# Mapping of languages to default STT and TTS engine names.
+_ENGINE_MAP: dict[str, tuple[str, str]] = {
+    "en": ("whisper_cpp", "elevenlabs"),
+    "es": ("whisper_cpp", "elevenlabs"),
+    "fr": ("whisper_cpp", "elevenlabs"),
+    "de": ("whisper_cpp", "elevenlabs"),
+    "pt": ("whisper_cpp", "elevenlabs"),
+    "ja": ("whisper_cpp", "elevenlabs"),
+    "zh": ("whisper_cpp", "elevenlabs"),
+    "hi": ("whisper_cpp", "elevenlabs"),
+}
+
 
 def detect_language(text: str, default: str = "en") -> str:
     """Return ISO language code detected in ``text``.
@@ -46,3 +58,9 @@ def guess_language_from_number(phone_number: str, default: str = "en") -> str:
         if phone_number.startswith(prefix):
             return lang
     return default
+
+
+def get_engines_for_language(lang: str) -> tuple[str, str]:
+    """Return (STT, TTS) engine names for ``lang``."""
+
+    return _ENGINE_MAP.get(lang, ("whisper_cpp", "elevenlabs"))

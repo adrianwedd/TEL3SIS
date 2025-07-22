@@ -26,6 +26,7 @@ from server.database import get_agent_config
 from tools import registry
 from tools.safety import safety_check
 from server.state_manager import StateManager
+from tools.language import get_engines_for_language
 from tools.calendar import AuthError
 from requests.exceptions import RequestException
 from googleapiclient.errors import HttpError
@@ -229,12 +230,22 @@ def build_core_agent(
         functions=registry.schemas(),
     )
 
-    transcriber_config = WhisperCPPTranscriberConfig.from_telephone_input_device()
+    stt_engine, tts_engine = get_engines_for_language(language)
+
+    if stt_engine == "whisper_cpp":
+        transcriber_config = WhisperCPPTranscriberConfig.from_telephone_input_device()
+    else:  # pragma: no cover - fallback until other engines are supported
+        transcriber_config = WhisperCPPTranscriberConfig.from_telephone_input_device()
     setattr(transcriber_config, "language", language)
 
-    synthesizer_config = ElevenLabsSynthesizerConfig.from_telephone_output_device(
-        api_key=cfg.eleven_labs_api_key
-    )
+    if tts_engine == "elevenlabs":
+        synthesizer_config = ElevenLabsSynthesizerConfig.from_telephone_output_device(
+            api_key=cfg.eleven_labs_api_key
+        )
+    else:  # pragma: no cover - fallback until other engines are supported
+        synthesizer_config = ElevenLabsSynthesizerConfig.from_telephone_output_device(
+            api_key=cfg.eleven_labs_api_key
+        )
     setattr(synthesizer_config, "language", language)
     voice = stored.get("voice")
     if voice:

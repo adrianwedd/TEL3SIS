@@ -111,3 +111,54 @@ def test_language_switch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Non
 def test_guess_language_from_number() -> None:
     assert language.guess_language_from_number("+341234") == "es"
     assert language.guess_language_from_number("+1555") == "en"
+
+
+def test_inbound_call_speech_detection(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    key, db_module = _setup_env(monkeypatch, tmp_path)
+
+    class DummyStateManager:
+        def create_session(self, *_: object, **__: object) -> None:
+            pass
+
+        def update_session(self, *_: object, **__: object) -> None:
+            pass
+
+        def is_escalation_required(self, _sid: str) -> bool:
+            return False
+
+        def get_summary(self, _sid: str) -> str:
+            return ""
+
+    monkeypatch.setattr(server_app, "StateManager", lambda: DummyStateManager())
+    monkeypatch.setattr(
+        server_app, "echo", types.SimpleNamespace(delay=lambda *a, **k: None)
+    )
+
+    captured: dict[str, str] = {}
+
+    def fake_build_core_agent(_sm: object, _sid: object = None, language: str = "en"):
+        captured["lang"] = language
+        return types.SimpleNamespace(agent=None)
+
+    monkeypatch.setattr(server_app, "build_core_agent", fake_build_core_agent)
+
+    app = server_app.create_app(Settings())
+    client = TestClient(app)
+
+    from_num = "+12125550000"
+    to_num = "+15005550010"
+
+    monkeypatch.setattr(language, "guess_language_from_number", lambda *_: "en")
+    monkeypatch.setattr(language, "detect_language", lambda _: "es")
+
+    resp = client.post(
+        "/v1/inbound_call",
+        data={"CallSid": "CA3", "From": from_num, "To": to_num, "SpeechResult": "hola"},
+        headers={"X-API-Key": key},
+    )
+
+    assert resp.status_code == 200
+    assert captured["lang"] == "es"
+    assert db_module.get_user_preference(from_num, "language") == "es"
