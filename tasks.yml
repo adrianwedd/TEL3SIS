@@ -2188,3 +2188,383 @@ tasks:
       - "Add entry to mkdocs.yml navigation."
     acceptance_criteria:
       - "Report accessible via documentation site."
+
+  - id: 120
+    task_id: CORE-28
+    epic: "Phase 3: Stability"
+    title: "Multi-language voice support"
+    description: "Detect caller language and switch STT/TTS models automatically."
+    component: server
+    area: Core
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add language detection to inbound_call"
+      - "Map languages to TTS/STT engines"
+      - "Store caller preference in UserPreference"
+    acceptance_criteria:
+      - "Calls automatically speak in the detected language"
+
+  - id: 121
+    task_id: CORE-29
+    epic: "Phase 3: Stability"
+    title: "Sentiment analysis for summaries"
+    description: "Run sentiment analysis on transcripts and store the score."
+    component: server
+    area: Data
+    dependencies: [94]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add sentiment analyzer (e.g., TextBlob)"
+      - "Persist sentiment field in Call model"
+      - "Display sentiment in admin UI"
+    acceptance_criteria:
+      - "Summaries include sentiment rating"
+
+  - id: 122
+    task_id: CORE-30
+    epic: "Phase 4: Performance"
+    title: "Live agent status via WebSocket"
+    description: "Stream agent state changes (listening/speaking) to the admin UI."
+    component: server
+    area: UX
+    dependencies: [92]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Emit state events from app.py"
+      - "Extend ConnectionManager to broadcast updates"
+      - "Update frontend to show status badges"
+    acceptance_criteria:
+      - "Admin UI reflects current call status in real time"
+
+  - id: 123
+    task_id: TOOL-06
+    epic: "Phase 2: Tools"
+    title: "Translation tool"
+    description: "Provide on-demand translation between caller and agent languages."
+    component: tools
+    area: Integration
+    dependencies: []
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Implement tools/translation.py using a translation API"
+      - "Register schema in tools_registry"
+      - "Allow /translate command via agent"
+    acceptance_criteria:
+      - "Users can request translations during a call"
+
+  - id: 124
+    task_id: TOOL-07
+    epic: "Phase 2: Tools"
+    title: "Knowledge base FAQ tool"
+    description: "Retrieve answers from a vector-searchable FAQ repository."
+    component: tools
+    area: Integration
+    dependencies: [93]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create FAQ embedding pipeline"
+      - "Add tool for FAQ lookup"
+      - "Document usage examples"
+    acceptance_criteria:
+      - "Agent can answer FAQ-style questions offline"
+
+  - id: 125
+    task_id: MEM-05
+    epic: "Phase 4: Performance"
+    title: "Vector store pruning"
+    description: "Periodically remove embeddings older than N days."
+    component: server
+    area: Data
+    dependencies: [65]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add last-accessed metadata to vector entries"
+      - "Celery task deletes stale embeddings"
+      - "Configurable retention setting"
+    acceptance_criteria:
+      - "Vector DB size remains bounded"
+
+  - id: 126
+    task_id: MEM-06
+    epic: "Phase 4: Performance"
+    title: "Conversation topic classification"
+    description: "Tag conversations with topics using embeddings."
+    component: server
+    area: Data
+    dependencies: [93]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Run clustering/classification on summaries"
+      - "Store topics in Call table"
+      - "Allow topic filtering in admin UI"
+    acceptance_criteria:
+      - "Calls display topic labels and can be filtered"
+
+  - id: 127
+    task_id: FWD-05
+    epic: "Phase 3: Handoff"
+    title: "Slack escalation"
+    description: "Send call summaries to a Slack channel during escalation."
+    component: server
+    area: Ops
+    dependencies: [57]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Integrate Slack webhook in notifications"
+      - "Update escalation workflow to post summary"
+      - "Add configuration variables"
+    acceptance_criteria:
+      - "Escalation posts appear in Slack with call info"
+
+  - id: 128
+    task_id: SAFE-05
+    epic: "Phase 5: Safety"
+    title: "Custom banned phrase lists"
+    description: "Allow admins to extend the SafetyOracle rules with project-specific patterns."
+    component: agents
+    area: Safety
+    dependencies: [60]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Persist extra patterns in database"
+      - "Modify SafetyOracle to load patterns"
+      - "Admin UI form for updates"
+    acceptance_criteria:
+      - "New banned phrases prevent unsafe PR merges"
+
+  - id: 129
+    task_id: SEC-02
+    epic: "Phase 5: Safety"
+    title: "Two-factor authentication"
+    description: "Require 2FA (TOTP) for admin logins."
+    component: server
+    area: Security
+    dependencies: [106]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Integrate pyotp for TOTP"
+      - "Store TOTP secret per user"
+      - "Update login flow and tests"
+    acceptance_criteria:
+      - "Admin dashboard access requires valid TOTP code"
+
+  - id: 130
+    task_id: OPS-08
+    epic: "Phase 6: UI + Ops"
+    title: "Kubernetes deployment"
+    description: "Provide Helm chart and docs for running TEL3SIS on k8s."
+    component: ops
+    area: CI/CD
+    dependencies: [70]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create charts/ directory with Helm templates"
+      - "Document environment variables"
+      - "Example values.yaml"
+    acceptance_criteria:
+      - "Users can `helm install` TEL3SIS successfully"
+
+  - id: 131
+    task_id: OPS-09
+    epic: "Phase 6: UI + Ops"
+    title: "Healthcheck endpoints"
+    description: "Add `/healthz` and `/readyz` endpoints for container orchestration."
+    component: server
+    area: Ops
+    dependencies: []
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Implement simple ping routes"
+      - "Hook into metrics_middleware"
+      - "Document in README"
+    acceptance_criteria:
+      - "Kubernetes liveness and readiness probes pass"
+
+  - id: 132
+    task_id: CI-08
+    epic: "Continuous"
+    title: "Coverage reporting"
+    description: "Upload coverage statistics to Codecov on each PR."
+    component: ci
+    area: CI/CD
+    dependencies: [113]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add coverage.py to requirements-dev"
+      - "Update GitHub Actions to run coverage"
+      - "Push report to Codecov"
+    acceptance_criteria:
+      - "PR checks show coverage percentage"
+
+  - id: 133
+    task_id: QA-07
+    epic: "Phase 2: Stability"
+    title: "Property-based call-flow tests"
+    description: "Use Hypothesis to fuzz call scenarios."
+    component: tests
+    area: Quality
+    dependencies: [68]
+    priority: 3
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add Hypothesis to dev requirements"
+      - "Write property tests for StateManager and tasks"
+      - "Ensure fake services work with Hypothesis"
+    acceptance_criteria:
+      - "Tests cover edge cases without failures"
+
+  - id: 134
+    task_id: DOCS-07
+    epic: "Documentation"
+    title: "Admin UI guide"
+    description: "Document features and usage of the React dashboard."
+    component: docs
+    area: Docs
+    dependencies: [102,105]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Walk through login, conversation viewer, and config pages"
+      - "Include screenshots"
+      - "Update mkdocs.yml"
+    acceptance_criteria:
+      - "Guide appears in the documentation site"
+
+  - id: 135
+    task_id: DOCS-08
+    epic: "Documentation"
+    title: "Contribution style guide"
+    description: "Detail commit message style and review process."
+    component: docs
+    area: DX
+    dependencies: [110]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Expand CONTRIBUTING.md with Conventional Commits"
+      - "Explain PR review sequence"
+      - "Link to tasks.yml policy"
+    acceptance_criteria:
+      - "Contributors follow the documented workflow"
+
+  - id: 136
+    task_id: LOG-02
+    epic: "Phase 2: Stability"
+    title: "Centralized log forwarding"
+    description: "Ship logs to ELK or Loki for aggregation."
+    component: server
+    area: Monitoring
+    dependencies: [118]
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Add optional log handler for external service"
+      - "Provide docker-compose override"
+      - "Document setup"
+    acceptance_criteria:
+      - "Logs visible in external dashboard"
+
+  - id: 137
+    task_id: UX-07
+    epic: "User Experience"
+    title: "Admin UI dark mode"
+    description: "Offer light/dark theme toggle in the dashboard."
+    component: frontend
+    area: UX
+    dependencies: [102]
+    priority: 1
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Update CSS with theme variables"
+      - "Persist user preference in LocalStorage"
+      - "Add toggle button"
+    acceptance_criteria:
+      - "Users can switch themes without refresh"
+
+  - id: 138
+    task_id: DX-01
+    epic: "Developer Experience"
+    title: "Devcontainer support"
+    description: "Provide `.devcontainer` for VS Code Remote Containers."
+    component: tooling
+    area: DX
+    dependencies: []
+    priority: 2
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Create `.devcontainer` folder with Dockerfile"
+      - "Include scripts to install dependencies"
+      - "Document usage in README"
+    acceptance_criteria:
+      - "Developers can open the repo in VS Code and start coding immediately"
+
+  - id: 139
+    task_id: ARCH-05
+    epic: "Phase 4: Performance"
+    title: "Plugin architecture for tools"
+    description: "Refactor tool system to load plugins dynamically."
+    component: agent
+    area: Architecture
+    dependencies: [90]
+    priority: 4
+    status: pending
+    assigned_to: null
+    command: null
+    actionable_steps:
+      - "Define entry point interface for tools"
+      - "Load plugins via Python entry points"
+      - "Update documentation for plugin authors"
+    acceptance_criteria:
+      - "New tools can be added without modifying core code"
