@@ -809,15 +809,44 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         )
 
         await websocket.send_json({"session_id": sid})
+        # notify admin clients that a session is ready to receive input
+        await chat_manager.broadcast_json(
+            {"event": "agent_state", "session_id": sid, "state": "listening"}
+        )
         try:
             while True:
                 text = await websocket.receive_text()
                 state_manager.append_history(sid, "user", text)
+                # signal the agent is processing and about to speak
+                await chat_manager.broadcast_json(
+                    {"event": "agent_state", "session_id": sid, "state": "speaking"}
+                )
                 async for resp in agent.generate_response(text, sid):
                     if hasattr(resp.message, "text"):
                         msg_text = getattr(resp.message, "text")
                         state_manager.append_history(sid, "assistant", msg_text)
                         await chat_manager.send_text(sid, msg_text)
+                await chat_manager.broadcast_json(
+                    {"event": "agent_state", "session_id": sid, "state": "listening"}
+                )
+        except WebSocketDisconnect:
+            chat_manager.disconnect(sid)
+            await chat_manager.broadcast_json(
+                {"event": "agent_state", "session_id": sid, "state": "offline"}
+            )
+
+    @app.websocket("/v1/admin/ws")
+    async def admin_ws(websocket: WebSocket):
+        """WebSocket stream for admin status updates."""
+        token = websocket.query_params.get("token")
+        if not token or not await verify_api_key_async(token):
+            await websocket.close(code=1008)
+            return
+        sid = str(uuid4())
+        await chat_manager.connect(sid, websocket)
+        try:
+            while True:
+                await websocket.receive_text()
         except WebSocketDisconnect:
             chat_manager.disconnect(sid)
 

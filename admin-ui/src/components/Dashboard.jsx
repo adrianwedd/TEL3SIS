@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 export default function Dashboard() {
   const [calls, setCalls] = useState([]);
   const [detail, setDetail] = useState(null);
+  const [status, setStatus] = useState('offline');
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -15,6 +16,19 @@ export default function Dashboard() {
       .then((r) => r.json())
       .then((data) => setCalls(data.items || []))
       .catch(() => setCalls([]));
+
+    const wsUrl = `${window.location.origin.replace('http', 'ws')}/v1/admin/ws?token=${token}`;
+    const ws = new WebSocket(wsUrl);
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'agent_state') {
+          setStatus(data.state);
+        }
+      } catch (e) {}
+    };
+    ws.onclose = () => setStatus('offline');
+    return () => ws.close();
   }, []);
 
   const loadDetail = (id) => {
@@ -30,7 +44,7 @@ export default function Dashboard() {
   return (
     <div className="dashboard">
       <header>
-        <h2>Admin Dashboard</h2>
+        <h2>Admin Dashboard <span className={`status-badge ${status}`}>{status}</span></h2>
         <div>
           <button onClick={() => (window.location.href = '/settings')}>
             Settings

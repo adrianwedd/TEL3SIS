@@ -64,3 +64,20 @@ body {
   margin-top: 8px;
   color: green;
 }
+
+.status-badge {
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.8em;
+}
+.status-badge.listening {
+  background: #28a745;
+}
+.status-badge.speaking {
+  background: #007bff;
+}
+.status-badge.offline {
+  background: #6c757d;
+}
