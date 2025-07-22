@@ -107,6 +107,55 @@ def test_sms_webhook_command(monkeypatch: pytest.MonkeyPatch, tmp_path):
     assert sent["body"] == "Language set to es"
 
 
+def test_sms_translate_command(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    key = _setup(monkeypatch, tmp_path)
+
+    sent: dict[str, str] = {}
+
+    def fake_send_sms(to: str, from_: str, body: str) -> None:
+        sent["to"] = to
+        sent["from"] = from_
+        sent["body"] = body
+
+    class DummyAgent:
+        def __init__(self, *_: object, **__: object) -> None:
+            pass
+
+        async def handle_message(self, text: str) -> str:  # noqa: D401
+            return "ignored"
+
+    monkeypatch.setattr("tools.notifications.send_sms", fake_send_sms)
+    monkeypatch.setattr(server_app, "send_sms", fake_send_sms)
+    monkeypatch.setattr(
+        "agents.sms_agent.build_core_agent",
+        lambda *_: types.SimpleNamespace(agent=None),
+    )
+    monkeypatch.setattr(
+        "agents.sms_agent.SafeFunctionCallingAgent",
+        lambda *_, **__: DummyAgent(),
+    )
+    monkeypatch.setattr(
+        "tools.translation.translate_text",
+        lambda text, lang: f"t:{text}:{lang}",
+    )
+
+    app = server_app.create_app(Settings())
+    client = TestClient(app)
+
+    resp = client.post(
+        "/v1/sms/webhook",
+        data={
+            "MessageSid": "SM3",
+            "From": "+1",
+            "To": "+2",
+            "Body": "/translate fr hello",
+        },
+        headers={"X-API-Key": key},
+    )
+    assert resp.status_code == 204
+    assert sent["body"] == "t:hello:fr"
+
+
 def test_inbound_sms_validation(monkeypatch: pytest.MonkeyPatch, tmp_path):
     key = _setup(monkeypatch, tmp_path)
 

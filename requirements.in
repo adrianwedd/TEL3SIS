@@ -21,6 +21,7 @@ pydantic
 pydantic-settings
 langdetect
 textblob
+deep-translator
 sentence-transformers
 fastapi
 httpx
