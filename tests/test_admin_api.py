@@ -72,13 +72,14 @@ def test_conversation_log(monkeypatch, tmp_path):
     client, key, db = setup_app(monkeypatch, tmp_path)
     t = tmp_path / "t.txt"
     t.write_text("hello")
-    db.save_call_summary("sid1", "111", "222", str(t), "sum", None)
+    db.save_call_summary("sid1", "111", "222", str(t), "sum", None, 0.1)
     with db.get_session() as session:
         call_id = session.query(db.Call).first().id
     resp = client.get(f"/v1/admin/conversations/{call_id}", headers={"X-API-Key": key})
     assert resp.status_code == 200
     data = resp.json()
     assert data["transcript"] == "hello"
+    assert data["sentiment"] == 0.1
 
 
 def test_agent_status(monkeypatch, tmp_path):

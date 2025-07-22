@@ -28,6 +28,7 @@ from .database import (
 )
 from .self_reflection import generate_self_critique
 from tools.language import detect_language
+from tools.sentiment import analyze_sentiment
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from .state_manager import StateManager
@@ -124,6 +125,7 @@ def transcribe_audio(
         set_user_preference(from_number, "language", language)
         summary = summarize_text(text)
         critique = generate_self_critique(text)
+        sentiment = analyze_sentiment(text)
         save_call_summary(
             call_sid,
             from_number,
@@ -131,6 +133,7 @@ def transcribe_audio(
             str(path),
             summary,
             critique,
+            sentiment,
         )
         try:
             manager = StateManager()

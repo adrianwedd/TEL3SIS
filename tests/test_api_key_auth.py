@@ -57,7 +57,7 @@ async def test_invalid_key(monkeypatch, tmp_path):
 @pytest.mark.asyncio
 async def test_valid_key(monkeypatch, tmp_path):
     client, key, db_module = await setup_app(monkeypatch, tmp_path)
-    db_module.save_call_summary("abc", "111", "222", "/p", "s", None)
+    db_module.save_call_summary("abc", "111", "222", "/p", "s", None, -0.2)
     monkeypatch.setenv("OAUTH_CLIENT_ID", "cid")
     monkeypatch.setenv("OAUTH_AUTH_URL", "https://auth.example/authorize")
     from urllib.parse import urlparse, parse_qs

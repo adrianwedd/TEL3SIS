@@ -8,6 +8,7 @@ from sqlalchemy import (
     DateTime,
     Integer,
     JSON,
+    Float,
     String,
     Index,
     select,
@@ -62,6 +63,7 @@ class Call(Base):
     transcript_path = Column(String, nullable=False)
     summary = Column(String, nullable=False)
     self_critique = Column(String, nullable=True)
+    sentiment = Column(Float, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
 
@@ -131,6 +133,7 @@ async def save_call_summary_async(
     transcript_path: str,
     summary: str,
     self_critique: str | None = None,
+    sentiment: float | None = None,
 ) -> None:
     """Persist a completed call with summary to the database."""
     async with get_session_async() as session:
@@ -141,6 +144,7 @@ async def save_call_summary_async(
             transcript_path=transcript_path,
             summary=summary,
             self_critique=self_critique,
+            sentiment=sentiment,
         )
         session.add(call)
         await session.commit()

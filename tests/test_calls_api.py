@@ -59,7 +59,7 @@ def test_list_calls(monkeypatch, tmp_path):
     monkeypatch.setenv("TWILIO_AUTH_TOKEN", "token")
     monkeypatch.setenv("TOKEN_ENCRYPTION_KEY", base64.b64encode(b"0" * 16).decode())
     db = migrate_sqlite(monkeypatch, tmp_path)
-    db.save_call_summary("abc", "111", "222", "/path", "summary", "crit")
+    db.save_call_summary("abc", "111", "222", "/path", "summary", "crit", 0.2)
     key = db.create_api_key("tester")
 
     app = create_app(Settings())
@@ -98,6 +98,7 @@ def test_list_calls(monkeypatch, tmp_path):
     data = resp.json()
     assert data["total"] == 1
     assert data["items"][0]["call_sid"] == "abc"
+    assert data["items"][0]["sentiment"] == 0.2
 
 
 def test_list_calls_filters_and_pagination(monkeypatch, tmp_path):
@@ -125,8 +126,8 @@ def test_list_calls_filters_and_pagination(monkeypatch, tmp_path):
             )
         )
         session.commit()
-    db.save_call_summary("b", "333", "222", "/p", "s", "crit")
-    db.save_call_summary("c", "333", "555", "/p", "s", None)
+    db.save_call_summary("b", "333", "222", "/p", "s", "crit", -0.1)
+    db.save_call_summary("c", "333", "555", "/p", "s", None, 0.0)
     key = db.create_api_key("tester")
 
     app = create_app(Settings())
@@ -142,9 +143,11 @@ def test_list_calls_filters_and_pagination(monkeypatch, tmp_path):
     data = resp.json()
     assert data["total"] == 2
     assert len(data["items"]) == 1
+    assert data["items"][0]["sentiment"] == -0.1
 
     resp = client.get("/v1/calls?phone=555", headers={"X-API-Key": key})
     assert resp.status_code == 200
     data = resp.json()
     assert data["total"] == 1
     assert data["items"][0]["from_number"] == "333"
+    assert data["items"][0]["sentiment"] == 0.0

@@ -36,7 +36,9 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     transcript_dir.mkdir()
     transcript_path = transcript_dir / "test.txt"
     transcript_path.write_text("hello world")
-    db.save_call_summary("abc", "111", "222", str(transcript_path), "summary", "crit")
+    db.save_call_summary(
+        "abc", "111", "222", str(transcript_path), "summary", "crit", 0.4
+    )
     key = db.create_api_key("tester")
 
     app = create_app(Settings())
@@ -71,6 +73,7 @@ def test_dashboard_oauth_flow(monkeypatch, tmp_path):
     resp = client.get("/v1/dashboard/1", headers={"X-API-Key": key})
     assert resp.status_code == 200
     assert b"hello world" in resp.content
+    assert b"0.40" in resp.content
 
 
 def test_oauth_callback_validation(monkeypatch, tmp_path) -> None:
@@ -117,6 +120,7 @@ def test_dashboard_prefix_search_with_formatted_number(monkeypatch, tmp_path):
         str(transcript_path),
         "summary",
         "crit",
+        0.5,
     )
     key = db.create_api_key("tester")
 

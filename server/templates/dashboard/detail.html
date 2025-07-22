@@ -4,6 +4,7 @@
 <h1>Call {{ call.call_sid }}</h1>
 <p>From: {{ call.from_number }} → {{ call.to_number }}</p>
 <p>Summary: {{ call.summary }}</p>
+<p>Sentiment: {{ '%.2f'|format(call.sentiment) if call.sentiment is not none else 'N/A' }}</p>
 {% if call.self_critique %}
 <p>Self Critique: {{ call.self_critique }}</p>
 {% endif %}

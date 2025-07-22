@@ -2214,7 +2214,7 @@ tasks:
     area: Data
     dependencies: [94]
     priority: 2
-    status: pending
+    status: done
     assigned_to: null
     command: null
     actionable_steps:

@@ -108,6 +108,7 @@ class CallInfo(BaseModel):
     transcript_path: str
     summary: str | None
     self_critique: str | None
+    sentiment: float | None
     created_at: datetime
 
 
@@ -505,6 +506,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
                     transcript_path=c.transcript_path,
                     summary=c.summary,
                     self_critique=c.self_critique,
+                    sentiment=c.sentiment,
                     created_at=c.created_at,
                 )
                 for c in calls
@@ -579,6 +581,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
                 transcript_path=c.transcript_path,
                 summary=c.summary,
                 self_critique=c.self_critique,
+                sentiment=c.sentiment,
                 created_at=c.created_at,
             )
             for c in subset
@@ -606,6 +609,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
             "to_number": call.to_number,
             "summary": call.summary,
             "self_critique": call.self_critique,
+            "sentiment": call.sentiment,
             "transcript": transcript,
             "created_at": call.created_at.isoformat(),
         }
