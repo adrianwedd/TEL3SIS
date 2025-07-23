@@ -1,4 +1,5 @@
 """FastAPI application serving telephony and web endpoints."""
+
 from __future__ import annotations
 import re
 import secrets
@@ -52,7 +53,7 @@ from .handoff import dial_twiml
 from .state_manager import StateManager
 from .tasks import echo, reprocess_call, delete_call_record, process_recording
 from agents.sms_agent import SMSAgent
-from tools.notifications import send_sms
+from tools.notifications import send_sms, start_call
 from tools.calendar import exchange_code, generate_auth_url, SCOPES
 from agents.core_agent import (
     build_core_agent,
@@ -89,6 +90,17 @@ class InboundSMSData(BaseModel):
     From: str
     To: str
     Body: str
+
+
+class SendSMSPayload(BaseModel):
+    to: str
+    body: str
+    from_phone: str | None = None
+
+
+class OutboundCallPayload(BaseModel):
+    to: str
+    from_phone: str | None = None
 
 
 class OAuthStartData(BaseModel):
@@ -764,6 +776,30 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     async def sms_webhook(request: Request):
         """Alias for Twilio's SMS webhook configuration."""
         return await _handle_sms_webhook(request)
+
+    @app.post("/v1/send_sms", summary="Send SMS via Twilio", tags=["sms"])
+    async def api_send_sms(payload: SendSMSPayload):
+        """Send an outbound SMS using Twilio."""
+        from_phone = payload.from_phone or Settings().twilio_phone_number
+        if not from_phone:
+            raise HTTPException(status_code=400, detail="from_phone required")
+        send_sms(payload.to, from_phone, payload.body)
+        return Response(status_code=204)
+
+    @app.post(
+        "/v1/outbound_call",
+        summary="Initiate outbound voice call",
+        tags=["calls"],
+        status_code=202,
+    )
+    async def outbound_call(payload: OutboundCallPayload, request: Request):
+        """Start an outbound call that connects to the agent."""
+        from_phone = payload.from_phone or Settings().twilio_phone_number
+        if not from_phone:
+            raise HTTPException(status_code=400, detail="from_phone required")
+        webhook = str(request.app.url_path_for("inbound_call"))
+        start_call(payload.to, from_phone, webhook)
+        return Response(status_code=202)
 
     @app.post(
         "/v1/recording_status",

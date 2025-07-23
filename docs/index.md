@@ -139,6 +139,7 @@ uvicorn server.app:create_app --factory --reload
 | `CELERY_RESULT_BACKEND` | Result backend for Celery |
 | `DATABASE_URL` | SQLite / Postgres for mid‑term memory |
 | `ESCALATION_PHONE_NUMBER` | Phone number used when handing off calls |
+| `TWILIO_PHONE_NUMBER` | Default caller ID for outbound SMS and calls |
 | `TOKEN_ENCRYPTION_KEY` | Base64 AES key for encrypting OAuth tokens |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth credentials for Calendar |
 | `SENDGRID_API_KEY` | SendGrid API key for email notifications |
@@ -275,6 +276,7 @@ Transcripts can be sent automatically once SendGrid and Twilio credentials are c
 - `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` – enables `send_email()`
 - `NOTIFY_EMAIL` – default email recipient
 - `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` – enables `send_sms()`
+- `TWILIO_PHONE_NUMBER` – caller ID for outbound messages
 - `ESCALATION_PHONE_NUMBER` – destination for escalation SMS
 
 If these variables are unset, the system logs a warning and skips the notification.

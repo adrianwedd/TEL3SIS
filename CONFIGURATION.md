@@ -24,6 +24,7 @@ The table below lists each variable, whether it is required, and its default val
 | `CELERY_RESULT_BACKEND` | No | uses `CELERY_BROKER_URL` | Celery result backend. |
 | `DATABASE_URL` | No | `sqlite:///tel3sis.db` | SQLAlchemy database URL. |
 | `ESCALATION_PHONE_NUMBER` | No | "" | Number dialed when escalating a call. |
+| `TWILIO_PHONE_NUMBER` | No | "" | Default caller ID for outbound SMS and calls. |
 | `CALL_RATE_LIMIT` | No | `3/minute` | Rate limit for inbound calls per host. |
 | `API_RATE_LIMIT` | No | `60/minute` | Rate limit for REST API requests. |
 | `OAUTH_AUTH_URL` | No | `https://example.com/auth` | OAuth authorization endpoint. |
