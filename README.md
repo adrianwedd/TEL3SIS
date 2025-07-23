@@ -178,6 +178,7 @@ Run the helper script to create a virtual environment and install everything:
 | `CELERY_RESULT_BACKEND` | Result backend for Celery |
 | `DATABASE_URL` | SQLite / Postgres for mid‑term memory |
 | `ESCALATION_PHONE_NUMBER` | Phone number used when handing off calls |
+| `TWILIO_PHONE_NUMBER` | Default caller ID for outbound SMS and calls |
 | `TOKEN_ENCRYPTION_KEY` | Base64 AES key for encrypting OAuth tokens |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth credentials for Calendar |
 | `SENDGRID_API_KEY` | SendGrid API key for email notifications |

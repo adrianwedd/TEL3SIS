@@ -1,4 +1,5 @@
 """Utility functions for sending email and SMS notifications."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -13,7 +14,7 @@ from server.settings import Settings
 from server.metrics import record_external_api, twilio_sms_latency
 from util import call_with_retries
 
-__all__ = ["send_email", "send_sms", "sanitize_transcript"]
+__all__ = ["send_email", "send_sms", "start_call", "sanitize_transcript"]
 
 
 _EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
@@ -87,3 +88,32 @@ def send_sms(to_phone: str, from_phone: str, body: str) -> None:
         logger.bind(to=to_phone).info("sms_sent")
     except Exception as exc:  # noqa: BLE001
         logger.bind(to=to_phone, error=str(exc)).error("sms_failed")
+
+
+def start_call(to_phone: str, from_phone: str, webhook_url: str) -> None:
+    """Initiate an outbound voice call via Twilio."""
+    cfg = Settings()
+    account_sid = cfg.twilio_account_sid
+    auth_token = cfg.twilio_auth_token
+    if cfg.use_fake_services:
+        with record_external_api("twilio"):
+            logger.bind(to=to_phone).info("call_mock_started")
+        return
+    if not account_sid or not auth_token:
+        logger.bind(to=to_phone).warning("twilio_not_configured")
+        return
+    url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Calls.json"
+    data = {"To": to_phone, "From": from_phone, "Url": webhook_url}
+    try:
+        with record_external_api("twilio"):
+            resp = call_with_retries(
+                requests.post,
+                url,
+                data=data,
+                auth=(account_sid, auth_token),
+                timeout=5,
+            )
+            resp.raise_for_status()
+        logger.bind(to=to_phone).info("call_started")
+    except Exception as exc:  # noqa: BLE001
+        logger.bind(to=to_phone, error=str(exc)).error("call_failed")

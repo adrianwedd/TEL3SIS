@@ -1,4 +1,5 @@
 """Application settings loaded from environment variables."""
+
 from __future__ import annotations
 
 from pydantic import ValidationError
@@ -33,6 +34,7 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
     escalation_phone_number: str = ""
+    twilio_phone_number: str = ""
     call_rate_limit: str = "3/minute"
     api_rate_limit: str = "60/minute"
     oauth_auth_url: str = "https://example.com/auth"

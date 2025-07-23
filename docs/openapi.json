@@ -545,6 +545,86 @@
         }
       }
     },
+    "/v1/send_sms": {
+      "post": {
+        "tags": [
+          "sms"
+        ],
+        "summary": "Send SMS via Twilio",
+        "description": "Send an outbound SMS using Twilio.",
+        "operationId": "api_send_sms_v1_send_sms_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendSMSPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/outbound_call": {
+      "post": {
+        "tags": [
+          "calls"
+        ],
+        "summary": "Initiate outbound voice call",
+        "description": "Start an outbound call that connects to the agent.",
+        "operationId": "outbound_call_v1_outbound_call_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutboundCallPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/recording_status": {
       "post": {
         "tags": [
@@ -642,6 +722,59 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "OutboundCallPayload": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "from_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Phone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to"
+        ],
+        "title": "OutboundCallPayload"
+      },
+      "SendSMSPayload": {
+        "properties": {
+          "to": {
+            "type": "string",
+            "title": "To"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "from_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Phone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to",
+          "body"
+        ],
+        "title": "SendSMSPayload"
       },
       "ValidationError": {
         "properties": {
