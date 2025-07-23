@@ -308,6 +308,7 @@ tel3sis restore backups/latest.tar.gz
 | **Weather** | “What’s the weather tomorrow?” | OpenWeatherMap REST |
 | **Calendar** | “Book a meeting at 10 AM” | Google Calendar API + OAuth |
 | **SMS/Email** | “Text me the transcript” | Twilio Messages / SendGrid |
+| **Browser** | “Open example.com” | Browser Use library |
 
 _Add new tool by implementing `tools/<name>.py` and registering JSON schema in `agents/tools_registry.py`._
 

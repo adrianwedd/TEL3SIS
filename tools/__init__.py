@@ -1,4 +1,5 @@
 """Registry of built-in tools and selection helpers."""
+
 from __future__ import annotations
 
 from agents.calendar_agent import CalendarAgent
@@ -7,6 +8,7 @@ from .base import registry, Tool
 from .weather import WeatherTool, get_weather
 from .calendar import CreateEventTool, ListEventsTool
 from .translation import TranslateTool, translate_text
+from .browser import BrowserTool, browse_url
 from .sentiment import analyze_sentiment
 
 
@@ -15,6 +17,7 @@ registry.register(WeatherTool())
 registry.register(CreateEventTool(), intent="create_event")
 registry.register(ListEventsTool(), intent="check_availability")
 registry.register(TranslateTool())
+registry.register(BrowserTool())
 
 _calendar_agent = CalendarAgent()
 
@@ -39,6 +42,8 @@ __all__ = [
     "CreateEventTool",
     "ListEventsTool",
     "TranslateTool",
+    "BrowserTool",
+    "browse_url",
     "analyze_sentiment",
     "translate_text",
 ]
