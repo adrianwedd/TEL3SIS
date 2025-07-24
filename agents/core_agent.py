@@ -31,6 +31,8 @@ from tools.calendar import AuthError
 from requests.exceptions import RequestException
 from googleapiclient.errors import HttpError
 from google.auth.exceptions import GoogleAuthError
+from server.metrics import external_api_calls, external_api_latency
+import time
 
 
 @dataclass
@@ -79,7 +81,10 @@ class FunctionCallingAgent(ChatGPTAgent):
         func = self.function_map.get(function_call.name)
         if func is None:
             logger.bind(function=function_call.name).error("unknown_function")
+            external_api_calls.labels(function_call.name, "unknown_function").inc()
             return None
+        
+        start_time = time.time()
         try:
             params = json.loads(function_call.arguments or "{}")
             if self.state_manager and self.call_sid:
@@ -93,11 +98,19 @@ class FunctionCallingAgent(ChatGPTAgent):
             logger.bind(function=function_call.name, error=str(exc)).error(
                 "invalid_arguments"
             )
+            external_api_calls.labels(function_call.name, "invalid_args").inc()
             return None
+        
         try:
             result = func(**params)
             if asyncio.iscoroutine(result):
                 result = await result
+            
+            # Record successful tool call
+            duration = time.time() - start_time
+            external_api_calls.labels(function_call.name, "success").inc()
+            external_api_latency.labels(function_call.name).observe(duration)
+            
             return str(result) if result is not None else None
         except (
             RuntimeError,
@@ -106,6 +119,9 @@ class FunctionCallingAgent(ChatGPTAgent):
             RequestException,
             AttributeError,
         ) as exc:
+            duration = time.time() - start_time
+            external_api_calls.labels(function_call.name, "error").inc()
+            external_api_latency.labels(function_call.name).observe(duration)
             logger.bind(function=function_call.name, error=str(exc)).error(
                 "tool_call_failed"
             )
@@ -116,13 +132,7 @@ class FunctionCallingAgent(ChatGPTAgent):
             response_text = await self.handle_function_call(function_call)
         except AuthError:
             fallback = "I need your permission to do that. I'll text you a link."
-            self.produce_interruptible_agent_response_event_nonblocking(
-                AgentResponseMessage(message=BaseMessage(text=fallback)),
-                is_interruptible=True,
-            )
-            self.produce_interruptible_agent_response_event_nonblocking(
-                AgentResponseMessage(message=EndOfTurn())
-            )
+            self._send_agent_response(fallback)
             return
         except (
             RuntimeError,
@@ -132,22 +142,33 @@ class FunctionCallingAgent(ChatGPTAgent):
             GoogleAuthError,
             AttributeError,
         ):
-            self.produce_interruptible_agent_response_event_nonblocking(
-                AgentResponseMessage(
-                    message=BaseMessage(
-                        text="I am having trouble reaching that service right now. Please try again later."
-                    )
-                ),
-                is_interruptible=True,
-            )
-            self.produce_interruptible_agent_response_event_nonblocking(
-                AgentResponseMessage(message=EndOfTurn())
-            )
+            # Provide more specific error messages based on exception type
+            error_msg = self._get_contextual_error_message(function_call.name)
+            self._send_agent_response(error_msg)
             return
+        
         if not response_text:
             return
+        
+        self._send_agent_response(response_text)
+    
+    def _get_contextual_error_message(self, function_name: str) -> str:
+        """Return contextual error message based on function type."""
+        error_messages = {
+            "get_weather": "I'm having trouble getting weather information right now. Please try again in a moment.",
+            "create_calendar_event": "I can't access your calendar at the moment. Please try scheduling the event later.",
+            "send_sms": "I'm unable to send text messages right now. Please try again shortly.",
+            "send_email": "I'm having trouble sending emails at the moment. Please try again later.",
+        }
+        return error_messages.get(
+            function_name, 
+            "I am having trouble reaching that service right now. Please try again later."
+        )
+    
+    def _send_agent_response(self, text: str) -> None:
+        """Helper to send agent response with consistent formatting."""
         self.produce_interruptible_agent_response_event_nonblocking(
-            AgentResponseMessage(message=BaseMessage(text=response_text)),
+            AgentResponseMessage(message=BaseMessage(text=text)),
             is_interruptible=True,
         )
         self.produce_interruptible_agent_response_event_nonblocking(
