@@ -44,3 +44,9 @@ def test_evaluate_iteration(monkeypatch):
     assert [c[0] for c in calls] == prompts
     assert results[0]["allowed"] is True
     assert results[1]["allowed"] is False
+
+
+def test_summarize_results():
+    results = [{"allowed": True}, {"allowed": False}, {"allowed": True}]
+    summary = red_team.summarize_results(results)
+    assert summary == {"allowed": 2, "blocked": 1}
