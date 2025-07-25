@@ -302,7 +302,6 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "additionalProperties": true,
                   "title": "Response Get Conversation Log V1 Admin Conversations  Call Id  Get"
                 }
               }
@@ -335,7 +334,6 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
                   "title": "Response Agent Status V1 Admin Agent Status Get"
                 }
