@@ -52,3 +52,4 @@ site/
 # Node
 node_modules/
 admin-ui/dist/
+temp/

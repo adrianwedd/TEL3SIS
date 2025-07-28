@@ -5,18 +5,25 @@
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features & Current Development Focus
 
 | Capability | Status | Notes |
 |------------|--------|-------|
 | Real‑time STT ↔️ LLM ↔️ TTS loop | ✅ Phase 1 | Whisper / Deepgram + GPT‑4o + ElevenLabs |
-| Call recording & transcription | ✅ Phase 1 | Audio in `recordings/audio`, transcripts in `recordings/transcripts` |
-| Toolchain via OpenAI Function Calling | 🔄 Phase 2 | Weather, Google Calendar, SMS/email |
-| Context‑aware call forwarding | 🔄 Phase 3 | Whisper summary piped to human |
-| Tri‑layer memory (Redis + SQLite + Vectors) | 🔄 Phase 4 | Session ↔ Mid‑term ↔ Long‑term |
-| Safety oracle (pre‑execution) | 🔄 Phase 5 | Red‑team simulation + audit logs |
-| Dashboard / metrics | 🛠 Phase 6 | Prometheus + Grafana |
-| CI / CD & DevSecOps | 🛠 Continuous | Git‑secrets, pytest, pre‑commit |
+| Call recording & transcription | 🔄 In Progress | Audio in `recordings/audio`, transcripts in `recordings/transcripts` (Issue #453) |
+| Toolchain via OpenAI Function Calling | 🔄 In Progress | Weather, Google Calendar, SMS/email (Issues #459, #433, #355, #354) |
+| Context‑aware call forwarding | 🔄 In Progress | Whisper summary piped to human (Issue #430, #369, #411) |
+| Tri‑layer memory (Redis + SQLite + Vectors) | 🔄 In Progress | Session ↔ Mid‑term ↔ Long‑term (Issues #334, #371, #396, #406, #448) |
+| Safety oracle (pre‑execution) | 🔄 In Progress | Red‑team simulation + audit logs (Issues #442, #437, #461, #427) |
+| Dashboard / metrics | 🔄 In Progress | Prometheus + Grafana (Issues #440, #441, #446, #445, #438, #429, #421, #375, #341, #305, #293) |
+| CI / CD & DevSecOps | 🔄 In Progress | Git‑secrets, pytest, pre‑commit (Issues #447, #434, #462, #345, #336, #378, #392, #331) |
+| Authentication & Authorization | 🔄 In Progress | OAuth2, 2FA, API Keys, RBAC (Issues #457, #455, #315, #424, #445) |
+| Core Agent Configuration & Logic | 🔄 In Progress | Unified CLI, error handling, state management (Issues #451, #450, #426, #439, #329, #330, #389, #372, #304, #319, #365, #351, #324, #327, #295) |
+| System Health & Monitoring | 🔄 In Progress | Healthchecks, logging, alerts (Issues #337, #416, #409, #376, #356, #344, #300) |
+| Data Management & Persistence | 🔄 In Progress | Backup/Restore, pruning, transactional updates (Issues #463, #448, #387, #380, #401, #406) |
+| API & CLI Development | 🔄 In Progress | Versioning, documentation, user management (Issues #428, #381, #335, #351) |
+| Environment & Configuration | 🔄 In Progress | Centralized config, .env management (Issues #444, #425, #382, #373, #325) |
+| Docker & Deployment | 🔄 In Progress | Image optimization, Kubernetes (Issues #435, #361, #246, #247, #419, #410) |
 
 ---
 
@@ -27,17 +34,14 @@
 
 ---
 
-## 📂 Directory Layout (Phase 0 – 1)
+## 📂 Directory Layout
 
 ```
 TEL3SIS/
 ├── agents/               # Core & tool‑aware agent configs
-├── server/
-│   ├── app.py            # FastAPI entrypoint
-│   ├── celery_app.py     # Celery factory
-│   └── state_manager.py  # Redis wrapper
+├── server/               # FastAPI entrypoint, Celery, State Management
 ├── tools/                # Calendar, Weather, SMS, etc.
-├── scripts/              # Dev helpers and startup tasks
+├── scripts/              # Development helpers and startup tasks
 ├── admin-ui/             # React dashboard (optional)
 ├── tasks.yml             # Swarm task manifest
 ├── docker-compose.yml
@@ -59,20 +63,19 @@ TEL3SIS/
    cd TEL3SIS
    ```
 
-2. **Install Python dependencies**
+2. **Install Python dependencies & pre-commit hooks**
 
    ```bash
    pip install -r requirements.txt
-   ```
-   ```bash
    pre-commit install
    ```
-   Install git hooks so `pre-commit` runs automatically.
+   This installs git hooks to automatically run `black`, `ruff`, and `git-secrets`.
+
 3. **Create `.env`**
 
    ```bash
    cp .env.example .env
-   # ➜ populate Twilio, OpenAI, ElevenLabs, Deepgram, EMBEDDING_PROVIDER, EMBEDDING_MODEL_NAME, etc.
+   # ➜ Populate with Twilio, OpenAI, ElevenLabs, Deepgram, EMBEDDING_PROVIDER, EMBEDDING_MODEL_NAME, etc.
    ```
 
 4. **Launch stack**
@@ -81,21 +84,21 @@ TEL3SIS/
    docker compose up --build
    ```
 
-5. **Expose to Twilio**
+5. **Expose to Twilio (for inbound calls)**
 
    ```bash
    ngrok http 3000
-   # copy https URL ➜ Twilio Console ➜ Voice Webhook = https://xxxx.ngrok.io/inbound_call
+   # Copy the `https` URL and paste it into your Twilio Console's Voice Webhook for your number (e.g., `https://xxxx.ngrok.io/inbound_call`).
    ```
 
 6. **Call your Twilio number** – if TEL3SIS answers, Phase 1 is alive.
 
-7. **Open Grafana**
+7. **Open Grafana (for monitoring)**
 
    Visit [http://localhost:3000/d/tel3sis-latency](http://localhost:3000/d/tel3sis-latency) (default login `admin`/`admin`).
    If the dashboard does not exist yet, import `ops/grafana/tel3sis.json` via **Dashboard → Import**.
 
-8. **Launch the React admin UI** (optional)
+8. **Launch the React Admin UI (optional)**
 
    ```bash
    cd admin-ui
@@ -107,13 +110,18 @@ TEL3SIS/
 
 Open [http://localhost:5173](http://localhost:5173) to access the dashboard. The app communicates with the FastAPI backend running on port 3000.
 
-## 📑 API Reference
+## 📑 API Reference & Documentation
 
-Detailed examples for every `/v1` endpoint can be found in [docs/api_usage.md](docs/api_usage.md).
-
-## 📚 Documentation
-For a deep dive into the system design, see the [core logic architecture review](docs/reviews/core_logic_architecture_review.md).
-Production deployment recommendations are covered in [docs/production.md](docs/production.md).
+- Detailed examples for every `/v1` endpoint can be found in [docs/api_usage.md](docs/api_usage.md).
+- For a deep dive into the system design, see the [core logic architecture review](docs/reviews/core_logic_architecture_review.md).
+- Production deployment recommendations are covered in [docs/production.md](docs/production.md).
+- A comprehensive user guide is being developed (Issue #464).
+- An Admin UI guide is being developed (Issue #449).
+- Configuration variables are being documented (Issue #444).
+- API and CLI references are being published (Issue #381).
+- Pre-commit hooks are being documented (Issue #392).
+- A contribution style guide is being developed (Issue #276).
+- A production deployment guide is being developed (Issue #272).
 
 ---
 **Local (non‑Docker) setup**  
@@ -159,7 +167,6 @@ Run the helper script to create a virtual environment and install everything:
 ./scripts/setup_test_env.sh
 ```
 
-
 ---
 
 ## ⚙️ Environment Variables
@@ -185,7 +192,7 @@ Run the helper script to create a virtual environment and install everything:
 | `SENDGRID_FROM_EMAIL` | Sender email address for SendGrid |
 | `NOTIFY_EMAIL` | Recipient for call transcripts |
 | `USE_FAKE_SERVICES` | Use `fakeredis` and mocked APIs for tests |
-| _see `.env.example`_ |
+| _see `.env.example` for a complete list_ |
 
 ### Generating and Storing the Encryption Key
 
@@ -245,37 +252,15 @@ pytest -q
 * STT latency reduction via `tel3sis warmup`
 * Management commands via `tel3sis manage`
 
-### Management CLI
+### Ongoing Testing & QA Initiatives
 
-#### User Management Commands
-
-```bash
-tel3sis manage create-user alice secret --role admin
-tel3sis manage list-users
-tel3sis manage update-user alice --password newpass --role user
-tel3sis manage delete-user alice
-```
-
-#### System Maintenance
-
-```bash
-tel3sis manage generate-api-key alice
-tel3sis manage migrate
-tel3sis manage cleanup --days 30
-```
-
-### Maintenance Commands
-
-Use the CLI to create and restore backups once the project is installed with
-`pip install -e .`:
-
-```bash
-# create a backup and upload to S3
-tel3sis backup --s3
-
-# restore from an archive
-tel3sis restore backups/latest.tar.gz
-```
+- Add unit tests for `StateManager` and `TokenStore` (Issue #450).
+- Add tests for CLI and tool error cases (Issue #458).
+- Implement property-based call-flow tests (Issue #390).
+- Set up local microphone/speaker test script (Issue #367).
+- Add integration tests for CLI and endpoints (Issue #362).
+- Create shared `vocode` mocking utility for tests (Issue #245).
+- Test Docker Compose deployment (Issue #247).
 
 ---
 
@@ -290,6 +275,15 @@ tel3sis restore backups/latest.tar.gz
 * Browse Grafana at [http://localhost:3000/d/tel3sis-latency](http://localhost:3000/d/tel3sis-latency).
   Import `ops/grafana/tel3sis.json` if the dashboard is missing to view latency and task metrics.
 
+### Ongoing Monitoring & Observability Initiatives
+
+- Provision Grafana dashboard (Issue #440).
+- Instrument Application with Prometheus Metrics (Issue #376).
+- Implement latency logger with loguru (Issue #356).
+- Configure Prometheus alert rules (Issue #344).
+- Set Up Alertmanager for Critical Alerts (Issue #409).
+- Centralized log forwarding (Issue #416).
+
 ---
 
 ## 🔐 Security
@@ -298,6 +292,19 @@ tel3sis restore backups/latest.tar.gz
 * `git-secrets` pre‑commit hook blocks accidental key leaks
 * OAuth tokens are AES‑GCM encrypted via `cryptography` before storage
 * Safety Oracle filters any risky LLM output before TTS
+
+### Ongoing Security Initiatives
+
+- Set up GitHub Actions security scan (Issue #462).
+- Design Secure OAuth2 Onboarding Flow (Issue #457).
+- Two-factor authentication (Issue #455).
+- Container image security scanning (Issue #345).
+- Add dependency vulnerability scanning to CI/CD (Issue #336).
+- Implement fallback for tool auth failure (Issue #420).
+- Custom banned phrase lists (Issue #427).
+- Persistent Encryption Key (Issue #388).
+- API key authentication (Issue #315).
+- Rate limiting and abuse protection (Issue #357).
 
 ---
 
@@ -311,6 +318,15 @@ tel3sis restore backups/latest.tar.gz
 | **Browser** | “Open example.com” | Browser Use library |
 
 _Add new tool by implementing `tools/<name>.py` and registering JSON schema in `agents/tools_registry.py`._
+
+### Ongoing Tool Development
+
+- Integrate simple tool: weather API (Issue #459).
+- Build Google Calendar tool with OAuth (Issue #433).
+- Translation tool (Issue #355).
+- Add OpenAI function-calling support to agent (Issue #354).
+- Knowledge base FAQ tool (Issue #423).
+- Refactor Tools for Dynamic Invocation (Issue #389).
 
 ### Notifications
 
@@ -351,6 +367,60 @@ The release workflow publishes `ghcr.io/<org>/tel3sis:<tag>`. Pull it with:
 ```bash
 docker pull ghcr.io/<org>/tel3sis:v0.1.0
 ```
+
+### Ongoing Release & Deployment Initiatives
+
+- Publish Docker image on release (Issue #246).
+- Develop production deployment guide (Issue #272).
+
+---
+
+## 🗺️ Roadmap & Future Development
+
+This section outlines key areas of ongoing and future development, linking directly to relevant GitHub Issues for detailed tracking.
+
+### Core Agent & AI Capabilities
+
+- **Self-Reflection & Learning:** Implementing routines for the agent to critique its own performance and learn from interactions (Issue #454).
+- **Advanced Dialogue Management:** Developing multi-turn dialogue state machines and intent recognition for more sophisticated conversations (Issues #372, #304, #295).
+- **Multilingual Support:** Expanding the agent's ability to handle and respond in multiple languages (Issue #327).
+- **Conversation Summarization:** Enhancing the agent's ability to summarize conversations for various purposes (Issue #324, #369).
+- **Escalation Triggers:** Adding more sophisticated triggers for human handoff (Issue #436).
+
+### Data & Memory Management
+
+- **Semantic Memory:** Integrating advanced memory solutions like ChromaDB or pgvector for long-term knowledge retention (Issue #334).
+- **Memory Retrieval:** Developing summarization-aware memory retrieval mechanisms (Issue #396).
+- **Call Data Persistence:** Ensuring robust persistence of call summaries and preferences (Issue #406).
+- **Vector Store Pruning:** Implementing strategies for managing the growth of the vector store (Issue #448).
+- **Transactional State Updates:** Ensuring data consistency across state changes (Issue #380).
+
+### System Architecture & Performance
+
+- **Asynchronous Database Migration:** Migrating to an async database driver for improved performance (Issue #401).
+- **Celery Worker Integration:** Introducing Celery workers for background task processing (Issue #410).
+- **Configuration Management:** Centralizing and streamlining environment configuration (Issues #425, #373, #382, #325).
+- **Healthcheck Endpoints:** Implementing robust health checks for all services (Issue #337).
+- **API Versioning:** Establishing a versioned API with validation (Issue #428).
+
+### Admin UI & User Experience
+
+- **Conversation Log Viewer:** Implementing a comprehensive viewer for past conversations (Issue #421).
+- **Dashboard Actionability:** Adding actions like deleting or reprocessing calls directly from the dashboard (Issue #293).
+- **Dashboard Enhancements:** Improving filtering, sorting, and pagination for the dashboard (Issue #305).
+- **Dark Mode:** Implementing a dark mode for the Admin UI (Issue #322).
+
+### Development & Operations
+
+- **Devcontainer Support:** Providing development container configurations for easier onboarding (Issue #419).
+- **Dependency Management:** Adopting `pip-tools` for more controlled dependency management (Issue #306).
+- **Automated Dependency Updates:** Automating the process of updating dependency locks (Issue #402).
+- **Container Image Security:** Implementing container image security scanning (Issue #345).
+- **Dependency Vulnerability Scanning:** Adding vulnerability scanning to CI/CD (Issue #336).
+- **Local Test Script:** Setting up a local microphone/speaker test script (Issue #367).
+- **Unified CLI:** Providing a unified `tel3sis` CLI for various management tasks (Issue #351).
+- **User Management CLI:** Expanding CLI capabilities for user management (Issue #335).
+- **Data Retention Cleanup:** Implementing jobs for data retention and cleanup (Issue #387).
 
 ---
 
