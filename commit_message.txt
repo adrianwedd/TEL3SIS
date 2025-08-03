@@ -1,0 +1,13 @@
+feat: Comprehensive issue grooming and documentation overhaul
+
+This commit encapsulates a major effort in repository hygiene and documentation clarity:
+
+- **Issue Grooming**: Extensive deduplication and clarification of GitHub issues, streamlining the project's task management.
+- **Documentation Enhancements**:
+    - `README.md`: Significantly revised to reflect current project status, ongoing development, and future roadmap.
+    - `CONTRIBUTING.md`: Enhanced with detailed, engaging guidance for new contributors.
+    - `CLAUDE.md`: Major revision to provide improved, comprehensive guidance for AI assistants.
+    - `GROOMER.md`: New file introduced to formalize issue management guidelines.
+- **File Reorganization**:
+    - `MIGRATION_REPORT.md`, `PLAN.md`, and `CONFIGURATION.md` moved to `docs/` for better organization and discoverability.
+    - `tasks.yml` moved to `temp/` (now untracked).
