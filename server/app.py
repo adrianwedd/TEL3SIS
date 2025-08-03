@@ -70,6 +70,24 @@ class AgentConfigPayload(BaseModel):
     voice: str = ""
 
 
+class CallResponse(BaseModel):
+    id: int
+    from_number: str
+    to_number: str
+    summary: str | None = None
+    sentiment: float | None = None
+    created_at: datetime
+    duration: float | None = None
+    status: str = "completed"
+
+
+class CallsListResponse(BaseModel):
+    items: list[CallResponse]
+    total: int
+    page: int = 1
+    limit: int = 50
+
+
 class InboundCallData(BaseModel):
     CallSid: str
     From: str
@@ -663,6 +681,122 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         """Persist new agent configuration."""
         await update_agent_config_async(prompt=payload.prompt, voice=payload.voice)
         return Response(status_code=204)
+
+    @app.get("/v1/calls", summary="List calls", tags=["admin"])
+    async def list_calls(
+        page: int = 1,
+        limit: int = 50,
+        query: str | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
+        status: str | None = None,
+        token: str | None = Depends(lambda request: request.headers.get("x-api-key")),
+    ) -> CallsListResponse:
+        """Return paginated list of calls with optional filtering."""
+        if not token or not await verify_api_key_async(token):
+            raise HTTPException(status_code=401, detail="Invalid API key")
+        
+        async with get_session_async() as session:
+            query_obj = select(Call).order_by(Call.id.desc())
+            
+            # Apply filters
+            if query:
+                query_obj = query_obj.filter(
+                    (Call.from_number.contains(query)) |
+                    (Call.to_number.contains(query)) |
+                    (Call.summary.contains(query))
+                )
+            
+            if from_date:
+                try:
+                    from_dt = datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+                    query_obj = query_obj.filter(Call.created_at >= from_dt)
+                except ValueError:
+                    pass
+                    
+            if to_date:
+                try:
+                    to_dt = datetime.fromisoformat(to_date.replace('Z', '+00:00'))
+                    query_obj = query_obj.filter(Call.created_at <= to_dt)
+                except ValueError:
+                    pass
+            
+            # Get total count
+            count_result = await session.execute(
+                select(func.count(Call.id)).select_from(query_obj.subquery())
+            )
+            total = count_result.scalar() or 0
+            
+            # Apply pagination
+            offset = (page - 1) * limit
+            query_obj = query_obj.offset(offset).limit(limit)
+            
+            result = await session.execute(query_obj)
+            calls = result.scalars().all()
+            
+            call_responses = [
+                CallResponse(
+                    id=call.id,
+                    from_number=call.from_number or "",
+                    to_number=call.to_number or "",
+                    summary=call.summary,
+                    sentiment=call.sentiment,
+                    created_at=call.created_at,
+                    duration=call.duration_seconds,
+                    status="completed" if call.summary else "active"
+                )
+                for call in calls
+            ]
+            
+            return CallsListResponse(
+                items=call_responses,
+                total=total,
+                page=page,
+                limit=limit
+            )
+
+    @app.post("/v1/auth/login", summary="Admin login", tags=["auth"])
+    async def admin_login(request: Request) -> dict:
+        """Authenticate admin user and return API token."""
+        try:
+            data = await request.json()
+            username = data.get("username", "").strip()
+            password = data.get("password", "").strip()
+            
+            if not username or not password:
+                raise HTTPException(status_code=400, detail="Username and password required")
+            
+            # Verify credentials
+            async with get_session_async() as session:
+                result = await session.execute(select(User).filter_by(username=username))
+                user = result.scalar_one_or_none()
+                
+                if not user or not user.check_password(password):
+                    raise HTTPException(status_code=401, detail="Invalid credentials")
+                
+                if user.role not in ["admin", "operator"]:
+                    raise HTTPException(status_code=403, detail="Insufficient permissions")
+                
+                # Generate API token (for demo purposes, using the user's existing api_key)
+                token = user.api_key or secrets.token_urlsafe(32)
+                if not user.api_key:
+                    user.api_key = token
+                    await session.commit()
+                
+                return {
+                    "token": token,
+                    "user": {
+                        "id": str(user.id),
+                        "username": user.username,
+                        "role": user.role
+                    }
+                }
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Login error: {e}")
+            raise HTTPException(status_code=500, detail="Login failed")
 
     @app.get(
         "/v1/oauth/consent",

@@ -1,0 +1,119 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #64748b;
+  --success: #059669;
+  --warning: #d97706;
+  --error: #dc2626;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* App layout */
+.app {
+  min-height: 100vh;
+}
+
+/* Login styles */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+}
+}
+.login-container input {
+  margin-bottom: 10px;
+  padding: 8px;
+}
+.dashboard header {
+  display: flex;
+  justify-content: space-between;
+  background: #333;
+  color: #fff;
+  padding: 10px;
+}
+
+.conversations-container {
+  display: flex;
+}
+
+.conversation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 40%;
+  border-right: 1px solid #ccc;
+}
+
+.conversation-item {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.conversation-item:hover {
+  background: #f0f0f0;
+}
+
+.conversation-detail {
+  padding: 10px;
+  flex: 1;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+}
+.settings-form label {
+  margin-bottom: 10px;
+}
+.settings-form textarea {
+  width: 100%;
+  min-height: 80px;
+}
+
+.save-indicator {
+  margin-top: 8px;
+  color: green;
+}
+
+.status-badge {
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.8em;
+}
+.status-badge.listening {
+  background: #28a745;
+}
+.status-badge.speaking {
+  background: #007bff;
+}
+.status-badge.offline {
+  background: #6c757d;
+}
