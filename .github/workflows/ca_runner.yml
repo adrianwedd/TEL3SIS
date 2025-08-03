@@ -2,7 +2,7 @@ name: CoordinatorAgent Runner
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '0 */4 * * *'  # Run every 4 hours instead of every 10 minutes
   workflow_dispatch:
 
 jobs:
@@ -18,12 +18,14 @@ jobs:
         with:
           app-id: ${{ secrets.CA_APP_ID }}
           private-key: ${{ secrets.CA_APP_KEY }}
+        continue-on-error: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
       - name: Run CoordinatorAgent
+        if: steps.app.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ steps.app.outputs.token }}
         run: |
@@ -37,3 +39,6 @@ jobs:
           tasks = agent.load_tasks()
           logger.bind(count=len(tasks)).info("loaded_tasks")
           PY
+      - name: Skip CoordinatorAgent (missing credentials)
+        if: steps.app.outcome != 'success'
+        run: echo "Skipping CoordinatorAgent - GitHub App credentials not configured"
