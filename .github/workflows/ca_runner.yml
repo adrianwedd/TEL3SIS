@@ -19,7 +19,7 @@ jobs:
           app-id: ${{ secrets.CA_APP_ID }}
           private-key: ${{ secrets.CA_APP_KEY }}
         continue-on-error: true
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Install dependencies
