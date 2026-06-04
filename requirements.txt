@@ -325,7 +325,7 @@ packaging==25.0
     #   kombu
     #   onnxruntime
     #   transformers
-pillow==11.3.0
+pillow==12.2.0
     # via sentence-transformers
 posthog==5.4.0
     # via chromadb
