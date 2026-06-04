@@ -28,8 +28,6 @@ attrs==25.3.0
     # via
     #   jsonschema
     #   referencing
-backoff==2.2.1
-    # via posthog
 bcrypt==4.3.0
     # via chromadb
 beautifulsoup4==4.13.4
@@ -64,7 +62,7 @@ cffi==1.17.1
     #   pynacl
 charset-normalizer==3.4.2
     # via requests
-chromadb==1.0.15
+chromadb==1.5.9
     # via -r requirements.in
 click==8.2.1
     # via
@@ -95,9 +93,7 @@ deep-translator==1.11.4
 deprecated==1.2.18
     # via pygithub
 distro==1.9.0
-    # via
-    #   openai
-    #   posthog
+    # via openai
 durationpy==0.10
     # via kubernetes
 ecdsa==0.19.1
@@ -327,8 +323,6 @@ packaging==25.0
     #   transformers
 pillow==11.3.0
     # via sentence-transformers
-posthog==5.4.0
-    # via chromadb
 priority==2.0.0
     # via hypercorn
 prometheus-client==0.22.1
@@ -364,7 +358,9 @@ pydantic==2.11.7
 pydantic-core==2.33.2
     # via pydantic
 pydantic-settings==2.10.1
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   chromadb
 pygithub==2.6.1
     # via -r requirements.in
 pygments==2.19.2
@@ -384,7 +380,6 @@ python-dateutil==2.9.0.post0
     #   botocore
     #   celery
     #   kubernetes
-    #   posthog
 python-dotenv==1.1.1
     # via
     #   pydantic-settings
@@ -420,7 +415,6 @@ requests==2.32.4
     #   google-api-core
     #   huggingface-hub
     #   kubernetes
-    #   posthog
     #   pygithub
     #   requests-oauthlib
     #   transformers
@@ -461,7 +455,6 @@ six==1.17.0
     #   ecdsa
     #   kubernetes
     #   langdetect
-    #   posthog
     #   python-dateutil
 sniffio==1.3.1
     # via
