@@ -92,6 +92,8 @@ cryptography==45.0.5
     #   pyjwt
 deep-translator==1.11.4
     # via -r requirements.in
+defusedxml==0.7.1
+    # via nltk
 deprecated==1.2.18
     # via pygithub
 distro==1.9.0
@@ -238,7 +240,7 @@ mpmath==1.3.0
     # via sympy
 networkx==3.5
     # via torch
-nltk==3.9.1
+nltk==3.10.0
     # via textblob
 numpy==2.3.1
     # via
