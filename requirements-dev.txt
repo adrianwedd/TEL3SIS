@@ -689,7 +689,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.31.2
+virtualenv==20.36.1
     # via pre-commit
 watchdog==6.0.0
     # via mkdocs
