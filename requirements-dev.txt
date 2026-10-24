@@ -407,7 +407,7 @@ packaging==25.0
     #   wheel
 pathspec==0.12.1
     # via mkdocs
-pillow==11.3.0
+pillow==13.0.0
     # via sentence-transformers
 pip-api==0.0.34
     # via pip-audit
