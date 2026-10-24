@@ -17,6 +17,7 @@ annotated-types==0.7.0
 anyio==4.9.0
     # via
     #   httpx
+    #   httpx2
     #   openai
     #   starlette
     #   watchfiles
@@ -77,7 +78,7 @@ chroma-hnswlib==0.7.3
     # via chromadb
 chromadb==0.4.24
     # via -r requirements.in
-click==8.1.7
+click==8.5.0
     # via
     #   -r requirements.in
     #   celery
@@ -85,6 +86,7 @@ click==8.1.7
     #   click-plugins
     #   click-repl
     #   flask
+    #   huggingface-hub
     #   mkdocs
     #   nltk
     #   pip-tools
@@ -139,7 +141,6 @@ filelock==3.20.3
     #   cachecontrol
     #   huggingface-hub
     #   torch
-    #   transformers
     #   virtualenv
 flask==3.1.1
     # via quart
@@ -180,12 +181,13 @@ grpcio==1.73.1
 h11==0.16.0
     # via
     #   httpcore
+    #   httpcore2
     #   hypercorn
     #   uvicorn
     #   wsproto
 h2==4.4.1
     # via hypercorn
-hf-xet==1.1.5
+hf-xet==1.7.0
     # via huggingface-hub
 hpack==4.2.0
     # via h2
@@ -201,8 +203,9 @@ httpx==0.27.0
     # via
     #   -r requirements.in
     #   fastapi
+    #   huggingface-hub
     #   openai
-huggingface-hub==0.33.4
+huggingface-hub==1.33.0
     # via
     #   sentence-transformers
     #   tokenizers
@@ -220,6 +223,7 @@ idna==3.15
     #   anyio
     #   email-validator
     #   httpx
+    #   httpx2
     #   requests
 importlib-metadata==8.7.0
     # via opentelemetry-api
@@ -407,8 +411,6 @@ packaging==25.0
     #   wheel
 pathspec==0.12.1
     # via mkdocs
-pillow==11.3.0
-    # via sentence-transformers
 pip-api==0.0.34
     # via pip-audit
 pip-audit==2.9.0
@@ -526,7 +528,7 @@ redis==5.0.4
     # via
     #   -r requirements.in
     #   fakeredis
-regex==2024.11.6
+regex==2026.9.29
     # via
     #   nltk
     #   transformers
@@ -537,13 +539,11 @@ requests==2.33.0
     #   chromadb
     #   deep-translator
     #   google-api-core
-    #   huggingface-hub
     #   kubernetes
     #   pip-audit
     #   posthog
     #   pygithub
     #   requests-oauthlib
-    #   transformers
 requests-oauthlib==2.0.0
     # via
     #   google-auth-oauthlib
@@ -574,7 +574,7 @@ scipy==1.16.0
     #   sentence-transformers
 sendgrid==6.10.0
     # via -r requirements.in
-sentence-transformers==2.7.0
+sentence-transformers==6.2.0
     # via -r requirements.in
 shellingham==1.5.4
     # via typer
@@ -613,9 +613,10 @@ textblob==0.19.0
     # via -r requirements.in
 threadpoolctl==3.6.0
     # via scikit-learn
-tokenizers==0.21.2
+tokenizers==0.22.2
     # via
     #   chromadb
+    #   sentence-transformers
     #   transformers
 toml==0.10.2
     # via pip-audit
@@ -629,7 +630,7 @@ tqdm==4.67.1
     #   openai
     #   sentence-transformers
     #   transformers
-transformers==4.53.2
+transformers==5.12.1
     # via sentence-transformers
 triton==3.3.1
     # via torch
@@ -637,6 +638,7 @@ typer==0.16.0
     # via
     #   chromadb
     #   fastapi-cli
+    #   transformers
 typing-extensions==4.14.1
     # via
     #   aiosqlite
@@ -656,6 +658,7 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   pygithub
     #   rich-toolkit
+    #   sentence-transformers
     #   sqlalchemy
     #   torch
     #   typer
