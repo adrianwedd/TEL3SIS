@@ -17,6 +17,7 @@ annotated-types==0.7.0
 anyio==4.9.0
     # via
     #   httpx
+    #   httpx2
     #   openai
     #   starlette
     #   watchfiles
@@ -66,7 +67,7 @@ charset-normalizer==3.4.2
     # via requests
 chromadb==1.0.15
     # via -r requirements.in
-click==8.2.1
+click==8.5.0
     # via
     #   -r requirements.in
     #   celery
@@ -74,6 +75,7 @@ click==8.2.1
     #   click-plugins
     #   click-repl
     #   flask
+    #   huggingface-hub
     #   nltk
     #   quart
     #   typer
@@ -110,7 +112,6 @@ filelock==3.20.3
     # via
     #   huggingface-hub
     #   torch
-    #   transformers
 flask==3.1.1
     # via quart
 flatbuffers==25.2.10
@@ -148,12 +149,13 @@ grpcio==1.73.1
 h11==0.16.0
     # via
     #   httpcore
+    #   httpcore2
     #   hypercorn
     #   uvicorn
     #   wsproto
 h2==4.4.1
     # via hypercorn
-hf-xet==1.1.5
+hf-xet==1.7.0
     # via huggingface-hub
 hpack==4.2.0
     # via h2
@@ -169,8 +171,9 @@ httpx==0.28.1
     # via
     #   -r requirements.in
     #   chromadb
+    #   huggingface-hub
     #   openai
-huggingface-hub==0.33.4
+huggingface-hub==1.33.0
     # via
     #   sentence-transformers
     #   tokenizers
@@ -185,6 +188,7 @@ idna==3.15
     # via
     #   anyio
     #   httpx
+    #   httpx2
     #   requests
 importlib-metadata==8.7.0
     # via opentelemetry-api
@@ -248,6 +252,7 @@ numpy==2.3.1
     #   onnxruntime
     #   scikit-learn
     #   scipy
+    #   sentence-transformers
     #   transformers
 nvidia-cublas-cu12==12.6.4.1
     # via
@@ -327,8 +332,6 @@ packaging==25.0
     #   kombu
     #   onnxruntime
     #   transformers
-pillow==11.3.0
-    # via sentence-transformers
 posthog==5.4.0
     # via chromadb
 priority==2.0.0
@@ -411,7 +414,7 @@ referencing==0.36.2
     # via
     #   jsonschema
     #   jsonschema-specifications
-regex==2024.11.6
+regex==2026.9.29
     # via
     #   nltk
     #   transformers
@@ -420,12 +423,10 @@ requests==2.33.0
     #   -r requirements.in
     #   deep-translator
     #   google-api-core
-    #   huggingface-hub
     #   kubernetes
     #   posthog
     #   pygithub
     #   requests-oauthlib
-    #   transformers
 requests-oauthlib==2.0.0
     # via
     #   google-auth-oauthlib
@@ -454,7 +455,7 @@ scipy==1.16.0
     #   sentence-transformers
 sendgrid==6.12.4
     # via -r requirements.in
-sentence-transformers==5.0.0
+sentence-transformers==6.2.0
     # via -r requirements.in
 shellingham==1.5.4
     # via typer
@@ -487,9 +488,10 @@ textblob==0.19.0
     # via -r requirements.in
 threadpoolctl==3.6.0
     # via scikit-learn
-tokenizers==0.21.2
+tokenizers==0.22.2
     # via
     #   chromadb
+    #   sentence-transformers
     #   transformers
 torch==2.7.1
     # via sentence-transformers
@@ -501,12 +503,14 @@ tqdm==4.67.1
     #   openai
     #   sentence-transformers
     #   transformers
-transformers==4.53.3
+transformers==5.12.1
     # via sentence-transformers
 triton==3.3.1
     # via torch
 typer==0.16.0
-    # via chromadb
+    # via
+    #   chromadb
+    #   transformers
 typing-extensions==4.14.1
     # via
     #   aiosqlite
