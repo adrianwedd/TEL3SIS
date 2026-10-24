@@ -65,7 +65,7 @@ certifi==2025.7.9
     #   kubernetes
     #   pulsar-client
     #   requests
-cffi==1.17.1
+cffi==2.1.1
     # via
     #   cryptography
     #   pynacl
@@ -100,7 +100,7 @@ click-repl==0.3.0
     # via celery
 coloredlogs==15.0.1
     # via onnxruntime
-cryptography==44.0.1
+cryptography==50.0.0
     # via
     #   -r requirements.in
     #   pyjwt
