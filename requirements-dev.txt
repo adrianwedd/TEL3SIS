@@ -134,7 +134,7 @@ fastapi==0.111.0
     #   chromadb
 fastapi-cli==0.0.8
     # via fastapi
-filelock==3.18.0
+filelock==3.20.3
     # via
     #   cachecontrol
     #   huggingface-hub
