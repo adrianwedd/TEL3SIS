@@ -335,7 +335,7 @@ nvidia-nvjitlink-cu12==12.6.85
     #   torch
 nvidia-nvtx-cu12==12.6.77
     # via torch
-oauthlib==3.2.2
+oauthlib==4.0.0
     # via
     #   -r requirements.in
     #   kubernetes
