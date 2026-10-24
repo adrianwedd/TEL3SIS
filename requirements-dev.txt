@@ -404,6 +404,7 @@ packaging==25.0
     #   pip-requirements-parser
     #   pytest
     #   transformers
+    #   wheel
 pathspec==0.12.1
     # via mkdocs
 pillow==11.3.0
@@ -704,7 +705,7 @@ werkzeug==3.1.6
     # via
     #   flask
     #   quart
-wheel==0.45.1
+wheel==0.46.2
     # via pip-tools
 wrapt==1.17.2
     # via
