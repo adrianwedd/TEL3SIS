@@ -115,7 +115,7 @@ flask==3.1.1
     # via quart
 flatbuffers==25.2.10
     # via onnxruntime
-fsspec==2025.7.0
+fsspec==2026.6.0
     # via
     #   huggingface-hub
     #   torch
