@@ -21,10 +21,23 @@ jobs:
         # real .env is deliberately not committed, so `docker compose up -d`
         # aborted with
         #   env file .../.env not found: no such file or directory
-        # on every run — the suite never reached a health check. The committed
-        # example carries the same key names with blank values, which is all the
-        # compose file needs to resolve its environment.
-        run: cp .env.example .env
+        # on every run — the suite never reached a health check.
+        # .env.example cannot simply be copied: its values are blank, and a bare
+        # SECRET_KEY= makes server.settings fail pydantic validation, so every
+        # service dies at import. Write the same dummy set the pytest job proves
+        # sufficient, so this suite reports real service failures rather than a
+        # missing-secret error it can never pass with.
+        run: |
+          cat > .env <<'EOF'
+          SECRET_KEY=ci-not-a-secret
+          BASE_URL=http://localhost:3000
+          TWILIO_ACCOUNT_SID=sid
+          TWILIO_AUTH_TOKEN=token
+          SENDGRID_API_KEY=sg
+          SENDGRID_FROM_EMAIL=from@test
+          NOTIFY_EMAIL=notify@test
+          DATABASE_URL=sqlite:///test.db
+          EOF
       - name: Start services
         run: docker compose up -d
       - name: Wait for health checks
