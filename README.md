@@ -95,7 +95,7 @@ TEL3SIS/
 
 7. **Open Grafana (for monitoring)**
 
-   Visit [http://localhost:3000/d/tel3sis-latency](http://localhost:3000/d/tel3sis-latency) (default login `admin`/`admin`).
+   Visit [http://localhost:3001/d/tel3sis-latency](http://localhost:3001/d/tel3sis-latency) (default login `admin`/`admin`).
    If the dashboard does not exist yet, import `ops/grafana/tel3sis.json` via **Dashboard → Import**.
 
 8. **Launch the React Admin UI (optional)**
@@ -272,7 +272,7 @@ pytest -q
 * Alerts trigger if STT/LLM/TTS average latency stays above **3 s** for over a minute
 * Alertmanager reads `ops/prometheus/alertmanager.yml` and posts to Slack via `SLACK_WEBHOOK_URL`
   or PagerDuty via `PAGERDUTY_ROUTING_KEY` in `.env`
-* Browse Grafana at [http://localhost:3000/d/tel3sis-latency](http://localhost:3000/d/tel3sis-latency).
+* Browse Grafana at [http://localhost:3001/d/tel3sis-latency](http://localhost:3001/d/tel3sis-latency).
   Import `ops/grafana/tel3sis.json` if the dashboard is missing to view latency and task metrics.
 
 ### Ongoing Monitoring & Observability Initiatives

@@ -4,7 +4,7 @@ TEL3SIS ships with a preconfigured Grafana dashboard to visualize Prometheus met
 
 ## Access
 
-Browse to [http://localhost:3000/d/tel3sis-latency](http://localhost:3000/d/tel3sis-latency) and log in with the default `admin` / `admin` credentials.
+Browse to [http://localhost:3001/d/tel3sis-latency](http://localhost:3001/d/tel3sis-latency) and log in with the default `admin` / `admin` credentials.
 If the dashboard is missing, import `ops/grafana/tel3sis.json` via **Dashboard → Import**.
 
 ## Panels

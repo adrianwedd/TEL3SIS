@@ -59,7 +59,13 @@ services:
   grafana:
     image: grafana/grafana:9.5.3
     ports:
-      - "3000:3000"
+      # Grafana listens on 3000 inside the container, and `web` already
+      # publishes host 3000. Two services binding the same host port makes
+      # `docker compose up -d` abort with "failed to set up container
+      # networking: driver failed programming external connectivity", so the
+      # compose suite could never reach its health checks. Publish Grafana on
+      # 3001 instead; the container port is unchanged.
+      - "3001:3000"
     volumes:
       - grafana-data:/var/lib/grafana
 
