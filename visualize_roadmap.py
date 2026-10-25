@@ -4,7 +4,6 @@ TEL3SIS Roadmap Visualization Generator
 Creates interactive Gantt charts and timeline visualizations from the roadmap data.
 """
 
-import json
 import pandas as pd
 from datetime import datetime, timedelta
 import plotly.graph_objects as go
@@ -12,7 +11,6 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import networkx as nx
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Roadmap data structure
 ROADMAP_DATA = {

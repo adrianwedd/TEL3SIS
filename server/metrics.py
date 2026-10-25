@@ -3,10 +3,9 @@
 import time
 from contextlib import contextmanager
 from typing import Awaitable, Callable, Dict, Optional
-from datetime import datetime, timedelta
 
 from fastapi import Request, Response
-from prometheus_client import Counter, Histogram, Gauge, Info
+from prometheus_client import Counter, Histogram, Gauge
 from logging_config import logger
 
 __all__ = [

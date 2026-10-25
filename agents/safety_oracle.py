@@ -3,7 +3,7 @@
 from __future__ import annotations
 import re
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Set
+from typing import List, Optional, Dict
 import hashlib
 from datetime import datetime, timedelta
 

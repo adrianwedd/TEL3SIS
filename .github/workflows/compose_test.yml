@@ -2,7 +2,13 @@ name: Compose Test
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+# Pure validation job with no deployable artifact: a superseded run is waste.
+concurrency:
+  group: compose-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   compose:
@@ -10,6 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: docker/setup-buildx-action@v3
+      - name: Provide compose env file
+        # docker-compose.yml declares `env_file: .env` for three services and the
+        # real .env is deliberately not committed, so `docker compose up -d`
+        # aborted with
+        #   env file .../.env not found: no such file or directory
+        # on every run — the suite never reached a health check. The committed
+        # example carries the same key names with blank values, which is all the
+        # compose file needs to resolve its environment.
+        run: cp .env.example .env
       - name: Start services
         run: docker compose up -d
       - name: Wait for health checks
