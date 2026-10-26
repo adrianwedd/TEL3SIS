@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Provide compose env file
         # docker-compose.yml declares `env_file: .env` for three services and the
         # real .env is deliberately not committed, so `docker compose up -d`
