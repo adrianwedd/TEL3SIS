@@ -52,7 +52,7 @@ cachetools==5.5.2
     # via google-auth
 celery==5.5.3
     # via -r requirements.in
-certifi==2025.7.14
+certifi==2026.10.18
     # via
     #   httpcore
     #   httpx
