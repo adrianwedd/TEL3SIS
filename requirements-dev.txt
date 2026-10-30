@@ -447,7 +447,7 @@ pulsar-client==3.7.0
     # via chromadb
 py-serializable==2.0.0
     # via cyclonedx-python-lib
-pyasn1==0.6.4
+pyasn1==0.6.5
     # via
     #   pyasn1-modules
     #   rsa
