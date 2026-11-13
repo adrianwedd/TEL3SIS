@@ -593,7 +593,7 @@ sortedcontainers==2.4.0
     # via
     #   cyclonedx-python-lib
     #   fakeredis
-soupsieve==2.8.4
+soupsieve==4.0
     # via beautifulsoup4
 sqlalchemy==2.0.29
     # via
